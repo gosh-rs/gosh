@@ -24,12 +24,15 @@ mod errors {
     error_chain!{}
 }
 
+mod cli;
+
 use errors::*;
+use cli::Commander;
 
 fn main() {
     let mut reader = Reader::new("rusty gosh").unwrap();
 
-    println!("This is the gosh shell.");
+    println!("This is the rusty gosh shell.");
     println!("Enter \"help\" or \"?\" for a list of commands.");
     println!("Press Ctrl-D or enter \"quit\" or \"q\" to exit.");
     println!("");
@@ -91,26 +94,6 @@ fn main() {
         }
     }
 }
-
-struct Commander {
-    molecule: Option<Molecule>,
-}
-
-impl Commander {
-    fn new() -> Self {
-        Commander {
-            molecule: None,
-        }
-    }
-
-    fn load(&mut self, filename: &str) -> Result<()> {
-        let mol = Molecule::from_file(filename).chain_err(|| "bad")?;
-        self.molecule = Some(mol);
-
-        Ok(())
-    }
-}
-
 
 static GOSH_COMMANDS: &'static [(&'static str, &'static str)] = &[
     ("help",             "You're looking at it"),
