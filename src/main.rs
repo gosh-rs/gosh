@@ -74,6 +74,24 @@ fn main() {
                 }
             },
 
+            "rebond" => {
+                if let Err(ref e) = &mut commander.rebond() {
+                    let stderr = &mut ::std::io::stderr();
+                    let errmsg = "Error writing to stderr";
+
+                    writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+                }
+            },
+
+            "clean" => {
+                if let Err(ref e) = &mut commander.clean() {
+                    let stderr = &mut ::std::io::stderr();
+                    let errmsg = "Error writing to stderr";
+
+                    writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+                }
+            },
+
             "write" | "save" => {
                 if args.len() == 0 {
                     println!("Please input path to save the molecule.");
@@ -100,6 +118,8 @@ static GOSH_COMMANDS: &'static [(&'static str, &'static str)] = &[
     ("quit",             "Quit the demo"),
     ("load",             "Load molecule from disk"),
     ("write",            "Write molecules into file"),
+    ("rebond",           "Rebuild bonds from atom distances."),
+    ("clean",            "Clean up bad molecular geometry."),
 ];
 
 fn split_first_word(s: &str) -> (&str, &str) {
@@ -134,7 +154,7 @@ impl<Term: Terminal> Completer<Term> for GOSHCompleter {
                 Some(compls)
             }
             // Complete command parameters
-            Some("get") | Some("set") => {
+            Some("load") | Some("write") => {
                 if words.count() == 0 {
                     let mut res = Vec::new();
 

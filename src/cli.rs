@@ -23,5 +23,23 @@ impl Commander {
 
         Ok(())
     }
+
+    pub fn clean(&mut self) -> Result<()> {
+        if let Some(ref mut mol) = &mut self.molecule {
+            mol.clean();
+        } else {
+            bail!("No molecule available.");
+        }
+        Ok(())
+    }
+
+    pub fn rebond(&mut self) -> Result<()> {
+        if let Some(ref mut mol) = &mut self.molecule {
+            mol.clean();
+        } else {
+            bail!("No molecule available.");
+        }
+        Ok(())
+    }
 }
 // 4982806b-0e81-4a97-b5f9-52f6abc5618a ends here
