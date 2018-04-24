@@ -1,0 +1,10 @@
+# [[file:~/Workspace/Programming/gosh/gosh.note::c45d1413-12b8-471e-b060-da682339ad4b][c45d1413-12b8-471e-b060-da682339ad4b]]
+[package]
+name = "gosh"
+version = "0.0.1"
+authors = ["Wenping Guo <ybyygu@gmail.com>"]
+
+[dependencies]
+error-chain = "*"
+linefeed = "*"
+# c45d1413-12b8-471e-b060-da682339ad4b ends here
