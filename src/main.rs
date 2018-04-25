@@ -18,16 +18,28 @@ use gchemol::{
     Molecule,
 };
 
-
+use cli::Commander;
 mod errors {
     // Create the Error, ErrorKind, ResultExt, and Result types
     error_chain!{}
 }
+use errors::*;
 
 mod cli;
 
-use errors::*;
-use cli::Commander;
+use std::path::{Path, PathBuf};
+use std::env;
+
+fn get_history_file() -> Result<PathBuf> {
+    match env::home_dir() {
+        Some(path) => {
+            let filename = path.join(".gosh.history");
+            return Ok(filename);
+        },
+        None => bail!("Impossible to get your home dir!"),
+    }
+}
+
 
 fn main() {
     let mut reader = Reader::new("rusty gosh").unwrap();
@@ -41,6 +53,14 @@ fn main() {
     reader.set_prompt("gosh> ");
 
     let mut commander = Commander::new();
+    let history_file = get_history_file().unwrap();
+    if let Err(e) = reader.load_history(&history_file) {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            println!("History file {} doesn't exist, not loading history.", history_file.display());
+        } else {
+            eprintln!("Could not load history file {}: {}", history_file.display(), e);
+        }
+    }
 
     while let Ok(ReadResult::Input(line)) = reader.read_line() {
         if !line.trim().is_empty() {
@@ -117,7 +137,13 @@ fn main() {
                 }
             },
 
-            "quit" | "q" => break,
+            "quit" | "q" => {
+                if let Err(e) = reader.save_history(&history_file) {
+                    eprintln!("Could not save history file {}: {}", history_file.display(), e);
+                }
+                break;
+            },
+
             "" => (),
             _ => println!("{:?}: not a command", line),
         }
