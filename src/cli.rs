@@ -1,5 +1,6 @@
 // [[file:~/Workspace/Programming/gosh/gosh.note::4982806b-0e81-4a97-b5f9-52f6abc5618a][4982806b-0e81-4a97-b5f9-52f6abc5618a]]
 use errors::*;
+use std::process::Command;
 
 use gchemol::{
     Molecule,
@@ -64,6 +65,19 @@ impl Commander {
         } else {
             bail!("No molecule available.");
         }
+        Ok(())
+    }
+
+    pub fn extern_cmdline(&self, cmdline: &str) -> Result<()> {
+        let output = Command::new(cmdline)
+            .output()
+            .chain_err(|| format!("external cmdline failed: {}", cmdline))?;
+        if output.status.success() {
+            println!("{}", String::from_utf8_lossy(&output.stdout));
+        } else {
+            println!("{}", String::from_utf8_lossy(&output.stderr));
+        }
+
         Ok(())
     }
 }

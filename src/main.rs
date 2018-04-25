@@ -27,6 +27,7 @@ use errors::*;
 
 mod cli;
 
+use std::process::Command;
 use std::path::{Path, PathBuf};
 use std::env;
 
@@ -134,6 +135,24 @@ fn main() {
                     writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
                 } else {
                     println!("saved.");
+                }
+            },
+
+            "ls" => {
+                if let Err(ref e) = &commander.extern_cmdline("ls") {
+                    let stderr = &mut ::std::io::stderr();
+                    let errmsg = "Error writing to stderr";
+
+                    writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+                }
+            },
+
+            "pwd" => {
+                if let Err(ref e) = &commander.extern_cmdline("pwd") {
+                    let stderr = &mut ::std::io::stderr();
+                    let errmsg = "Error writing to stderr";
+
+                    writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
                 }
             },
 
