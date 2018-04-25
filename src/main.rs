@@ -92,17 +92,28 @@ fn main() {
                 }
             },
 
-            "write" | "save" => {
+            "write" => {
                 if args.len() == 0 {
                     println!("Please input path to save the molecule.");
                 } else {
                     let filename = args;
-                    if let Some(mol) = &mut commander.molecule {
-                        mol.to_file(filename);
-                        println!("Molecule wrote to: {:?}.", filename);
-                    } else {
-                        println!("No molecule available.");
+                    if let Err(ref e) = &commander.write(filename) {
+                        let stderr = &mut ::std::io::stderr();
+                        let errmsg = "Error writing to stderr";
+
+                        writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
                     }
+                }
+            },
+
+            "save" => {
+                if let Err(ref e) = &commander.save() {
+                    let stderr = &mut ::std::io::stderr();
+                    let errmsg = "Error writing to stderr";
+
+                    writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+                } else {
+                    println!("saved.");
                 }
             },
 
