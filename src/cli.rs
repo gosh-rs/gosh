@@ -60,7 +60,7 @@ impl Commander {
 
     pub fn rebond(&mut self) -> Result<()> {
         if let Some(ref mut mol) = &mut self.molecule {
-            mol.clean();
+            mol.rebond();
         } else {
             bail!("No molecule available.");
         }
