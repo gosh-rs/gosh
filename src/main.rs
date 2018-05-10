@@ -45,7 +45,8 @@ fn get_history_file() -> Result<PathBuf> {
 fn main() {
     let mut reader = Reader::new("rusty gosh").unwrap();
 
-    println!("This is the rusty gosh shell.");
+    let version = env!("CARGO_PKG_VERSION");
+    println!("This is the rusty gosh shell version {}.", version);
     println!("Enter \"help\" or \"?\" for a list of commands.");
     println!("Press Ctrl-D or enter \"quit\" or \"q\" to exit.");
     println!("");
@@ -90,7 +91,7 @@ fn main() {
 
                         writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
                     } else {
-                        println!("Molecule loaded from: {:?}.", filename);
+                        println!("{} molecules loaded from: {:?}.", commander.molecules.len(), filename);
                     }
                 }
             },

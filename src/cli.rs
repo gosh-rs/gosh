@@ -3,13 +3,15 @@ use errors::*;
 use std::process::Command;
 
 use gchemol::{
+    self,
     Molecule,
+    io,
 };
 
 /// A commander for interactive interpreter
 pub struct Commander {
-    /// active molecule
-    pub molecule: Option<Molecule>,
+    /// active molecules
+    pub molecules: Vec<Molecule>,
     /// input file containg molecules
     pub filename: Option<String>,
 }
@@ -17,22 +19,22 @@ pub struct Commander {
 impl Commander {
     pub fn new() -> Self {
         Commander {
-            molecule: None,
             filename: None,
+            molecules: vec![],
         }
     }
 
     pub fn load(&mut self, filename: &str) -> Result<()> {
-        let mol = Molecule::from_file(filename).chain_err(|| "bad")?;
-        self.molecule = Some(mol);
+        self.molecules = io::read(filename).chain_err(|| "failed to load molecules")?;
         self.filename = Some(filename.to_owned());
 
         Ok(())
     }
 
     pub fn write(&self, filename: &str) -> Result<()> {
-        if let Some(ref mol) = self.molecule {
-            mol.to_file(filename).chain_err(|| "failed to save molecule.")?;
+        if ! self.molecules.is_empty() {
+            // mol.to_file(filename).chain_err(|| "failed to save molecule.")?;
+            io::write(filename, &self.molecules).chain_err(|| "failed to save molecules.")?;
         } else {
             bail!("No active molecule available.");
         }
@@ -51,8 +53,8 @@ impl Commander {
     }
 
     pub fn clean(&mut self) -> Result<()> {
-        if let Some(ref mut mol) = &mut self.molecule {
-            mol.clean();
+        if ! self.molecules.is_empty() {
+            self.molecules[0].clean();
         } else {
             bail!("No molecule available.");
         }
@@ -60,8 +62,8 @@ impl Commander {
     }
 
     pub fn rebond(&mut self) -> Result<()> {
-        if let Some(ref mut mol) = &mut self.molecule {
-            mol.rebond();
+        if ! self.molecules.is_empty() {
+            self.molecules[0].rebond();
         } else {
             bail!("No molecule available.");
         }
