@@ -6,6 +6,7 @@ use gchemol::{
     self,
     Molecule,
     io,
+    formats,
 };
 
 /// A commander for interactive interpreter
@@ -58,6 +59,11 @@ impl Commander {
         } else {
             bail!("No molecule available.");
         }
+        Ok(())
+    }
+
+    pub fn avail(&mut self) -> Result<()> {
+        formats::describe_backends();
         Ok(())
     }
 

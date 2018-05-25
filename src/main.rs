@@ -73,7 +73,7 @@ fn main() {
 
         match cmd {
             "help" | "?" => {
-                println!("linefeed demo commands:");
+                println!("gosh subcommands:");
                 println!();
                 for &(cmd, help) in GOSH_COMMANDS {
                     println!("  {:16} - {}", cmd, help);
@@ -128,6 +128,15 @@ fn main() {
                 }
             },
 
+            "avail" => {
+                if let Err(ref e) = &mut commander.avail() {
+                    let stderr = &mut ::std::io::stderr();
+                    let errmsg = "Error writing to stderr";
+
+                    writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+                }
+            },
+
             "save" => {
                 if let Err(ref e) = &commander.save() {
                     let stderr = &mut ::std::io::stderr();
@@ -172,11 +181,12 @@ fn main() {
 
 static GOSH_COMMANDS: &'static [(&'static str, &'static str)] = &[
     ("help",             "You're looking at it"),
-    ("quit",             "Quit the demo"),
+    ("quit",             "Quit gosh"),
     ("load",             "Load molecule from disk"),
     ("write",            "Write molecules into file"),
-    ("rebond",           "Rebuild bonds from atom distances."),
+    ("rebond",           "Rebuild bonds based on atom distances."),
     ("clean",            "Clean up bad molecular geometry."),
+    ("avail",            "Show supported file formats."),
 ];
 
 fn split_first_word(s: &str) -> (&str, &str) {
