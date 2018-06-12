@@ -1,5 +1,5 @@
 // [[file:~/Workspace/Programming/gosh/gosh.note::4982806b-0e81-4a97-b5f9-52f6abc5618a][4982806b-0e81-4a97-b5f9-52f6abc5618a]]
-use errors::*;
+use quicli::prelude::*;
 use std::process::Command;
 
 use gchemol::{
@@ -26,7 +26,7 @@ impl Commander {
     }
 
     pub fn load(&mut self, filename: &str) -> Result<()> {
-        self.molecules = io::read(filename).chain_err(|| "failed to load molecules")?;
+        self.molecules = io::read(filename).map_err(|e| format_err!("failed to load molecules"))?;
         self.filename = Some(filename.to_owned());
 
         Ok(())
@@ -34,8 +34,22 @@ impl Commander {
 
     pub fn write(&self, filename: &str) -> Result<()> {
         if ! self.molecules.is_empty() {
-            // mol.to_file(filename).chain_err(|| "failed to save molecule.")?;
-            io::write(filename, &self.molecules).chain_err(|| "failed to save molecules.")?;
+            io::write(filename, &self.molecules).map_err(|e| format_err!("failed to save molecules."))?;
+        } else {
+            bail!("No active molecule available.");
+        }
+
+        Ok(())
+    }
+
+    pub fn format(&self, template_file: &str) -> Result<()> {
+        if ! self.molecules.is_empty() {
+            let mol = &self.molecules[0];
+            let template = io::read_file(template_file)
+                .map_err(|e| format_err!("failed to load template"))?;
+            let s = formats::template::render_molecule_with(mol, &template)
+                .map_err(|e| format_err!("failed to render molecule"))?;
+            println!("{:}", s);
         } else {
             bail!("No active molecule available.");
         }
@@ -79,7 +93,7 @@ impl Commander {
     pub fn extern_cmdline(&self, cmdline: &str) -> Result<()> {
         let output = Command::new(cmdline)
             .output()
-            .chain_err(|| format!("external cmdline failed: {}", cmdline))?;
+            .map_err(|e| format_err!("external cmdline failed: {}", cmdline))?;
         if output.status.success() {
             println!("{}", String::from_utf8_lossy(&output.stdout));
         } else {

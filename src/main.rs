@@ -1,30 +1,22 @@
 // [[file:~/Workspace/Programming/gosh/gosh.note::c5024615-a25b-4b40-9305-890be0fe004b][c5024615-a25b-4b40-9305-890be0fe004b]]
-// `error_chain!` can recurse deeply
-#![recursion_limit = "1024"]
-
 extern crate linefeed;
 extern crate gchemol;
 #[macro_use]
-extern crate error_chain;
+extern crate quicli;
+
+use quicli::prelude::*;
 
 use std::rc::Rc;
 use std::io::Write;
 use linefeed::{Reader, ReadResult};
 use linefeed::terminal::Terminal;
 use linefeed::complete::{Completer, Completion};
-use error_chain::ChainedError; // trait which holds `display_chain`
 
 use gchemol::{
     Molecule,
 };
 
 use cli::Commander;
-mod errors {
-    // Create the Error, ErrorKind, ResultExt, and Result types
-    error_chain!{}
-}
-use errors::*;
-
 mod cli;
 
 use std::process::Command;
@@ -41,9 +33,8 @@ fn get_history_file() -> Result<PathBuf> {
     }
 }
 
-
-fn main() {
-    let mut reader = Reader::new("rusty gosh").unwrap();
+main!({
+    let mut reader = Reader::new("rusty gosh")?;
 
     let version = env!("CARGO_PKG_VERSION");
     println!("This is the rusty gosh shell version {}.", version);
@@ -86,10 +77,7 @@ fn main() {
                 } else {
                     let filename = args;
                     if let Err(ref e) = &mut commander.load(filename) {
-                        let stderr = &mut ::std::io::stderr();
-                        let errmsg = "Error writing to stderr";
-
-                        writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+                        eprintln!("{:?}", e);
                     } else {
                         println!("{} molecules loaded from: {:?}.", commander.molecules.len(), filename);
                     }
@@ -98,19 +86,13 @@ fn main() {
 
             "rebond" => {
                 if let Err(ref e) = &mut commander.rebond() {
-                    let stderr = &mut ::std::io::stderr();
-                    let errmsg = "Error writing to stderr";
-
-                    writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+                    eprintln!("{:?}", e);
                 }
             },
 
             "clean" => {
                 if let Err(ref e) = &mut commander.clean() {
-                    let stderr = &mut ::std::io::stderr();
-                    let errmsg = "Error writing to stderr";
-
-                    writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+                    eprintln!("{:?}", e);
                 }
             },
 
@@ -120,29 +102,31 @@ fn main() {
                 } else {
                     let filename = args;
                     if let Err(ref e) = &commander.write(filename) {
-                        let stderr = &mut ::std::io::stderr();
-                        let errmsg = "Error writing to stderr";
+                        eprintln!("{:?}", e);
+                    }
+                }
+            },
 
-                        writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+            "format" => {
+                if args.len() == 0 {
+                    println!("Please input path to user defined template file.");
+                } else {
+                    let filename = args;
+                    if let Err(ref e) = &commander.format(filename) {
+                        eprintln!("{:?}", e);
                     }
                 }
             },
 
             "avail" => {
                 if let Err(ref e) = &mut commander.avail() {
-                    let stderr = &mut ::std::io::stderr();
-                    let errmsg = "Error writing to stderr";
-
-                    writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+                    eprintln!("{:?}", e);
                 }
             },
 
             "save" => {
                 if let Err(ref e) = &commander.save() {
-                    let stderr = &mut ::std::io::stderr();
-                    let errmsg = "Error writing to stderr";
-
-                    writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+                    eprintln!("{:?}", e);
                 } else {
                     println!("saved.");
                 }
@@ -150,19 +134,13 @@ fn main() {
 
             "ls" => {
                 if let Err(ref e) = &commander.extern_cmdline("ls") {
-                    let stderr = &mut ::std::io::stderr();
-                    let errmsg = "Error writing to stderr";
-
-                    writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+                    eprintln!("{:?}", e);
                 }
             },
 
             "pwd" => {
                 if let Err(ref e) = &commander.extern_cmdline("pwd") {
-                    let stderr = &mut ::std::io::stderr();
-                    let errmsg = "Error writing to stderr";
-
-                    writeln!(stderr, "{}", e.display_chain()).expect(errmsg);
+                    eprintln!("{:?}", e);
                 }
             },
 
@@ -177,7 +155,7 @@ fn main() {
             _ => println!("{:?}: not a command", line),
         }
     }
-}
+});
 
 static GOSH_COMMANDS: &'static [(&'static str, &'static str)] = &[
     ("help",             "You're looking at it"),
@@ -185,6 +163,7 @@ static GOSH_COMMANDS: &'static [(&'static str, &'static str)] = &[
     ("load",             "Load molecule from disk"),
     ("write",            "Write molecules into file"),
     ("rebond",           "Rebuild bonds based on atom distances."),
+    ("format",           "Format molecule using user defined template file."),
     ("clean",            "Clean up bad molecular geometry."),
     ("avail",            "Show supported file formats."),
 ];
