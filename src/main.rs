@@ -118,6 +118,14 @@ main!({
                 }
             },
 
+            "fragment" => {
+                if let Err(ref e) = &mut commander.fragment() {
+                    eprintln!("{:?}", e);
+                } else {
+                    println!("got {:} fragments", commander.molecules.len());
+                }
+            }
+
             "avail" => {
                 if let Err(ref e) = &mut commander.avail() {
                     eprintln!("{:?}", e);
@@ -166,6 +174,7 @@ static GOSH_COMMANDS: &'static [(&'static str, &'static str)] = &[
     ("format",           "Format molecule using user defined template file."),
     ("clean",            "Clean up bad molecular geometry."),
     ("avail",            "Show supported file formats."),
+    ("fragment",         "Break molecule into smaller fragments based on connectivity."),
 ];
 
 fn split_first_word(s: &str) -> (&str, &str) {

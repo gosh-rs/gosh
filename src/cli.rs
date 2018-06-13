@@ -90,6 +90,17 @@ impl Commander {
         Ok(())
     }
 
+    pub fn fragment(&mut self) -> Result<()> {
+        if ! self.molecules.is_empty() {
+            let mols = self.molecules[0].fragment();
+            self.molecules.clear();
+            self.molecules.extend(mols);
+        } else {
+            bail!("No molecule available.");
+        }
+        Ok(())
+    }
+
     pub fn extern_cmdline(&self, cmdline: &str) -> Result<()> {
         let output = Command::new(cmdline)
             .output()
