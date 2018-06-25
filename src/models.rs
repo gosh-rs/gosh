@@ -1,8 +1,10 @@
 // [[file:~/Workspace/Programming/gosh/gosh.note::894d0c1b-0482-46b9-a3dc-8f00b78833bc][894d0c1b-0482-46b9-a3dc-8f00b78833bc]]
 use quicli::prelude::*;
+use gchemol::Molecule;
 
 #[derive(Debug, Clone)]
 pub struct ModelResults {
+    molecule        : Option<Molecule>,
     energy          : Option<f64>,
     forces          : Option<Vec<[f64; 3]>>,
     dipole_moment   : Option<[f64; 3]>,
@@ -12,6 +14,7 @@ pub struct ModelResults {
 impl Default for ModelResults {
     fn default() -> Self {
         ModelResults {
+            molecule        : None,
             energy          : None,
             forces          : None,
             dipole_moment   : None,
@@ -62,7 +65,7 @@ impl FromStr for ModelResults {
 fn parse_model_results(stream: &str) -> Result<ModelResults>{
     let mut results = ModelResults::default();
 
-    let mut lines = stream.lines();
+    let mut lines = stream.lines().peekable();
     loop {
         if let Some(line) = lines.next() {
             if line.starts_with("@") {
@@ -85,6 +88,30 @@ fn parse_model_results(stream: &str) -> Result<ModelResults>{
                     Some("@dipole_moments") => {
                         // unimplemented!()
                     },
+                    Some("@structure") => {
+                        let mut s = String::new();
+                        loop {
+                            // easy return for next record
+                            if let Some(line) = lines.peek() {
+                                if line.starts_with("@") {
+                                    break;
+                                }
+                            } else {
+                                // file end
+                                break;
+                            }
+                            // read lines for structure
+                            if let Some(line) = lines.next() {
+                                s.push_str(&format!("{}\n", line));
+                            } else {
+                                // file end
+                                break;
+                            }
+                        }
+
+                        let mol = Molecule::parse_from(s, "text/xyz")?;
+                        results.molecule = Some(mol);
+                    }
                     _ => {
                         warn!("ignored header: {:?}", header);
                     }
@@ -103,8 +130,12 @@ fn parse_model_results(stream: &str) -> Result<ModelResults>{
 fn test_model_parse_results() {
     let output = "@result_file_format_version
 0.1
-@number_of_atoms I 1
+@structure
 3
+CH2
+    C      7.50000000     11.59838500     11.36570800
+    H     12.79336700     22.88608500     13.03115500
+    H     25.95160100      9.92351500     13.03115500
 @total_energy        R 1
  -0.32933619218901E+00
 @dipole_moments      R 3
@@ -116,6 +147,9 @@ fn test_model_parse_results() {
 ";
 
     let r = parse_model_results(output).expect("model results");
+    assert!(r.molecule.is_some());
+    assert_eq!(3, r.molecule.unwrap().natoms());
+
     let e = r.energy.expect("model result: energy");
     assert_relative_eq!(-0.329336, e, epsilon=1e-4);
 }

@@ -2,5 +2,7 @@
 #[macro_use] extern crate quicli;
 #[macro_use] extern crate approx;
 
+extern crate gchemol;
+
 pub mod models;
 // aab14c1c-34e6-4e2d-b87a-77139ff545df ends here
