@@ -4,11 +4,11 @@ use gchemol::Molecule;
 
 #[derive(Debug, Clone)]
 pub struct ModelResults {
-    molecule        : Option<Molecule>,
-    energy          : Option<f64>,
-    forces          : Option<Vec<[f64; 3]>>,
-    dipole_moment   : Option<[f64; 3]>,
-    force_constants : Option<Vec<[f64; 3]>>,
+    pub molecule        : Option<Molecule>,
+    pub energy          : Option<f64>,
+    pub forces          : Option<Vec<[f64; 3]>>,
+    pub dipole_moment   : Option<[f64; 3]>,
+    pub force_constants : Option<Vec<[f64; 3]>>,
 }
 
 impl Default for ModelResults {
