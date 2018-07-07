@@ -8,6 +8,7 @@ use gchemol::{
 };
 
 pub mod dftb;
+pub mod lj;
 
 #[derive(Debug, Clone)]
 pub struct ModelResults {
@@ -36,7 +37,7 @@ pub trait ChemicalModel {
     }
 
     /// define how to calculate properties, such as energy, forces, ...
-    fn calculate(&self) -> Result<()> {
+    fn calculate(&self, mol: &Molecule) -> Result<ModelResults> {
         unimplemented!()
     }
 
