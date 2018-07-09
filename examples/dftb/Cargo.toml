@@ -1,0 +1,13 @@
+# [[file:~/Workspace/Programming/gosh/gosh.note::c9a911a0-d036-4aa2-b46c-a2c0b93797d4][c9a911a0-d036-4aa2-b46c-a2c0b93797d4]]
+[package]
+name = "run-dftb"
+version = "0.0.1"
+authors = ["Wenping Guo <ybyygu@gmail.com>"]
+
+[dependencies]
+quicli = "*"
+duct = "*"
+gosh = {path = "../.."}
+#gchemol = { git = "https://github.com/ybyygu/gchemol.git" }
+gchemol = { path = "../../../gchemol" }
+# c9a911a0-d036-4aa2-b46c-a2c0b93797d4 ends here
