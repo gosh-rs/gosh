@@ -6,4 +6,5 @@
 extern crate gchemol;
 
 pub mod models;
+pub mod apps;
 // aab14c1c-34e6-4e2d-b87a-77139ff545df ends here
