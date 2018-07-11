@@ -9,6 +9,7 @@
 
 use super::*;
 
+#[derive(Debug, Clone)]
 pub struct FIRE {
     /// the maximum time step allowed
     dt_max: f64,
@@ -71,7 +72,10 @@ impl FIRE {
         // FIXME: criteria parameters
         let fmax = 0.01;
         let dmax = 0.02;
-        if fnorms.max() < fmax && dnorms.max() < dmax {
+        let fcur = fnorms.max();
+        let dcur = dnorms.max();
+        println!("{:#?}", (fcur, dcur));
+        if fcur < fmax && dcur < dmax {
             true
         } else {
             false
@@ -137,6 +141,13 @@ impl FIRE {
         // scale the displacement according to max displacement
         scale_disp_vectors(&mut disp_vectors, self.maxdisp);
 
+        // update the internal velocities
+        for i in 0..forces.len() {
+            for j in 0..3 {
+                velocities[i][j] += forces[i][j] * self.dt;
+            }
+        }
+
         Ok(disp_vectors)
     }
 }
@@ -153,8 +164,8 @@ fn zero_velocities(natoms: usize) -> Vec<Point3D> {
 // get particle displacement vectors by performing a regular MD step
 fn get_md_displacement_vectors
     (
-        velocities : &Vec<Point3D>,
         forces     : &Vec<Point3D>,
+        velocities : &Vec<Point3D>,
         timestep   : f64
     ) -> Vec<Point3D>
 {
@@ -277,5 +288,51 @@ fn test_vector_dot() {
 // ac85201d-3985-4160-886b-1f811e6db4b9 ends here
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::759e21a2-1f20-4c38-a7c4-9601c1281347][759e21a2-1f20-4c38-a7c4-9601c1281347]]
+use gchemol::Molecule;
 
+#[test]
+fn test_fire_opt() {
+    use models::ChemicalModel;
+    use models::lj::LennardJones;
+    let mut mol = get_test_mol();
+    let mut lj = LennardJones::default();
+    lj.derivative_order = 1;
+
+    let mut fire = FIRE::default();
+    let natoms = mol.natoms();
+    for i in 0..500 {
+        let mresult = lj.calculate(&mol).expect("lj calculation");
+        let energy = mresult.energy.expect("lj energy");
+        println!("step {}: energy = {:-6.3}", i, energy);
+
+        let forces = mresult.forces.expect("lj forces");
+        let dvects = fire.displacement_vectors(&forces).expect("dv");
+        // update positions
+        let mut positions = mol.positions();
+        for j in 0..natoms {
+            for k in 0..3 {
+                positions[j][k] += dvects[j][k];
+            }
+        }
+
+        if fire.converged(&forces, &dvects) {
+            break;
+        }
+
+        mol.set_positions(positions);
+    }
+}
+
+fn get_test_mol() -> Molecule {
+    let txt = " 6
+Title Card Required
+C              -0.131944         -0.282942          0.315957
+H               0.401220         -1.210646          0.315957
+H              -1.201944         -0.282942          0.315957
+C               0.543331          0.892036          0.315957
+H               0.010167          1.819741          0.315957
+H               1.613331          0.892036          0.315957
+";
+    Molecule::parse_from(txt, "text/xyz").expect("mol from xyz string")
+}
 // 759e21a2-1f20-4c38-a7c4-9601c1281347 ends here
