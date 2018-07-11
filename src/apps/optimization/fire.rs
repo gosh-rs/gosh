@@ -1,134 +1,249 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::fdd9627f-71a8-4a4f-b0a7-9f1d2af71da3][fdd9627f-71a8-4a4f-b0a7-9f1d2af71da3]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::4aa0086b-0cf4-406a-861a-b281b328ef2e][4aa0086b-0cf4-406a-861a-b281b328ef2e]]
+/// Implementation of the Fast-Inertial-Relaxation-Engine (FIRE) algorithm
+///
+/// References
+/// ----------
+/// (1) Bitzek, E. et al. Structural Relaxation Made Simple. Phys. Rev. Lett. 2006, 97 (17), 170201.
+/// (2) http://users.jyu.fi/~pekkosk/resources/pdf/FIRE.pdf
+/// (3) https://github.com/siesta-project/flos/blob/master/flos/optima/fire.lua
+
 use super::*;
 
 pub struct FIRE {
+    /// the maximum time step allowed
+    dt_max: f64,
+    /// factor used to decrease alpha-parameter if downhill
+    f_alpha: f64,
+    /// initial alpha-parameter
+    alpha_start: f64,
+    /// the maximum displacement allowed
+    maxdisp: f64,
+    /// factor used to increase time-step if downhill
+    f_inc: f64,
+    /// factor used to decrease time-step if uphill
+    f_dec: f64,
+    /// minimum number of iterations ("latency" time) performed before time-step
+    /// may be increased, which is important for the stability of the algorithm.
+    nsteps_min: usize,
+
     /// adaptive time step for integration of the equations of motion
     dt: f64,
-    /// the maximum time step permitted
-    dtmax: f64,
     /// adaptive parameter that controls the velocity used to evolve the system.
     alpha: f64,
-    /// the maximum step size permitted
-    maxmove: f64,
-    /// factor by which the time step is decreased if an uphill step has been taken
-    fdec: f64,
-    /// factor by which parameter a decreases if moving downhill and at least
-    /// nmin steps from the last uphill step
-    fa: f64,
-
+    /// internal current velocities
     velocities: Option<Vec<[f64; 3]>>,
+    /// current number of iterations when go downhill
     nsteps: usize,
-    /// minimum number of steps taken after an uphill step before adaptive
-    /// parameters are allowed to change
-    nmin: usize,
 }
 
 impl Default for FIRE {
     fn default() -> Self {
         FIRE {
-            dt: 0.1,
-            dtmax: 1.0,
-            alpha: 0.10,
-            fdec: 0.50,
-            fa: 0.99,
-            maxmove: 0.5,
+            // default parameters taken from the original paper
+            dt_max     : 1.00,
+            alpha_start: 0.10,
+            f_alpha    : 0.99,
+            f_dec      : 0.50,
+            f_inc      : 1.10,
+            maxdisp    : 0.50,
+            nsteps_min : 5,
 
-            velocities: None,
-            nsteps: 0,
-            nmin: 5,
+            // counters or adaptive parameters
+            dt         : 0.10,
+            alpha      : 0.10,
+            nsteps     : 0,
+            velocities : None,
         }
     }
 }
+// 4aa0086b-0cf4-406a-861a-b281b328ef2e ends here
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::fdd9627f-71a8-4a4f-b0a7-9f1d2af71da3][fdd9627f-71a8-4a4f-b0a7-9f1d2af71da3]]
+type Point3D = [f64; 3];
+
+impl FIRE {
+    /// Determine whether we have optimized the structure
+    pub fn converged(&self, forces: &Vec<Point3D>, displacement_vectors: &Vec<Point3D>) -> bool {
+        debug_assert!(forces.len() == displacement_vectors.len(), "vectors in different size");
+        let fnorms = vector_norms(&forces);
+        let dnorms = vector_norms(displacement_vectors);
+
+        // FIXME: criteria parameters
+        let fmax = 0.01;
+        let dmax = 0.02;
+        if fnorms.max() < fmax && dnorms.max() < dmax {
+            true
+        } else {
+            false
+        }
+    }
+
+    /// get displacement vectors for all atoms
+    pub fn displacement_vectors(&mut self, forces: &Vec<Point3D>) -> Result<Vec<Point3D>> {
+        let natoms = forces.len();
+        let velocities = self.velocities.take();
+        if let Some(mut velocities) = velocities {
+            let r = self.propagate(&forces, &mut velocities);
+            self.velocities = Some(velocities);
+            r
+        } else {
+            let mut velocities = zero_velocities(natoms);
+            let r = self.propagate(&forces, &mut velocities);
+            self.velocities = Some(velocities);
+            r
+        }
+    }
+
+    /// Propagate the system for one simulation step using FIRE algorithm.
+    fn propagate(&mut self, forces: &Vec<Point3D>, velocities: &mut Vec<Point3D>) -> Result<Vec<Point3D>> {
+        // F1. calculate the power: P = F·V
+        let power = vector_dot(&forces, &velocities);
+
+        // F2. adjust velocities
+        update_velocities(velocities, &forces, self.alpha);
+
+        // F3 & F4: check the direction of power: go downhill or go uphill
+        if power.is_sign_positive() {
+            // F3. when go downhill
+            // increase time step if we have go downhill for enough times
+            if self.nsteps > self.nsteps_min {
+                self.dt *= self.f_inc;
+                if self.dt > self.dt_max {
+                    self.dt = self.dt_max;
+                }
+                self.alpha *= self.f_alpha;
+            }
+            // increment step counter
+            self.nsteps += 1;
+        } else {
+            // F4. when go uphill
+            // decrease time-step and reset alpha
+            self.dt *= self.f_dec;
+            self.alpha = self.alpha_start;
+            // reset velocities to zero
+            let natoms = forces.len();
+            for i in 0..natoms {
+                for j in 0..3 {
+                    velocities[i][j] = 0.0;
+                }
+            }
+            // reset step counter
+            self.nsteps = 0;
+        }
+
+        // F5. calculate displacement vectors based on a typical MD stepping algorithm
+        let mut disp_vectors = get_md_displacement_vectors(&forces, &velocities, self.alpha);
+
+        // scale the displacement according to max displacement
+        scale_disp_vectors(&mut disp_vectors, self.maxdisp);
+
+        Ok(disp_vectors)
+    }
+}
+
+fn zero_velocities(natoms: usize) -> Vec<Point3D> {
+    // initialize velocities with zeros
+    let mut velocities = Vec::with_capacity(natoms);
+    for _ in 0..natoms {
+        velocities.push([0.0; 3]);
+    }
+    velocities
+}
+
+// get particle displacement vectors by performing a regular MD step
+fn get_md_displacement_vectors
+    (
+        velocities : &Vec<Point3D>,
+        forces     : &Vec<Point3D>,
+        timestep   : f64
+    ) -> Vec<Point3D>
+{
+    let natoms = velocities.len();
+    debug_assert!(natoms == forces.len(), "input vectors are in different size!");
+
+    // Verlet algorithm
+    let mut disp_vectors = Vec::with_capacity(natoms);
+    let dt = timestep;
+    for i in 0..natoms {
+        let mut position = [0.0; 3];
+        for j in 0..3 {
+            let fij = forces[i][j];
+            let vij = velocities[i][j];
+            position[j] = dt * vij + 0.5 * fij * dt * dt;
+        }
+        disp_vectors.push(position);
+    }
+
+    disp_vectors
+}
+
+// Update velocities
 // V = (1 - alpha) · V + alpha · F / |F| · |V|
-fn update_velocities(velocities: &mut Vec<[f64; 3]>, forces: &Vec<[f64; 3]>, alpha: f64) {
+fn update_velocities(velocities: &mut Vec<Point3D>, forces: &Vec<Point3D>, alpha: f64) {
     let n = velocities.len();
-    let vnorm = vdot(&velocities, &velocities).sqrt();
-    let fnorm = vdot(&forces, &forces).sqrt();
+    let vnorm = vector_dot(&velocities, &velocities).sqrt();
+    let fnorm = vector_dot(&forces, &forces).sqrt();
     for i in 0..n {
         for j in 0..3 {
             let fij = forces[i][j];
-            velocities[i][j] *= (1.0 - alpha);
+            velocities[i][j] *= 1.0 - alpha;
             velocities[i][j] += alpha * fij * vnorm / fnorm;
         }
     }
 }
 
-impl FIRE {
-    fn init_velocities(&mut self, natoms: usize) {
-        // initialize velocities with zeros
-        let mut velocities = Vec::with_capacity(natoms);
-        for _ in 0..natoms {
-            velocities.push([0.0; 3]);
+// scale the displacement vectors if exceed a given max displacement.
+fn scale_disp_vectors(disp_vectors: &mut Vec<Point3D>, maxdisp: f64) {
+    // get the max norm of displacement vector for atoms
+    let mut norm_max = 0.0;
+    for i in 0..disp_vectors.len() {
+        let mut d = 0.0;
+        for j in 0..3 {
+            let dij = disp_vectors[i][j];
+            d += dij.powi(2);
         }
-        self.velocities = Some(velocities);
+        let d = d.sqrt();
+        if d > norm_max {
+            norm_max = d;
+        }
     }
 
-    /// update positions using FIRE algorithm
-    pub fn next_step(&mut self, forces: &Vec<[f64; 3]>) -> Result<()> {
-        let natoms = forces.len();
-        if self.velocities.is_none() {
-            &mut self.init_velocities(natoms);
-        }
-
-        if let Some(ref mut velocities) = &mut self.velocities {
-            // P = F·V
-            let p = vdot(&forces, &velocities);
-
-            // check direction
-            if p.is_sign_positive() {
-                update_velocities(velocities, &forces, self.alpha);
-                if self.nsteps > self.nmin {
-                    self.dt *= self.fdec;
-                    if self.dt > self.dtmax {
-                        self.dt = self.dtmax;
-                    }
-                    self.alpha *= self.fa;
-                }
-                self.nsteps += 1;
-            } else {
-                // reset alpha
-                self.alpha = 0.1;
-                self.dt *= self.fdec;
-                self.nsteps = 0;
-
-                // reset velocities to zero
-                for i in 0..natoms {
-                    for j in 0..3 {
-                        velocities[i][j] = 0.0;
-                    }
-                }
-            }
-
-            // calculate positions shift
-            let mut positions_delta = Vec::with_capacity(natoms);
-            for i in 0..natoms {
-                let mut position = [0.0; 3];
-                for j in 0..3 {
-                    let fij = forces[i][j];
-                    velocities[i][j] += self.dt * fij;
-                    position[j] = self.dt * velocities[i][j]
-                }
-                positions_delta.push(position);
-            }
-
-            let dr_norm = vdot(&positions_delta, &positions_delta).sqrt();
-            if dr_norm > self.maxmove {
-                let scale = self.maxmove / dr_norm;
-                for i in 0..natoms {
-                    for j in 0..3 {
-                        positions_delta[i][j] *= scale;
-                    }
-                }
+    // scale the displacement vectors if too large
+    let natoms = disp_vectors.len();
+    if norm_max > maxdisp {
+        let scale = maxdisp / norm_max;
+        for i in 0..natoms {
+            for j in 0..3 {
+                disp_vectors[i][j] *= scale;
             }
         }
-
-        Ok(())
     }
+}
+// fdd9627f-71a8-4a4f-b0a7-9f1d2af71da3 ends here
+
+// [[file:~/Workspace/Programming/gosh/gosh.note::ac85201d-3985-4160-886b-1f811e6db4b9][ac85201d-3985-4160-886b-1f811e6db4b9]]
+use test::stats::Stats;
+
+// return the norms of a list of 3D vectors
+fn vector_norms(vectors: &Vec<Point3D>) -> Vec<f64> {
+    let n = vectors.len();
+    let mut norms = Vec::with_capacity(n);
+
+    for i in 0..n {
+        let mut l = 0.0;
+        for j in 0..3 {
+            let vij = vectors[i][j];
+            l += vij.powi(2);
+        }
+
+        norms.push(l.sqrt());
+    }
+
+    norms
 }
 
 #[inline]
-fn vdot(vector1: &Vec<[f64; 3]>, vector2: &Vec<[f64; 3]>) -> f64 {
+fn vector_dot(vector1: &Vec<[f64; 3]>, vector2: &Vec<[f64; 3]>) -> f64 {
     let n = vector1.len();
     debug_assert!(n == vector2.len());
 
@@ -145,7 +260,7 @@ fn vdot(vector1: &Vec<[f64; 3]>, vector2: &Vec<[f64; 3]>) -> f64 {
 }
 
 #[test]
-fn test_vdot() {
+fn test_vector_dot() {
     let a = vec![
         [1., 4., 0.0],
         [5., 6., 0.0]
@@ -156,7 +271,11 @@ fn test_vdot() {
         [2., 2., 0.0]
     ];
 
-    let x = vdot(&a, &b);
+    let x = vector_dot(&a, &b);
     assert_relative_eq!(30.0, x, epsilon=1e-4);
 }
-// fdd9627f-71a8-4a4f-b0a7-9f1d2af71da3 ends here
+// ac85201d-3985-4160-886b-1f811e6db4b9 ends here
+
+// [[file:~/Workspace/Programming/gosh/gosh.note::759e21a2-1f20-4c38-a7c4-9601c1281347][759e21a2-1f20-4c38-a7c4-9601c1281347]]
+
+// 759e21a2-1f20-4c38-a7c4-9601c1281347 ends here
