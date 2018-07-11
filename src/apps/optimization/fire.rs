@@ -46,7 +46,7 @@ impl Default for FIRE {
             f_alpha    : 0.99,
             f_dec      : 0.50,
             f_inc      : 1.10,
-            maxdisp    : 0.50,
+            maxdisp    : 0.10,
             nsteps_min : 5,
 
             // counters or adaptive parameters
@@ -70,11 +70,11 @@ impl FIRE {
         let dnorms = vector_norms(displacement_vectors);
 
         // FIXME: criteria parameters
-        let fmax = 0.01;
+        let fmax = 0.05;
         let dmax = 0.02;
         let fcur = fnorms.max();
         let dcur = dnorms.max();
-        println!("{:#?}", (fcur, dcur));
+        // println!("{:#?}", (fcur, dcur));
         if fcur < fmax && dcur < dmax {
             true
         } else {
@@ -111,19 +111,19 @@ impl FIRE {
             // F3. when go downhill
             // increase time step if we have go downhill for enough times
             if self.nsteps > self.nsteps_min {
-                self.dt *= self.f_inc;
-                if self.dt > self.dt_max {
-                    self.dt = self.dt_max;
-                }
+                self.dt = self.dt_max.min(self.dt * self.f_inc);
                 self.alpha *= self.f_alpha;
             }
             // increment step counter
             self.nsteps += 1;
         } else {
             // F4. when go uphill
-            // decrease time-step and reset alpha
+            // decrease time-step
             self.dt *= self.f_dec;
+            // reset alpha
             self.alpha = self.alpha_start;
+            // reset step counter
+            self.nsteps = 0;
             // reset velocities to zero
             let natoms = forces.len();
             for i in 0..natoms {
@@ -131,22 +131,19 @@ impl FIRE {
                     velocities[i][j] = 0.0;
                 }
             }
-            // reset step counter
-            self.nsteps = 0;
         }
 
         // F5. calculate displacement vectors based on a typical MD stepping algorithm
-        let mut disp_vectors = get_md_displacement_vectors(&forces, &velocities, self.alpha);
-
-        // scale the displacement according to max displacement
-        scale_disp_vectors(&mut disp_vectors, self.maxdisp);
-
         // update the internal velocities
         for i in 0..forces.len() {
             for j in 0..3 {
                 velocities[i][j] += forces[i][j] * self.dt;
             }
         }
+        let mut disp_vectors = get_md_displacement_vectors(&forces, &velocities, self.dt);
+
+        // scale the displacement according to max displacement
+        scale_disp_vectors(&mut disp_vectors, self.maxdisp);
 
         Ok(disp_vectors)
     }
@@ -294,13 +291,16 @@ use gchemol::Molecule;
 fn test_fire_opt() {
     use models::ChemicalModel;
     use models::lj::LennardJones;
-    let mut mol = get_test_mol();
+
+    // let mut mol = get_test_mol();
+    let filename = "tests/files/LennardJones/LJ38r.xyz";
+    let mut mol = Molecule::from_file(filename).expect("LJ38 opt test file");
     let mut lj = LennardJones::default();
     lj.derivative_order = 1;
 
     let mut fire = FIRE::default();
     let natoms = mol.natoms();
-    for i in 0..500 {
+    for i in 0..5000 {
         let mresult = lj.calculate(&mol).expect("lj calculation");
         let energy = mresult.energy.expect("lj energy");
         println!("step {}: energy = {:-6.3}", i, energy);
@@ -323,16 +323,16 @@ fn test_fire_opt() {
     }
 }
 
-fn get_test_mol() -> Molecule {
-    let txt = " 6
-Title Card Required
-C              -0.131944         -0.282942          0.315957
-H               0.401220         -1.210646          0.315957
-H              -1.201944         -0.282942          0.315957
-C               0.543331          0.892036          0.315957
-H               0.010167          1.819741          0.315957
-H               1.613331          0.892036          0.315957
-";
-    Molecule::parse_from(txt, "text/xyz").expect("mol from xyz string")
-}
+// fn get_test_mol() -> Molecule {
+//     let txt = " 6
+// Title Card Required
+// C              -0.131944         -0.282942          0.315957
+// H               0.401220         -1.210646          0.315957
+// H              -1.201944         -0.282942          0.315957
+// C               0.543331          0.892036          0.315957
+// H               0.010167          1.819741          0.315957
+// H               1.613331          0.892036          0.315957
+// ";
+//     Molecule::parse_from(txt, "text/xyz").expect("mol from xyz string")
+// }
 // 759e21a2-1f20-4c38-a7c4-9601c1281347 ends here
