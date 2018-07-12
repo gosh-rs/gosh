@@ -39,6 +39,10 @@ impl LennardJones {
 
 impl ChemicalModel for LennardJones {
     fn calculate(&self, mol: &Molecule) -> Result<ModelResults> {
+        if mol.lattice.is_some() {
+            warn!("LJ model: periodic lattice will be ignored!")
+        }
+
         let natoms = mol.natoms();
         let mut energy = 0.0;
         let mut forces = Vec::with_capacity(natoms);
