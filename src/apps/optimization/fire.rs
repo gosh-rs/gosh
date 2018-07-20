@@ -60,8 +60,6 @@ impl Default for FIRE {
 // 4aa0086b-0cf4-406a-861a-b281b328ef2e ends here
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::fdd9627f-71a8-4a4f-b0a7-9f1d2af71da3][fdd9627f-71a8-4a4f-b0a7-9f1d2af71da3]]
-type Point3D = [f64; 3];
-
 impl FIRE {
     /// Determine whether we have optimized the structure
     pub fn converged(&self, forces: &Vec<Point3D>, displacement_vectors: &Vec<Point3D>) -> bool {
@@ -70,8 +68,8 @@ impl FIRE {
         let dnorms = vector_norms(displacement_vectors);
 
         // FIXME: criteria parameters
-        let fmax = 0.05;
-        let dmax = 0.02;
+        let fmax = 0.03;
+        let dmax = 0.05;
         let fcur = fnorms.max();
         let dcur = dnorms.max();
         // println!("{:#?}", (fcur, dcur));
@@ -232,6 +230,28 @@ fn scale_disp_vectors(disp_vectors: &mut Vec<Point3D>, maxdisp: f64) {
 // [[file:~/Workspace/Programming/gosh/gosh.note::ac85201d-3985-4160-886b-1f811e6db4b9][ac85201d-3985-4160-886b-1f811e6db4b9]]
 use test::stats::Stats;
 
+pub trait VectorMath {
+    fn norm(&self) -> f64;
+}
+
+impl VectorMath for [f64] {
+    fn norm(&self) -> f64 {
+        let mut s = 0.0;
+        for &x in self {
+            s += x.powi(2);
+        }
+
+        s.sqrt()
+    }
+}
+
+#[test]
+fn test_vector_math() {
+    let x = vec![0.1, 0.1, 0.1];
+    let x = x.norm();
+    assert_relative_eq!(0.1732, x, epsilon=1e-4);
+}
+
 // return the norms of a list of 3D vectors
 fn vector_norms(vectors: &Vec<Point3D>) -> Vec<f64> {
     let n = vectors.len();
@@ -300,7 +320,7 @@ fn test_fire_opt() {
 
     let mut fire = FIRE::default();
     let natoms = mol.natoms();
-    for i in 0..5000 {
+    for i in 0..1000 {
         let mresult = lj.calculate(&mol).expect("lj calculation");
         let energy = mresult.energy.expect("lj energy");
         println!("step {}: energy = {:-6.3}", i, energy);

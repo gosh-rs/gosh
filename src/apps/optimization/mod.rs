@@ -48,4 +48,5 @@ pub trait Optimizer {
 }
 
 pub mod fire;
+pub mod neb;
 // 0f081329-2da0-4cd6-b622-265614169d68 ends here
