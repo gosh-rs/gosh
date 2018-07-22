@@ -8,6 +8,7 @@ authors = ["Wenping Guo <ybyygu@gmail.com>"]
 approx = "*"
 quicli = "*"
 duct = "0.10"
+nalgebra = "*"
 linefeed = {git = "https://github.com/murarth/linefeed.git", rev="6ba931f" }
 #linefeed = "0.5"
 #gchemol = { path = "/home/ybyygu/Workspace/Programming/gchemol" }

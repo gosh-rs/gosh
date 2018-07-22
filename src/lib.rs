@@ -7,6 +7,7 @@ extern crate test;
 #[macro_use] extern crate duct;
 
 extern crate gchemol;
+extern crate nalgebra;
 
 pub mod models;
 pub mod apps;

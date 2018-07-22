@@ -1,11 +1,11 @@
 // [[file:~/Workspace/Programming/gosh/gosh.note::4aa0086b-0cf4-406a-861a-b281b328ef2e][4aa0086b-0cf4-406a-861a-b281b328ef2e]]
-/// Implementation of the Fast-Inertial-Relaxation-Engine (FIRE) algorithm
-///
-/// References
-/// ----------
-/// (1) Bitzek, E. et al. Structural Relaxation Made Simple. Phys. Rev. Lett. 2006, 97 (17), 170201.
-/// (2) http://users.jyu.fi/~pekkosk/resources/pdf/FIRE.pdf
-/// (3) https://github.com/siesta-project/flos/blob/master/flos/optima/fire.lua
+//! Implementation of the Fast-Inertial-Relaxation-Engine (FIRE) algorithm
+//!
+//! References
+//! ----------
+//! - Bitzek, E. et al. Structural Relaxation Made Simple. Phys. Rev. Lett. 2006, 97 (17), 170201.
+//! - http://users.jyu.fi/~pekkosk/resources/pdf/FIRE.pdf
+//! - https://github.com/siesta-project/flos/blob/master/flos/optima/fire.lua
 
 use super::*;
 
@@ -323,7 +323,7 @@ fn test_fire_opt() {
     for i in 0..1000 {
         let mresult = lj.calculate(&mol).expect("lj calculation");
         let energy = mresult.energy.expect("lj energy");
-        println!("step {}: energy = {:-6.3}", i, energy);
+        debug!("step {}: energy = {:-6.3}", i, energy);
 
         let forces = mresult.forces.expect("lj forces");
         let dvects = fire.displacement_vectors(&forces).expect("dv");
