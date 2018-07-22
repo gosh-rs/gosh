@@ -12,11 +12,7 @@ use gchemol::geometry::*;
 
 #[derive(Debug, Clone)]
 pub struct NEB {
-    /// initial state
-    pub mol1: Option<Molecule>,
-    /// final state
-    pub mol2: Option<Molecule>,
-    /// NEB images: A list of Molecules without the two end points
+    /// NEB images: A list of Molecules including the two end points
     images : Vec<Molecule>,
     /// climbing image or not
     climb  : bool,
@@ -31,17 +27,14 @@ impl Default for NEB {
             images : vec![],
             climb  : false,
             k      : 0.1,
-            mol1   : None,
-            mol2   : None,
         }
     }
 }
 
 impl NEB {
-    pub fn new(mol1: Molecule, mol2: Molecule) -> Self {
+    pub fn new(images: Vec<Molecule>) -> Self {
         NEB {
-            mol1: Some(mol1),
-            mol2: Some(mol2),
+            images,
             ..Default::default()
         }
     }
@@ -49,11 +42,11 @@ impl NEB {
     // sanity check of images
     fn check_images(&self) -> Result<()>{
         let images = &self.images;
-        if ! images.is_empty() {
+        if images.len() > 2 {
             // 1. have the same number of atoms
             let mol = &images[0];
             let natoms = mol.natoms();
-            for i in 0..images.len() {
+            for i in 1..images.len() {
                 if images[i].natoms() != natoms {
                     bail!("mol {} has different number of atoms.", i);
                 }
@@ -61,7 +54,7 @@ impl NEB {
 
             // 2. all images have the same order of elements
             let syms = mol.symbols();
-            for i in 0..images.len() {
+            for i in 1..images.len() {
                 let symsi = images[i].symbols();
                 for j in 0..natoms {
                     if syms[j] != symsi[j] {
@@ -70,7 +63,7 @@ impl NEB {
                 }
             }
         } else {
-            bail!("no images!");
+            bail!("not enough images!");
         }
 
         Ok(())
@@ -118,71 +111,104 @@ impl NEB {
         // sanity check
         self.check_images()?;
 
-        if let Some(ref mol1) = self.mol1 {
-            if let Some(ref mol2) = self.mol2 {
-                let tangents = tangent_vectors_original(mol1, mol2, &self.images)?;
-                Ok(tangents)
-            } else {
-                bail!("no molecule (mol2) as the final state");
-            }
-        } else {
-            bail!("no molecule (mol1) as the initial state");
-        }
+        let tangents = tangent_vectors_original(&self.images)?;
+        Ok(tangents)
     }
 }
+// 68a74344-0730-42bf-aa81-0c9405355dd1 ends here
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::d915c7b2-5fb5-4c26-8bde-baa6cfae3db9][d915c7b2-5fb5-4c26-8bde-baa6cfae3db9]]
 // original algorithm for tangent calculation
 // Ref: Classical and Quantum Dynamics in Condensed Phase Simulations; World Scientific, 1998; p 385.
-fn tangent_vectors_original
-    (
-        mol1: &Molecule,
-        mol2: &Molecule,
-        images: &Vec<Molecule>
-    ) -> Result<Vec<Positions3D>>
+fn tangent_vectors_original(images: &Vec<Molecule>) -> Result<Vec<Positions3D>>
 {
     let nmols = images.len();
-    // tangent vectors along the path
-    let mut tangents = Vec::with_capacity(nmols);
-    // first_image - initial_state
-    let pi = mol1.positions();
-    let pj = images[0].positions();
+    assert!(nmols >= 3, "neb tangent original: not enough images");
 
-    // normalized displacement vectors
-    let mut disp_prev = get_normalized_displacements_between(&pj, &pi);
+    // tangent vectors along the path
+    let mut tangents = Vec::with_capacity(nmols - 2 );
 
     // for intermediate images: between neighboring images
-    for i in 0..(nmols-1) {
-        let j = i + 1;
-        let pi = images[i].positions();
-        let pj = images[j].positions();
+    for i in 1..(nmols-1) {
+        let positions_this = images[i].positions();
+        let positions_next = images[i+1].positions();
+        let positions_prev = images[i-1].positions();
 
         // normalized displacement vectors
-        let disp_next = get_normalized_displacements_between(&pj, &pi);
-        let disp = &disp_next + &disp_prev;
-        tangents.push(disp);
-        disp_prev = disp_next;
+        let disp_next = get_normalized_displacements_between(&positions_next, &positions_this);
+        let disp_prev = get_normalized_displacements_between(&positions_this, &positions_prev);
+        let tangent = &disp_next + &disp_prev;
+        tangents.push(tangent);
     }
-
-    // final_state - last_image
-    let pj = mol2.positions();
-    let pi = images[nmols-1].positions();
-    let disp_next = get_normalized_displacements_between(&pj, &pi);
-    tangents.push(disp_next + disp_prev);
 
     Ok(tangents)
 }
+// d915c7b2-5fb5-4c26-8bde-baa6cfae3db9 ends here
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::c6fdc171-9b1c-4ba8-a7c0-d3dbf57237eb][c6fdc171-9b1c-4ba8-a7c0-d3dbf57237eb]]
+// Parameters
+// ----------
+// images: intermediate states
+// energies: energies for the intermediate states
+//
+// Reference
+// ---------
 // Henkelman, G.; Jónsson, H. J. Chem. Phys. 2000, 113 (22), 9978–9985.
+//
 fn tangent_vectors_improved
     (
-        mol1: &Molecule,
-        mol2: &Molecule,
-        images: &Vec<Molecule>
+        images: &Vec<Molecule>,
+        energies: &Vec<f64>,
     ) -> Result<Vec<Positions3D>>
 {
-    unimplemented!()
-}
+    let nmols = images.len();
+    debug_assert!(nmols == energies.len(), "neb improved: size different");
+    debug_assert!(nmols >= 3, "neb improved: no intermediate image!");
 
+    // tangent vectors along the path
+    let mut tangents = Vec::with_capacity(nmols - 2);
+
+    // loop over intermediate images excluding endpoints
+    for i in 1..(nmols-1) {
+        let positions_this = images[i].positions();
+        let positions_next = images[i+1].positions();
+        let positions_prev = images[i-1].positions();
+
+        // displacement vectors
+        let disp_next = get_displacements_between(&positions_next, &positions_this);
+        let disp_prev = get_displacements_between(&positions_this, &positions_prev);
+        let energy_this = energies[i];
+        let energy_next = energies[i+1];
+        let energy_prev = energies[i-1];
+
+        let mut tangent = {
+            if energy_next > energy_this && energy_this > energy_prev {
+                disp_next
+            } else if energy_next < energy_this && energy_this < energy_prev {
+                disp_prev
+            } else {
+                let d1 = (energy_next - energy_this).abs();
+                let d2 = (energy_this - energy_prev).abs();
+                let delta_energy_max = d1.max(d2);
+                let delta_energy_min = d1.min(d2);
+                if energy_next > energy_prev {
+                    disp_next * delta_energy_max + disp_prev * delta_energy_min
+                } else {
+                    disp_next * delta_energy_min + disp_prev * delta_energy_max
+                }
+            }
+        };
+        let n = tangent.normalize_mut();
+        assert!(n.is_sign_positive(), "neb improved tangent: weird norm");
+
+        tangents.push(tangent);
+    }
+
+    Ok(tangents)
+}
+// c6fdc171-9b1c-4ba8-a7c0-d3dbf57237eb ends here
+
+// [[file:~/Workspace/Programming/gosh/gosh.note::82c2f7d1-cec4-4866-a9ba-7be37b872a95][82c2f7d1-cec4-4866-a9ba-7be37b872a95]]
 fn tangent_vectors_elastic_band
     (
         mol1: &Molecule,
@@ -192,7 +218,7 @@ fn tangent_vectors_elastic_band
 {
     unimplemented!()
 }
-// 68a74344-0730-42bf-aa81-0c9405355dd1 ends here
+// 82c2f7d1-cec4-4866-a9ba-7be37b872a95 ends here
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::755896f3-48b3-47b2-aa73-25f73a8b4b9a][755896f3-48b3-47b2-aa73-25f73a8b4b9a]]
 #[test]
@@ -200,11 +226,7 @@ fn test_neb() {
     use gchemol::io;
     let mut images = io::read("tests/files/NEB/images.mol2").expect("neb test file");
 
-    let mut neb = NEB::default();
-    let mol1 = images.remove(0);
-    let mol2 = images.pop().unwrap();
-    let mut neb = NEB::new(mol1, mol2);
-    neb.images = images;
+    let mut neb = NEB::new(images);
     let ts = neb.tangent().unwrap();
     for x in ts {
         println!("{:}", x);

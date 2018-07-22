@@ -32,12 +32,10 @@ impl Default for ModelResults {
 }
 
 pub trait ChemicalModel {
-    fn positions(&self) -> Vec<[f64; 3]> {
-        unimplemented!()
-    }
-
     /// define how to calculate properties, such as energy, forces, ...
-    fn calculate(&self, mol: &Molecule) -> Result<ModelResults> {
+    fn calculate(&self, mol: &Molecule) -> Result<ModelResults>;
+
+    fn positions(&self) -> Vec<[f64; 3]> {
         unimplemented!()
     }
 
