@@ -3,8 +3,10 @@
 //!
 //! References
 //! ----------
-//! * Henkelman & Jonsson, JCP (113), 2000
-//! * Henkelman, Uberuaga, & Jonsson, JCP (113), 2000
+//! * Henkelman, G. et al J. Chem. Phys. 2000, 113 (22), 9978–9985.
+//! * Henkelman, G. et al J. Chem. Phys. 2000, 113 (22), 9901–9904.
+//! * Kolsbjerg et al J. Chem. Phys. 2016, 145 (9), 094107.
+//! * https://github.com/siesta-project/flos/blob/master/flos/special/neb.lua
 
 use super::*;
 use gchemol::Molecule;
@@ -40,14 +42,17 @@ pub struct NEB {
     pub climbing  : bool,
     /// Spring force constants between neighboring images
     pub spring_constants: Vec<f64>,
+    /// the tolerance for determining whether an image is climbing or not
+    climbing_tol: f64,
 }
 
 impl Default for NEB {
     fn default() -> Self {
         NEB {
-            images : vec![],
-            climbing  : false,
-            spring_constants: vec![],
+            images           : vec![],
+            climbing         : true,
+            spring_constants : vec![],
+            climbing_tol     : 0.005,
         }
     }
 }
@@ -153,15 +158,6 @@ fn get_neighboring_images_displacements(images: &Vec<Image>) -> Result<Vec<Posit
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::68a74344-0730-42bf-aa81-0c9405355dd1][68a74344-0730-42bf-aa81-0c9405355dd1]]
 impl NEB {
-    fn tangents(&self) -> Result<Vec<Positions3D>> {
-        // sanity check
-        self.check_images()?;
-
-        let displacements = get_neighboring_images_displacements(&self.images)?;
-        let tangents = tangent_vectors_original(&displacements)?;
-        Ok(tangents)
-    }
-
     /// calculate real energy and forces
     pub fn calculate<T: ChemicalModel>(&mut self, model: T) -> Result<()>{
         let nimages = self.images.len();
@@ -206,9 +202,6 @@ impl NEB {
         // 1. calculate image tangent vectors to NEB path
         // let tangents = tangent_vectors_original(&displacements)?;
         let tangents = tangent_vectors_improved(&displacements, &energies)?;
-        // for t in &tangents {
-        //     println!("{:}", t);
-        // }
 
         // 2. the parallel part from spring forces
         let forces1 = spring_forces_parallel(&displacements, &self.spring_constants, &tangents);
@@ -224,7 +217,53 @@ impl NEB {
             forces_neb.push(f);
         }
 
+        if self.climbing {
+            self.fix_climbing_image(&mut forces_neb, &energies, &forces, &tangents)?;
+        }
+
         Ok(forces_neb)
+    }
+
+    /// Fix forces for the climbing image
+    /// Parameters
+    /// ----------
+    /// * forces_neb: calculated neb forces in regular way
+    /// * energies: molecule energy in each image
+    fn fix_climbing_image(&self,
+                          forces_neb: &mut Vec<Positions3D>,
+                          energies: &Vec<f64>,
+                          forces: &Vec<Positions3D>,
+                          tangents: &Vec<Positions3D>) -> Result<()>
+    {
+        let n = self.images.len();
+
+        // energy tolerance for determing climbing images
+        let tol = self.climbing_tol;
+
+        // locate the climbing image
+        let mut candidates = vec![];
+        for i in 1..(n-1) {
+            let eprev = energies[i-1];
+            let ethis = energies[i  ];
+            let enext = energies[i+1];
+
+            if ethis - eprev > tol && ethis - enext > tol {
+                candidates.push(i);
+            }
+        }
+
+        // FIXME: how about this?
+        if candidates.len() != 1 {
+            bail!("found {} peaks for climbing..", candidates.len());
+        }
+
+        let imax = candidates.pop().expect("single climbing image");
+        // fix forces for climbing image
+        let freal = &forces[imax];
+        let tangent = &tangents[imax - 1];
+        forces_neb[imax] = freal - 2.0 * freal.dot(tangent) * tangent;
+
+        Ok(())
     }
 
     // collect image energies and forces for later use
@@ -394,12 +433,7 @@ fn tangent_vectors_improved
 // c6fdc171-9b1c-4ba8-a7c0-d3dbf57237eb ends here
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::82c2f7d1-cec4-4866-a9ba-7be37b872a95][82c2f7d1-cec4-4866-a9ba-7be37b872a95]]
-fn tangent_vectors_elastic_band
-    (
-        mol1: &Molecule,
-        mol2: &Molecule,
-        images: &Vec<Molecule>
-    ) -> Result<Vec<Positions3D>>
+fn tangent_vectors_elastic_band(images: &Vec<Molecule>) -> Result<Vec<Positions3D>>
 {
     unimplemented!()
 }
