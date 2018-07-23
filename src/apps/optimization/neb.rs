@@ -15,8 +15,6 @@ use gchemol::geometry::*;
 pub struct Image {
     /// internal molecule
     pub mol    : Molecule,
-    /// spring constant
-    pub k      : f64,
     /// real energy
     pub energy : Option<f64>,
     /// real forces
@@ -28,9 +26,8 @@ impl Image {
     pub fn new(mol: Molecule) -> Self {
         Image {
             mol,
-            k: 0.1,
-            energy: None,
-            forces: None,
+            energy  : None,
+            forces  : None,
         }
     }
 }
@@ -41,6 +38,8 @@ pub struct NEB {
     pub images : Vec<Image>,
     /// climbing image or not
     pub climbing  : bool,
+    /// Spring force constants between neighboring images
+    pub spring_constants: Vec<f64>,
 }
 
 impl Default for NEB {
@@ -48,12 +47,14 @@ impl Default for NEB {
         NEB {
             images : vec![],
             climbing  : false,
+            spring_constants: vec![],
         }
     }
 }
 
 impl NEB {
     pub fn new(mols: Vec<Molecule>) -> Self {
+        let n = mols.len();
         // build up images from molecules
         let mut images = Vec::with_capacity(mols.len());
         for mol in mols {
@@ -61,8 +62,11 @@ impl NEB {
             images.push(image);
         }
 
+        // the number for springs
+        let n = n - 1;
         NEB {
             images,
+            spring_constants: (0..n).map(|v| 0.1).collect(),
             ..Default::default()
         }
     }
@@ -159,7 +163,7 @@ impl NEB {
     }
 
     /// calculate real energy and forces
-    fn calculate<T: ChemicalModel>(&mut self, model: T) -> Result<()>{
+    pub fn calculate<T: ChemicalModel>(&mut self, model: T) -> Result<()>{
         let nimages = self.images.len();
         // FIXME: special treatment for initial state and final state
         // calculate image energies and forces
@@ -191,24 +195,75 @@ impl NEB {
     }
 
     /// Return the resulting NEB forces for all images
-    fn neb_forces(&self) -> Result<Vec<Positions3D>> {
-        // calculate image tangents
-        let tangents = self.tangents()?;
-        // let f1 = spring_forces_parallel();
-        // let f2 = real_forces_perpendicular();
-        // let fneb = f1 + f2;
-        unimplemented!()
+    pub fn neb_forces(&self) -> Result<Vec<Positions3D>> {
+        // sanity check
+        self.check_images()?;
+
+        // 0. collect intermediate results
+        let displacements = get_neighboring_images_displacements(&self.images)?;
+        let (energies, forces) = self.collect_energies_and_forces()?;
+
+        // 1. calculate image tangent vectors to NEB path
+        // let tangents = tangent_vectors_original(&displacements)?;
+        let tangents = tangent_vectors_improved(&displacements, &energies)?;
+        // for t in &tangents {
+        //     println!("{:}", t);
+        // }
+
+        // 2. the parallel part from spring forces
+        let forces1 = spring_forces_parallel(&displacements, &self.spring_constants, &tangents);
+
+        // 3. the perpendicular part from real forces
+        let forces2 = real_forces_perpendicular(&forces, &tangents);
+
+        // 4. neb forces
+        let n = forces1.len();
+        let mut forces_neb = Vec::with_capacity(n);
+        for i in 0..n {
+            let f = &forces1[i] + &forces2[i];
+            forces_neb.push(f);
+        }
+
+        Ok(forces_neb)
+    }
+
+    // collect image energies and forces for later use
+    fn collect_energies_and_forces(&self) -> Result<(Vec<f64>, Vec<Positions3D>)> {
+        let n = self.images.len();
+        let mut energies = Vec::with_capacity(n);
+        let mut forces   = Vec::with_capacity(n);
+
+        for i in 0..n {
+            if let Some(e) = &self.images[i].energy {
+                energies.push(*e);
+            } else {
+                bail!("image {}: no energy record.", i);
+            }
+            if let Some(f) = &self.images[i].forces {
+                // FIXME: avoid allocation
+                forces.push(f.clone());
+            } else {
+                bail!("image {}: no forces record.", i);
+            }
+        }
+
+        Ok((energies, forces))
     }
 }
 
 // Calculate the parallel component of the spring force
+// Parameters
+// ----------
+// displacements: displacement vectors between neighboring molecules (size = N - 1)
+// spring_constants: spring constants for neighboring images (size = N - 1)
+// tangents: tangents to NEB path for intermediate images excluding endpoints (size = N - 2)
 fn spring_forces_parallel(displacements: &Vec<Positions3D>,
                           spring_constants: &Vec<f64>,
                           tangents: &Vec<Positions3D>) -> Vec<Positions3D>
 {
     let nmols = tangents.len() + 2;
     debug_assert!(nmols - 1 == displacements.len());
-    debug_assert!(nmols - 2 == spring_constants.len());
+    debug_assert!(nmols - 1 == spring_constants.len());
 
     let mut forces = Vec::with_capacity(nmols - 2);
     // calculate spring forces for all intermediate images
@@ -222,8 +277,8 @@ fn spring_forces_parallel(displacements: &Vec<Positions3D>,
         let kprev = spring_constants[i-1];
         // spring constant of the next pair
         let knext = spring_constants[i];
-        // tangent vector for current image
-        let tangent = &tangents[i];
+        // tangent vector corresponding to current image
+        let tangent = &tangents[i-1];
         let f = (displ_next.norm() * knext - displ_prev.norm() * kprev) * tangent;
         forces.push(f);
     }
@@ -233,21 +288,20 @@ fn spring_forces_parallel(displacements: &Vec<Positions3D>,
 // Calculate the perpendicular component of the real forces
 // Parameters
 // ----------
-// all_forces: forces of molecules in all intermediate images
-// tangents: tangent vectors of all intermediate images
-fn real_forces_perpendicular(all_forces: &Vec<Positions3D>,
-                             tangents: &Vec<Positions3D>) -> Vec<Positions3D> {
-
-    let n = all_forces.len();
-    debug_assert!(n == tangents.len());
-
-    let nmols = n + 2;
+// all_forces: real forces of molecule in each image including endpoints (size = N)
+// tangents: tangent vectors of all intermediate images excluding endpoints (size = N - 2)
+fn real_forces_perpendicular(all_forces: &Vec<Positions3D>, tangents: &Vec<Positions3D>) -> Vec<Positions3D> {
+    let nmols = all_forces.len();
+    debug_assert!(nmols - 2 == tangents.len());
 
     let mut vforces = Vec::with_capacity(nmols - 2);
-    for i in 1..(nmols - 2) {
+
+    // loop over intermediate molecules excluding endpoints
+    for i in 1..(nmols - 1) {
         let fi = &all_forces[i];
-        let ti = &tangents[i];
-        let f = fi - fi * ti * ti;
+        // tangent vector corresponding to current image
+        let ti = &tangents[i-1];
+        let f = fi - fi.dot(ti) * ti;
         vforces.push(f);
     }
 
@@ -284,7 +338,7 @@ fn tangent_vectors_original(displacements: &Vec<Positions3D>) -> Result<Vec<Posi
 // Parameters
 // ----------
 // displacements: displacement vectors between neighboring images
-// energies: energies of molecules in the images
+// energies: energies of molecules in images
 //
 // Reference
 // ---------
@@ -293,7 +347,7 @@ fn tangent_vectors_original(displacements: &Vec<Positions3D>) -> Result<Vec<Posi
 fn tangent_vectors_improved
     (
         displacements: &Vec<Positions3D>,
-        energies: &Vec<f64>,
+        energies: &Vec<f64>
     ) -> Result<Vec<Positions3D>>
 {
     let nmols = energies.len();
@@ -355,12 +409,18 @@ fn tangent_vectors_elastic_band
 #[test]
 fn test_neb() {
     use gchemol::io;
+    use models::lj::LennardJones;
+
     let mut images = io::read("tests/files/NEB/images.mol2").expect("neb test file");
 
     let mut neb = NEB::new(images);
-    let ts = neb.tangents().unwrap();
-    for x in ts {
-        println!("{:}", x);
+    let mut lj = LennardJones::default();
+    lj.derivative_order = 1;
+
+    neb.calculate(lj);
+    let x = neb.neb_forces().unwrap();
+    for i in x {
+        //println!("{:}", i);
     }
 }
 // 755896f3-48b3-47b2-aa73-25f73a8b4b9a ends here
