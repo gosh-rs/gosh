@@ -10,9 +10,21 @@
 
 use super::*;
 use gchemol::Molecule;
-use gchemol::geometry::*;
+use gchemol::geometry::{
+    // 3D vector
+    Vector3f,
+    // 3D vectors
+    Vector3fVec,
+    // 3D vector alias
+    Position,
+    // 3D vectors alias
+    Positions,
+    // convenient traits for build-in array/slice structs
+    VecFloatMath,
+    VecFloat3Math,
+};
 
-/// A single image in the chain of NEB images.
+/// A single image in the chain of NEB chain.
 #[derive(Debug, Clone)]
 pub struct Image {
     /// internal molecule
@@ -20,7 +32,7 @@ pub struct Image {
     /// real energy
     pub energy : Option<f64>,
     /// real forces
-    pub forces : Option<Positions3D>,
+    pub forces : Option<Vector3fVec>,
 }
 
 impl Image {
@@ -34,11 +46,12 @@ impl Image {
     }
 }
 
+/// Nudged Elastic Band (NEB) method
 #[derive(Debug, Clone)]
 pub struct NEB {
     /// NEB images: A list of Molecules including the two end points
     pub images : Vec<Image>,
-    /// climbing image or not
+    /// Using climbing image or not
     pub climbing  : bool,
     /// Spring force constants between neighboring images
     pub spring_constants: Vec<f64>,
@@ -112,29 +125,19 @@ impl NEB {
 // b805a230-8b97-4b2e-ac45-0430598e1af8 ends here
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::e40a0225-7988-43a1-ba61-adf6949d9d43][e40a0225-7988-43a1-ba61-adf6949d9d43]]
-use nalgebra as na;
-type Vector3D = na::Vector3<f64>;
-// 3xN matrix storing 3D coordinates
-type Positions3D = na::Matrix<f64, na::U3, na::Dynamic, na::MatrixVec<f64, na::U3, na::Dynamic>>;
-
-fn get_positions_matrix(positions: &Vec<Point3D>) -> Positions3D {
-    let pts: Vec<_> = positions.iter().map(|v| Vector3D::from(*v)).collect();
-    Positions3D::from_columns(&pts)
-}
-
 // Return displacement vectors: positions_next - positions_this
-fn get_displacements_between(positions_next: &Vec<Point3D>, positions_this: &Vec<Point3D>) -> Positions3D {
+fn get_displacements_between(positions_next: &Vec<Point3D>, positions_this: &Vec<Point3D>) -> Vector3fVec {
     debug_assert!(positions_this.len() == positions_next.len());
 
-    let pts1 = get_positions_matrix(positions_this);
-    let pts2 = get_positions_matrix(positions_next);
+    let pts1 = positions_this.to_dmatrix();
+    let pts2 = positions_next.to_dmatrix();
 
     pts2 - pts1
 }
 
 // Return displacement vectors between every pair of neighboring images
 // displ = R_{i+1} - R_{i}
-fn get_neighboring_images_displacements(images: &Vec<Image>) -> Result<Vec<Positions3D>>
+fn get_neighboring_images_displacements(images: &Vec<Image>) -> Result<Vec<Vector3fVec>>
 {
     let nmols = images.len();
     assert!(nmols >= 3, "neb tangent original: not enough images");
@@ -179,8 +182,7 @@ impl NEB {
 
             // 2. get the forces
             if let Some(forces) = mr.forces {
-                // FIXME: need util in gchemol
-                let fm = get_positions_matrix(&forces);
+                let fm = forces.to_dmatrix();
                 self.images[i].forces = Some(fm);
             } else {
                 bail!("no forces");
@@ -191,7 +193,7 @@ impl NEB {
     }
 
     /// Return the resulting NEB forces for all images
-    pub fn neb_forces(&self) -> Result<Vec<Positions3D>> {
+    pub fn neb_forces(&self) -> Result<Vec<Vector3fVec>> {
         // sanity check
         self.check_images()?;
 
@@ -230,10 +232,10 @@ impl NEB {
     /// * forces_neb: calculated neb forces in regular way
     /// * energies: molecule energy in each image
     fn fix_climbing_image(&self,
-                          forces_neb: &mut Vec<Positions3D>,
+                          forces_neb: &mut Vec<Vector3fVec>,
                           energies: &Vec<f64>,
-                          forces: &Vec<Positions3D>,
-                          tangents: &Vec<Positions3D>) -> Result<()>
+                          forces: &Vec<Vector3fVec>,
+                          tangents: &Vec<Vector3fVec>) -> Result<()>
     {
         let n = self.images.len();
 
@@ -267,7 +269,7 @@ impl NEB {
     }
 
     // collect image energies and forces for later use
-    fn collect_energies_and_forces(&self) -> Result<(Vec<f64>, Vec<Positions3D>)> {
+    fn collect_energies_and_forces(&self) -> Result<(Vec<f64>, Vec<Vector3fVec>)> {
         let n = self.images.len();
         let mut energies = Vec::with_capacity(n);
         let mut forces   = Vec::with_capacity(n);
@@ -296,9 +298,9 @@ impl NEB {
 // displacements: displacement vectors between neighboring molecules (size = N - 1)
 // spring_constants: spring constants for neighboring images (size = N - 1)
 // tangents: tangents to NEB path for intermediate images excluding endpoints (size = N - 2)
-fn spring_forces_parallel(displacements: &Vec<Positions3D>,
+fn spring_forces_parallel(displacements: &Vec<Vector3fVec>,
                           spring_constants: &Vec<f64>,
-                          tangents: &Vec<Positions3D>) -> Vec<Positions3D>
+                          tangents: &Vec<Vector3fVec>) -> Vec<Vector3fVec>
 {
     let nmols = tangents.len() + 2;
     debug_assert!(nmols - 1 == displacements.len());
@@ -329,7 +331,7 @@ fn spring_forces_parallel(displacements: &Vec<Positions3D>,
 // ----------
 // all_forces: real forces of molecule in each image including endpoints (size = N)
 // tangents: tangent vectors of all intermediate images excluding endpoints (size = N - 2)
-fn real_forces_perpendicular(all_forces: &Vec<Positions3D>, tangents: &Vec<Positions3D>) -> Vec<Positions3D> {
+fn real_forces_perpendicular(all_forces: &Vec<Vector3fVec>, tangents: &Vec<Vector3fVec>) -> Vec<Vector3fVec> {
     let nmols = all_forces.len();
     debug_assert!(nmols - 2 == tangents.len());
 
@@ -351,7 +353,7 @@ fn real_forces_perpendicular(all_forces: &Vec<Positions3D>, tangents: &Vec<Posit
 // [[file:~/Workspace/Programming/gosh/gosh.note::d915c7b2-5fb5-4c26-8bde-baa6cfae3db9][d915c7b2-5fb5-4c26-8bde-baa6cfae3db9]]
 // original algorithm for tangent calculation
 // Ref: Classical and Quantum Dynamics in Condensed Phase Simulations; World Scientific, 1998; p 385.
-fn tangent_vectors_original(displacements: &Vec<Positions3D>) -> Result<Vec<Positions3D>>
+fn tangent_vectors_original(displacements: &Vec<Vector3fVec>) -> Result<Vec<Vector3fVec>>
 {
     let nmols = displacements.len() + 1;
     assert!(nmols >= 3, "neb tangent original: not enough images");
@@ -385,9 +387,9 @@ fn tangent_vectors_original(displacements: &Vec<Positions3D>) -> Result<Vec<Posi
 //
 fn tangent_vectors_improved
     (
-        displacements: &Vec<Positions3D>,
+        displacements: &Vec<Vector3fVec>,
         energies: &Vec<f64>
-    ) -> Result<Vec<Positions3D>>
+    ) -> Result<Vec<Vector3fVec>>
 {
     let nmols = energies.len();
     debug_assert!(nmols >= 3, "neb improved: no intermediate image!");
@@ -433,7 +435,7 @@ fn tangent_vectors_improved
 // c6fdc171-9b1c-4ba8-a7c0-d3dbf57237eb ends here
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::82c2f7d1-cec4-4866-a9ba-7be37b872a95][82c2f7d1-cec4-4866-a9ba-7be37b872a95]]
-fn tangent_vectors_elastic_band(images: &Vec<Molecule>) -> Result<Vec<Positions3D>>
+fn tangent_vectors_elastic_band(images: &Vec<Molecule>) -> Result<Vec<Vector3fVec>>
 {
     unimplemented!()
 }
@@ -454,7 +456,7 @@ fn test_neb() {
     neb.calculate(lj);
     let x = neb.neb_forces().unwrap();
     for i in x {
-        //println!("{:}", i);
+        // println!("{:}", i);
     }
 }
 // 755896f3-48b3-47b2-aa73-25f73a8b4b9a ends here
