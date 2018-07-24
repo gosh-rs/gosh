@@ -8,6 +8,11 @@
 //! - https://github.com/siesta-project/flos/blob/master/flos/optima/fire.lua
 
 use super::*;
+use gchemol::geometry::{
+    Stats,
+    VecFloatMath,
+    VecFloat3Math,
+};
 
 #[derive(Debug, Clone)]
 pub struct FIRE {
@@ -64,8 +69,8 @@ impl FIRE {
     /// Determine whether we have optimized the structure
     pub fn converged(&self, forces: &Vec<Point3D>, displacement_vectors: &Vec<Point3D>) -> bool {
         debug_assert!(forces.len() == displacement_vectors.len(), "vectors in different size");
-        let fnorms = vector_norms(&forces);
-        let dnorms = vector_norms(displacement_vectors);
+        let fnorms = forces.norms();
+        let dnorms = displacement_vectors.norms();
 
         // FIXME: criteria parameters
         let fmax = 0.03;
@@ -228,48 +233,6 @@ fn scale_disp_vectors(disp_vectors: &mut Vec<Point3D>, maxdisp: f64) {
 // fdd9627f-71a8-4a4f-b0a7-9f1d2af71da3 ends here
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::ac85201d-3985-4160-886b-1f811e6db4b9][ac85201d-3985-4160-886b-1f811e6db4b9]]
-use test::stats::Stats;
-
-pub trait VectorMath {
-    fn norm(&self) -> f64;
-}
-
-impl VectorMath for [f64] {
-    fn norm(&self) -> f64 {
-        let mut s = 0.0;
-        for &x in self {
-            s += x.powi(2);
-        }
-
-        s.sqrt()
-    }
-}
-
-#[test]
-fn test_vector_math() {
-    let x = vec![0.1, 0.1, 0.1];
-    let x = x.norm();
-    assert_relative_eq!(0.1732, x, epsilon=1e-4);
-}
-
-// return the norms of a list of 3D vectors
-fn vector_norms(vectors: &Vec<Point3D>) -> Vec<f64> {
-    let n = vectors.len();
-    let mut norms = Vec::with_capacity(n);
-
-    for i in 0..n {
-        let mut l = 0.0;
-        for j in 0..3 {
-            let vij = vectors[i][j];
-            l += vij.powi(2);
-        }
-
-        norms.push(l.sqrt());
-    }
-
-    norms
-}
-
 #[inline]
 fn vector_dot(vector1: &Vec<[f64; 3]>, vector2: &Vec<[f64; 3]>) -> f64 {
     let n = vector1.len();
@@ -324,6 +287,7 @@ fn test_fire_opt() {
         let mresult = lj.calculate(&mol).expect("lj calculation");
         let energy = mresult.energy.expect("lj energy");
         debug!("step {}: energy = {:-6.3}", i, energy);
+        // println!("step {}: energy = {:-6.3}", i, energy);
 
         let forces = mresult.forces.expect("lj forces");
         let dvects = fire.displacement_vectors(&forces).expect("dv");
