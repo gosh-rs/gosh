@@ -170,7 +170,7 @@ impl NEB {
             // 0. run the model
             let mr = {
                 let mol = &self.images[i].mol;
-                model.calculate(mol)?
+                model.compute(mol)?
             };
 
             // 1. get the energy

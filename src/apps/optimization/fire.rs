@@ -284,7 +284,7 @@ fn test_fire_opt() {
     let mut fire = FIRE::default();
     let natoms = mol.natoms();
     for i in 0..1000 {
-        let mresult = lj.calculate(&mol).expect("lj calculation");
+        let mresult = lj.compute(&mol).expect("lj calculation");
         let energy = mresult.energy.expect("lj energy");
         debug!("step {}: energy = {:-6.3}", i, energy);
         // println!("step {}: energy = {:-6.3}", i, energy);

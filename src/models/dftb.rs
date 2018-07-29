@@ -37,7 +37,7 @@ pub fn run<P: Into<PathBuf>>(mol: &Molecule, runfile: P) -> Result<ModelResults>
 }
 
 impl ChemicalModel for DftbModel {
-    fn calculate(&self, mol: &Molecule) -> Result<ModelResults> {
+    fn compute(&self, mol: &Molecule) -> Result<ModelResults> {
         run(&mol, &self.runfile)
     }
 }

@@ -14,10 +14,10 @@ pub struct LennardJones {
 impl Default for LennardJones {
     fn default() -> Self {
         LennardJones {
-            epsilon: 1.0,
-            sigma: 1.0,
+            epsilon          : 1.0,
+            sigma            : 1.0,
             // energy only
-            derivative_order: 0,
+            derivative_order : 0,
         }
     }
 }
@@ -38,9 +38,9 @@ impl LennardJones {
 }
 
 impl ChemicalModel for LennardJones {
-    fn calculate(&self, mol: &Molecule) -> Result<ModelResults> {
+    fn compute(&self, mol: &Molecule) -> Result<ModelResults> {
         if mol.lattice.is_some() {
-            warn!("LJ model: periodic lattice will be ignored!")
+            warn!("LJ model: periodic lattice will be ignored!");
         }
 
         let natoms = mol.natoms();
@@ -91,7 +91,7 @@ fn test_lj_model() {
 
     // LJ3
     let mol = Molecule::from_file("tests/files/LennardJones/LJ3.xyz").expect("lj3 test file");
-    let mr = lj.calculate(&mol).expect("lj model: LJ3");
+    let mr = lj.compute(&mol).expect("lj model: LJ3");
     let e = mr.energy.expect("lj model energy: LJ3");
     assert_relative_eq!(-3.0, e, epsilon=1e-3);
 
@@ -104,7 +104,7 @@ fn test_lj_model() {
 
     // LJ38
     let mol = Molecule::from_file("tests/files/LennardJones/LJ38.xyz").expect("lj38 test file");
-    let mr = lj.calculate(&mol).expect("lj model: LJ38");
+    let mr = lj.compute(&mol).expect("lj model: LJ38");
     let e = mr.energy.expect("lj model energy: LJ38");
     assert_relative_eq!(-173.92843, e, epsilon=1e-3);
 
