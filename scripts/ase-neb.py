@@ -19,7 +19,7 @@ def set_dftb_calculator_for_opt(atoms):
     """
     import os
     os.environ["DFTB_COMMAND"] = "dftb+"
-    os.environ["DFTB_PREFIX"] = "SKFiles"
+    os.environ["DFTB_PREFIX"] = "/home/ybyygu/Incoming/liuxc-dftb+/dftb-params/3ob-3-1/"
 
     from ase.calculators.dftb import Dftb
 
@@ -66,6 +66,16 @@ def dftb_opt(filename):
     atoms.write(filename, plain=True)
     print("updated structure inplace: {}".format(filename))
 # dftb+:2 ends here
+
+# [[file:~/Workspace/Programming/gosh/gosh.note::*gaussian][gaussian:1]]
+def set_gaussian_calculator(atoms):
+    from ase.calculators.gaussian import Gaussian
+
+    calc = Gaussian(method="b3lyp",
+                    basis="6-31g**",
+                    nproc=4)
+    atoms.set_calculator(calc)
+# gaussian:1 ends here
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*dmol3][dmol3:1]]
 def set_dmol3_calculator(atoms):
@@ -114,7 +124,7 @@ def create_neb_images(reactantfile,
     images = [initial]
     images += [initial.copy() for i in range(nimages-2)]
     images += [final]
-    neb = NEB(images, remove_rotation_and_translation=True)
+    neb = NEB(images, remove_rotation_and_translation=True, method="improvedtangent")
 
     # run linear or IDPP interpolation
     neb.interpolate(scheme)
@@ -199,6 +209,7 @@ def ts_search(images_filename, fmax=0.05, maxstep=20, cineb=False):
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*batch][batch:1]]
 def run_all():
+    nimages = 11
     import subprocess as sp
     cmdline = "babel reactant.mol2 reactant.xyz"
     sp.run(cmdline.split())
@@ -206,18 +217,25 @@ def run_all():
     cmdline = "babel product.mol2 product.xyz"
     sp.run(cmdline.split())
 
-    # optimization
+    # pre-optimization
     dftb_opt("reactant.xyz")
     dftb_opt("product.xyz")
 
     # rxview images
-    cmdline = "rxview reactant.mol2 product.mol2 rxview.xyz -n 11"
+    # LST style
+    cmdline = "rxview reactant.mol2 product.mol2 rx-lst.xyz -n {}".format(nimages)
+    sp.run(cmdline.split())
+
+    # BOC
+    cmdline = "rxview reactant.mol2 product.mol2 rx-boc.xyz -n {} -b".format(nimages)
     sp.run(cmdline.split())
 
     # idpp images
     create_neb_images("reactant.xyz", "product.xyz", outfilename="idpp.pdb", scheme="idpp", nimages=11)
 
-    ts_search("rxview.xyz", maxstep=500, cineb=True, fmax=0.1)
+    ts_search("rx-boc.xyz", maxstep=500, cineb=True, fmax=0.1)
+
+    ts_search("rx-lst.xyz", maxstep=500, cineb=True, fmax=0.1)
 
     ts_search("idpp.pdb", maxstep=500, cineb=True, fmax=0.1)
 
