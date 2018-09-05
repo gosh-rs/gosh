@@ -142,7 +142,7 @@ def create_neb_images(reactantfile,
 
     return images
 
-def run_neb(images, trajfile, fmax=0.05, maxstep=100, cineb=True):
+def run_neb(images, trajfile, fmax=0.1, maxstep=100, cineb=True, keep_image_distance=True):
     """run Nudged Elastic Band (NEB) calculation
 
     Parameters
@@ -150,14 +150,29 @@ def run_neb(images, trajfile, fmax=0.05, maxstep=100, cineb=True):
     images   : a list of ase atoms object as initial guess for NEB calculation
     trajfile : trajectory file name during optimization
     cineb    : enable climbing image NEB or not
+    keep_image_distance: adjust spring constant k to keep original image distance
     """
     from ase.optimize import BFGS, FIRE
 
-    neb = NEB(images, remove_rotation_and_translation=True, climb=cineb)
+    # set spring constants
+    if keep_image_distance:
+        n = len(images)
+        ks = []
+        print("k vars:")
+        for i in range(n-1):
+            d = images[i+1].positions - images[i].positions
+            k = 1 / np.linalg.norm(d)
+            ks.append(k)
+            print("{:02}--{:02} = {:4.2f}".format(i, i+1, k))
+    else:
+        ks = 1
+
+    neb = NEB(images, remove_rotation_and_translation=True, climb=cineb, k=ks)
     # n = FIRE(neb, trajectory=trajfile, force_consistent=False)
     # n = FIRE(neb, trajectory=trajfile)
     n = BFGS(neb, trajectory=trajfile)
     n.run(fmax=fmax, steps=maxstep)
+
     return neb
 
 def read_images(filename):
@@ -167,13 +182,11 @@ def read_images(filename):
 # neb:1 ends here
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*ts][ts:1]]
-def ts_search(images_filename, fmax=0.05, maxstep=20, cineb=False):
+def ts_search(images_filename, maxstep=20, method="dftb", keep_image_distance=True):
     """the main entry point for transition state searching
 
     images_filename: the filename containing multiple molecules (images)
-    fmax           : the max force for convergence
     maxstep        : the max allowed number of steps
-    cineb          : using climbing image or not in NEB searching
     """
 
     # load data
@@ -187,11 +200,16 @@ def ts_search(images_filename, fmax=0.05, maxstep=20, cineb=False):
 
     # using dftb+
     for image in images:
-        set_dftb_calculator_for_sp(image)
+        if method == "dftb":
+            set_dftb_calculator_for_sp(image)
+        elif method == "gaussian":
+            set_gaussian_calculator(image)
+        else:
+            raise RuntimeError("wrong calculator!")
 
-    # start neb calculation
+    # start neb calculation without climbing image
     trajfile = '{}.traj'.format(label)
-    neb = run_neb(images, trajfile, fmax=fmax, maxstep=maxstep, cineb=cineb)
+    neb = run_neb(images, trajfile, maxstep=maxstep, fmax=0.5, cineb=False, keep_image_distance=keep_image_distance)
 
     # a brief summary
     for i, image in enumerate(images):
@@ -201,6 +219,19 @@ def ts_search(images_filename, fmax=0.05, maxstep=20, cineb=False):
     # write optimized images
     ase.io.write("neb-images.xyz", neb.images)
 
+    # climbing
+    print("climbing...")
+    trajfile = '{}-ci.traj'.format(label)
+    neb = run_neb(images, trajfile, maxstep=maxstep, fmax=0.1, cineb=True, keep_image_distance=keep_image_distance)
+
+    # a brief summary
+    for i, image in enumerate(images):
+        energy = image.get_potential_energy()
+        print("image {:02}: energy = {:<-12.4f} eV".format(i, energy))
+
+    # write optimized images
+    ase.io.write("cineb-images.xyz", neb.images)
+
     # goto workdir
     os.chdir("..")
 
@@ -208,7 +239,7 @@ def ts_search(images_filename, fmax=0.05, maxstep=20, cineb=False):
 # ts:1 ends here
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*batch][batch:1]]
-def run_all():
+def run_all(method="dftb"):
     nimages = 11
     import subprocess as sp
     cmdline = "babel reactant.mol2 reactant.xyz"
@@ -218,8 +249,9 @@ def run_all():
     sp.run(cmdline.split())
 
     # pre-optimization
-    dftb_opt("reactant.xyz")
-    dftb_opt("product.xyz")
+    if method == "dftb":
+        dftb_opt("reactant.xyz")
+        dftb_opt("product.xyz")
 
     # rxview images
     # LST style
@@ -231,13 +263,14 @@ def run_all():
     sp.run(cmdline.split())
 
     # idpp images
-    create_neb_images("reactant.xyz", "product.xyz", outfilename="idpp.pdb", scheme="idpp", nimages=11)
+    create_neb_images("reactant.xyz", "product.xyz", outfilename="idpp.pdb", scheme="idpp", nimages=nimages)
 
-    ts_search("rx-boc.xyz", maxstep=500, cineb=True, fmax=0.1)
+    ts_search("rx-boc.xyz", maxstep=500, method=method, keep_image_distance=True)
 
-    ts_search("rx-lst.xyz", maxstep=500, cineb=True, fmax=0.1)
+    ts_search("rx-lst.xyz", maxstep=500, method=method, keep_image_distance=True)
 
-    ts_search("idpp.pdb", maxstep=500, cineb=True, fmax=0.1)
+    # for idpp using the normal way
+    ts_search("idpp.pdb", maxstep=500, method=method, keep_image_distance=False)
 
 if __name__ == '__main__':
     run_all()
