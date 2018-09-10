@@ -182,7 +182,7 @@ def read_images(filename):
 # neb:1 ends here
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*ts][ts:1]]
-def ts_search(images_filename, maxstep=20, method="dftb", keep_image_distance=True):
+def ts_search(images_filename, maxstep=20, method="dftb", keep_image_distance=True, climbing=False):
     """the main entry point for transition state searching
 
     images_filename: the filename containing multiple molecules (images)
@@ -208,29 +208,31 @@ def ts_search(images_filename, maxstep=20, method="dftb", keep_image_distance=Tr
             raise RuntimeError("wrong calculator!")
 
     # start neb calculation without climbing image
-    trajfile = '{}.traj'.format(label)
-    neb = run_neb(images, trajfile, maxstep=maxstep, fmax=0.5, cineb=False, keep_image_distance=keep_image_distance)
+    if not climbing:
+        trajfile = '{}.traj'.format(label)
+        neb = run_neb(images, trajfile, maxstep=maxstep, fmax=0.5, cineb=False, keep_image_distance=keep_image_distance)
+    else:
+        # climbing
+        print("climbing...")
+        trajfile = '{}-ci.traj'.format(label)
+        neb = run_neb(images, trajfile, maxstep=maxstep, fmax=0.1, cineb=True, keep_image_distance=keep_image_distance)
 
     # a brief summary
     for i, image in enumerate(images):
         energy = image.get_potential_energy()
         print("image {:02}: energy = {:<-12.4f} eV".format(i, energy))
 
-    # write optimized images
-    ase.io.write("neb-images.xyz", neb.images)
-
-    # climbing
-    print("climbing...")
-    trajfile = '{}-ci.traj'.format(label)
-    neb = run_neb(images, trajfile, maxstep=maxstep, fmax=0.1, cineb=True, keep_image_distance=keep_image_distance)
-
-    # a brief summary
-    for i, image in enumerate(images):
-        energy = image.get_potential_energy()
-        print("image {:02}: energy = {:<-12.4f} eV".format(i, energy))
+    # find ts
+    tmp = [(image.get_total_energy(), image) for image in neb.images]
+    tmp.sort()
+    _, ts = tmp[-1]
+    ts.write("ts.xyz")
 
     # write optimized images
-    ase.io.write("cineb-images.xyz", neb.images)
+    if not climbing:
+        ase.io.write("neb-images.xyz", neb.images)
+    else:
+        ase.io.write("cineb-images.xyz", neb.images)
 
     # goto workdir
     os.chdir("..")
@@ -240,7 +242,7 @@ def ts_search(images_filename, maxstep=20, method="dftb", keep_image_distance=Tr
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*batch][batch:1]]
 def run_all(method="dftb"):
-    nimages = 11
+    nimages = 7
     import subprocess as sp
     cmdline = "babel reactant.mol2 reactant.xyz"
     sp.run(cmdline.split())
@@ -265,13 +267,18 @@ def run_all(method="dftb"):
     # idpp images
     create_neb_images("reactant.xyz", "product.xyz", outfilename="idpp.pdb", scheme="idpp", nimages=nimages)
 
-    ts_search("rx-boc.xyz", maxstep=500, method=method, keep_image_distance=True)
+    # normal neb
 
-    ts_search("rx-lst.xyz", maxstep=500, method=method, keep_image_distance=True)
+    ts_search("rx-boc.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=False)
+    cmdline = "rxview reactant.mol2 product.mol2 -m rx-boc/ts.xyz rx-boc-stage2.xyz -n {} -b".format(nimages)
+    sp.run(cmdline.split())
+    ts_search("rx-boc-stage2.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=True)
+
+    ts_search("rx-lst.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=False)
+    cmdline = "rxview reactant.mol2 product.mol2 -m rx-lst/ts.xyz rx-lst-stage2.xyz -n {} -b".format(nimages)
+    sp.run(cmdline.split())
+    ts_search("rx-lst-stage2.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=True)
 
     # for idpp using the normal way
-    ts_search("idpp.pdb", maxstep=500, method=method, keep_image_distance=False)
-
-if __name__ == '__main__':
-    run_all()
+    # ts_search("idpp.pdb", maxstep=500, method=method, keep_image_distance=False)
 # batch:1 ends here
