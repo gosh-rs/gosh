@@ -77,6 +77,33 @@ def set_gaussian_calculator(atoms):
     atoms.set_calculator(calc)
 # gaussian:1 ends here
 
+# [[file:~/Workspace/Programming/gosh/gosh.note::*mopac][mopac:1]]
+def set_mopac_calculator_for_sp(atoms):
+    from ase.calculators.mopac import MOPAC
+
+    # the default relscf parameter in ase is unnecessarily high
+    calc = MOPAC(method="PM6", relscf=0.1)
+    atoms.set_calculator(calc)
+
+def set_mopac_calculator_for_opt(atoms):
+    from ase.calculators.mopac import MOPAC
+
+    # the default relscf parameter in ase is unnecessarily high
+    calc = MOPAC(method="PM6", task='GRADIENTS', relscf=0.1)
+    atoms.set_calculator(calc)
+
+def mopac_opt(filename):
+    """read atoms from filename, and optimize using dftb+, then save back inplace."""
+
+    atoms = ase.io.read(filename)
+    set_mopac_calculator_for_opt(atoms)
+    e = atoms.get_total_energy()
+    print("opt energy = {:-10.4f}".format(e))
+    # avoid the bug for the xyz comment line
+    atoms.write(filename, plain=True)
+    print("updated structure inplace: {}".format(filename))
+# mopac:1 ends here
+
 # [[file:~/Workspace/Programming/gosh/gosh.note::*dmol3][dmol3:1]]
 def set_dmol3_calculator(atoms):
     from ase.calculators.dmol import DMol3
@@ -204,6 +231,8 @@ def ts_search(images_filename, maxstep=20, method="dftb", keep_image_distance=Tr
             set_dftb_calculator_for_sp(image)
         elif method == "gaussian":
             set_gaussian_calculator(image)
+        elif method == "mopac":
+            set_mopac_calculator_for_sp(image)
         else:
             raise RuntimeError("wrong calculator!")
 
@@ -254,6 +283,9 @@ def run_all(method="dftb"):
     if method == "dftb":
         dftb_opt("reactant.xyz")
         dftb_opt("product.xyz")
+    elif method == "mopac":
+        mopac_opt("reactant.xyz")
+        mopac_opt("product.xyz")
 
     # rxview images
     # LST style
@@ -268,7 +300,6 @@ def run_all(method="dftb"):
     create_neb_images("reactant.xyz", "product.xyz", outfilename="idpp.pdb", scheme="idpp", nimages=nimages)
 
     # normal neb
-
     ts_search("rx-boc.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=False)
     cmdline = "rxview reactant.mol2 product.mol2 -m rx-boc/ts.xyz rx-boc-stage2.xyz -n {} -b".format(nimages)
     sp.run(cmdline.split())
