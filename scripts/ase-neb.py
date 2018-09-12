@@ -179,7 +179,7 @@ def run_neb(images, trajfile, fmax=0.1, maxstep=100, cineb=True, keep_image_dist
     cineb    : enable climbing image NEB or not
     keep_image_distance: adjust spring constant k to keep original image distance
     """
-    from ase.optimize import BFGS, FIRE
+    from ase.optimize import BFGS, FIRE, LBFGS
 
     # set spring constants
     if keep_image_distance:
@@ -197,7 +197,8 @@ def run_neb(images, trajfile, fmax=0.1, maxstep=100, cineb=True, keep_image_dist
     neb = NEB(images, remove_rotation_and_translation=True, climb=cineb, k=ks)
     # n = FIRE(neb, trajectory=trajfile, force_consistent=False)
     # n = FIRE(neb, trajectory=trajfile)
-    n = BFGS(neb, trajectory=trajfile)
+    # n = BFGS(neb, trajectory=trajfile)
+    n = LBFGS(neb, trajectory=trajfile, force_consistent=False)
     n.run(fmax=fmax, steps=maxstep)
 
     return neb
@@ -253,15 +254,15 @@ def ts_search(images_filename, maxstep=20, method="dftb", keep_image_distance=Tr
 
     # find ts
     tmp = [(image.get_total_energy(), image) for image in neb.images]
-    tmp.sort()
-    _, ts = tmp[-1]
+    tmp.sort(key=lambda pair: pair[0], reverse=True)
+    _, ts = tmp[0]
     ts.write("ts.xyz")
 
     # write optimized images
     if not climbing:
-        ase.io.write("neb-images.xyz", neb.images)
+        ase.io.write("neb-images.pdb", neb.images)
     else:
-        ase.io.write("cineb-images.xyz", neb.images)
+        ase.io.write("cineb-images.pdb", neb.images)
 
     # goto workdir
     os.chdir("..")
@@ -270,8 +271,8 @@ def ts_search(images_filename, maxstep=20, method="dftb", keep_image_distance=Tr
 # ts:1 ends here
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*batch][batch:1]]
-def run_all(method="dftb"):
-    nimages = 7
+def run_all(method="dftb", qst=False):
+    nimages = 11
     import subprocess as sp
     cmdline = "babel reactant.mol2 reactant.xyz"
     sp.run(cmdline.split())
@@ -299,17 +300,23 @@ def run_all(method="dftb"):
     # idpp images
     create_neb_images("reactant.xyz", "product.xyz", outfilename="idpp.pdb", scheme="idpp", nimages=nimages)
 
-    # normal neb
     ts_search("rx-boc.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=False)
-    cmdline = "rxview reactant.mol2 product.mol2 -m rx-boc/ts.xyz rx-boc-stage2.xyz -n {} -b".format(nimages)
-    sp.run(cmdline.split())
-    ts_search("rx-boc-stage2.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=True)
+    if qst:
+        cmdline = "rxview reactant.mol2 product.mol2 -m rx-boc/ts.xyz rx-boc-stage2.xyz -n {} -b".format(nimages)
+        sp.run(cmdline.split())
+        ts_search("rx-boc-stage2.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=True)
+    else:
+        ts_search("rx-boc/neb-images.pdb", maxstep=500, method=method, keep_image_distance=True, climbing=True)
 
     ts_search("rx-lst.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=False)
-    cmdline = "rxview reactant.mol2 product.mol2 -m rx-lst/ts.xyz rx-lst-stage2.xyz -n {} -b".format(nimages)
-    sp.run(cmdline.split())
-    ts_search("rx-lst-stage2.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=True)
+    if qst:
+        cmdline = "rxview reactant.mol2 product.mol2 -m rx-lst/ts.xyz rx-lst-stage2.xyz -n {} -b".format(nimages)
+        sp.run(cmdline.split())
+        ts_search("rx-lst-stage2.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=True)
+    else:
+        ts_search("rx-lst/neb-images.pdb", maxstep=500, method=method, keep_image_distance=True, climbing=True)
 
     # for idpp using the normal way
-    # ts_search("idpp.pdb", maxstep=500, method=method, keep_image_distance=False)
+    ts_search("idpp.pdb", maxstep=500, method=method, keep_image_distance=False, climbing=False)
+    ts_search("idpp/neb-images.pdb", maxstep=500, method=method, keep_image_distance=False, climbing=True)
 # batch:1 ends here
