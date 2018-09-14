@@ -3,8 +3,10 @@
 extern crate test;
 
 #[macro_use] extern crate quicli;
-#[macro_use] extern crate approx;
 #[macro_use] extern crate duct;
+
+#[cfg(test)]
+#[macro_use] extern crate approx;
 
 extern crate gchemol;
 extern crate nalgebra;

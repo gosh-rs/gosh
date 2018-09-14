@@ -83,14 +83,14 @@ def set_mopac_calculator_for_sp(atoms):
     from ase.calculators.mopac import MOPAC
 
     # the default relscf parameter in ase is unnecessarily high
-    calc = MOPAC(method="PM6", relscf=0.01)
+    calc = MOPAC(method="PM6", relscf=0.1)
     atoms.set_calculator(calc)
 
 def set_mopac_calculator_for_opt(atoms):
     from ase.calculators.mopac import MOPAC
 
     # the default relscf parameter in ase is unnecessarily high
-    calc = MOPAC(method="PM6", task='GRADIENTS', relscf=0.01)
+    calc = MOPAC(method="PM6", task='GRADIENTS', relscf=0.1)
     atoms.set_calculator(calc)
 
 def mopac_opt(filename):

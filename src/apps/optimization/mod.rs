@@ -1,5 +1,7 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::0f081329-2da0-4cd6-b622-265614169d68][0f081329-2da0-4cd6-b622-265614169d68]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*mod.rs][mod.rs:1]]
 use super::*;
+use gchemol::prelude::*;
+use gchemol::geometry::prelude::*;
 
 type Point3D = [f64; 3];
 
@@ -49,4 +51,4 @@ pub trait Optimizer {
 
 pub mod fire;
 pub mod neb;
-// 0f081329-2da0-4cd6-b622-265614169d68 ends here
+// mod.rs:1 ends here

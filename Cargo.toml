@@ -1,7 +1,7 @@
-# [[file:~/Workspace/Programming/gosh/gosh.note::c45d1413-12b8-471e-b060-da682339ad4b][c45d1413-12b8-471e-b060-da682339ad4b]]
+# [[file:~/Workspace/Programming/gosh/gosh.note::*cargo][cargo:1]]
 [package]
 name = "gosh"
-version = "0.0.8"
+version = "0.0.9"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 
 [dependencies]
@@ -11,6 +11,9 @@ duct = "0.10"
 nalgebra = "*"
 linefeed = {git = "https://github.com/murarth/linefeed.git", rev="6ba931f" }
 #linefeed = "0.5"
-#gchemol = { path = "/home/ybyygu/Workspace/Programming/gchemol" }
-gchemol = { git = "https://github.com/ybyygu/gchemol.git" }
-# c45d1413-12b8-471e-b060-da682339ad4b ends here
+gchemol = {rev="v0.0.21", path = "/home/ybyygu/Workspace/Programming/gchemol" }
+#gchemol = {git = "https://github.com/ybyygu/gchemol.git" }
+
+[dev-dependencies]
+approx = "0.3"
+# cargo:1 ends here

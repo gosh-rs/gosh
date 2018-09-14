@@ -1,4 +1,4 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::bbd2c8e8-5b09-4016-84ed-fc0f79a46c7f][bbd2c8e8-5b09-4016-84ed-fc0f79a46c7f]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*src][src:1]]
 use super::*;
 
 #[derive(Clone, Copy, Debug)]
@@ -57,7 +57,7 @@ impl ChemicalModel for LennardJones {
         let dm = mol.distance_matrix();
         for i in 0..natoms {
             for j in 0..i {
-                let r = dm[i][j];
+                let r = dm[(i, j)];
                 energy += self.pair_energy(r);
                 if self.derivative_order >= 1 {
                     let g = self.pair_gradient(r);
@@ -115,4 +115,4 @@ fn test_lj_model() {
         }
     }
 }
-// bbd2c8e8-5b09-4016-84ed-fc0f79a46c7f ends here
+// src:1 ends here

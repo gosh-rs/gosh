@@ -10,19 +10,6 @@
 
 use super::*;
 use gchemol::Molecule;
-use gchemol::geometry::{
-    // 3D vector
-    Vector3f,
-    // 3D vectors
-    Vector3fVec,
-    // 3D vector alias
-    Position,
-    // 3D vectors alias
-    Positions,
-    // convenient traits for build-in array/slice structs
-    VecFloatMath,
-    VecFloat3Math,
-};
 
 /// A single image in the chain of NEB chain.
 #[derive(Debug, Clone)]
@@ -124,7 +111,7 @@ impl NEB {
 }
 // b805a230-8b97-4b2e-ac45-0430598e1af8 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::e40a0225-7988-43a1-ba61-adf6949d9d43][e40a0225-7988-43a1-ba61-adf6949d9d43]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*utils][utils:1]]
 // Return displacement vectors: positions_next - positions_this
 fn get_displacements_between(positions_next: &Vec<Point3D>, positions_this: &Vec<Point3D>) -> Vector3fVec {
     debug_assert!(positions_this.len() == positions_next.len());
@@ -157,7 +144,7 @@ fn get_neighboring_images_displacements(images: &Vec<Image>) -> Result<Vec<Vecto
 
     Ok(displs)
 }
-// e40a0225-7988-43a1-ba61-adf6949d9d43 ends here
+// utils:1 ends here
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::68a74344-0730-42bf-aa81-0c9405355dd1][68a74344-0730-42bf-aa81-0c9405355dd1]]
 impl NEB {
@@ -441,7 +428,7 @@ fn tangent_vectors_elastic_band(images: &Vec<Molecule>) -> Result<Vec<Vector3fVe
 }
 // 82c2f7d1-cec4-4866-a9ba-7be37b872a95 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::755896f3-48b3-47b2-aa73-25f73a8b4b9a][755896f3-48b3-47b2-aa73-25f73a8b4b9a]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
 #[test]
 fn test_neb() {
     use gchemol::io;
@@ -459,4 +446,4 @@ fn test_neb() {
         // println!("{:}", i);
     }
 }
-// 755896f3-48b3-47b2-aa73-25f73a8b4b9a ends here
+// test:1 ends here

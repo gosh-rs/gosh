@@ -1,4 +1,4 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::4aa0086b-0cf4-406a-861a-b281b328ef2e][4aa0086b-0cf4-406a-861a-b281b328ef2e]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
 //! Implementation of the Fast-Inertial-Relaxation-Engine (FIRE) algorithm
 //!
 //! References
@@ -8,11 +8,6 @@
 //! - https://github.com/siesta-project/flos/blob/master/flos/optima/fire.lua
 
 use super::*;
-use gchemol::geometry::{
-    Stats,
-    VecFloatMath,
-    VecFloat3Math,
-};
 
 #[derive(Debug, Clone)]
 pub struct FIRE {
@@ -62,9 +57,9 @@ impl Default for FIRE {
         }
     }
 }
-// 4aa0086b-0cf4-406a-861a-b281b328ef2e ends here
+// base:1 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::fdd9627f-71a8-4a4f-b0a7-9f1d2af71da3][fdd9627f-71a8-4a4f-b0a7-9f1d2af71da3]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*core][core:1]]
 impl FIRE {
     /// Determine whether we have optimized the structure
     pub fn converged(&self, forces: &Vec<Point3D>, displacement_vectors: &Vec<Point3D>) -> bool {
@@ -230,9 +225,9 @@ fn scale_disp_vectors(disp_vectors: &mut Vec<Point3D>, maxdisp: f64) {
         }
     }
 }
-// fdd9627f-71a8-4a4f-b0a7-9f1d2af71da3 ends here
+// core:1 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::ac85201d-3985-4160-886b-1f811e6db4b9][ac85201d-3985-4160-886b-1f811e6db4b9]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*utils][utils:1]]
 #[inline]
 fn vector_dot(vector1: &Vec<[f64; 3]>, vector2: &Vec<[f64; 3]>) -> f64 {
     let n = vector1.len();
@@ -265,9 +260,9 @@ fn test_vector_dot() {
     let x = vector_dot(&a, &b);
     assert_relative_eq!(30.0, x, epsilon=1e-4);
 }
-// ac85201d-3985-4160-886b-1f811e6db4b9 ends here
+// utils:1 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::759e21a2-1f20-4c38-a7c4-9601c1281347][759e21a2-1f20-4c38-a7c4-9601c1281347]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
 use gchemol::Molecule;
 
 #[test]
@@ -303,7 +298,7 @@ fn test_fire_opt() {
             break;
         }
 
-        mol.set_positions(positions);
+        mol.set_positions(&positions).unwrap();
     }
 }
 
@@ -319,4 +314,4 @@ fn test_fire_opt() {
 // ";
 //     Molecule::parse_from(txt, "text/xyz").expect("mol from xyz string")
 // }
-// 759e21a2-1f20-4c38-a7c4-9601c1281347 ends here
+// test:1 ends here

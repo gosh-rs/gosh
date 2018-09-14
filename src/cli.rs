@@ -1,12 +1,14 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::4982806b-0e81-4a97-b5f9-52f6abc5618a][4982806b-0e81-4a97-b5f9-52f6abc5618a]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*cli][cli:1]]
 use quicli::prelude::*;
 use std::process::Command;
+
+
+use gchemol::prelude::*;
 
 use gchemol::{
     self,
     Molecule,
     io,
-    formats,
 };
 
 /// A commander for interactive interpreter
@@ -47,7 +49,7 @@ impl Commander {
             let mol = &self.molecules[0];
             let template = io::read_file(template_file)
                 .map_err(|e| format_err!("failed to load template"))?;
-            let s = formats::template::render_molecule_with(mol, &template)
+            let s = mol.render_with(&template)
                 .map_err(|e| format_err!("failed to render molecule"))?;
             println!("{:}", s);
         } else {
@@ -77,7 +79,7 @@ impl Commander {
     }
 
     pub fn avail(&mut self) -> Result<()> {
-        formats::describe_backends();
+        // formats::describe_backends();
         Ok(())
     }
 
@@ -114,4 +116,4 @@ impl Commander {
         Ok(())
     }
 }
-// 4982806b-0e81-4a97-b5f9-52f6abc5618a ends here
+// cli:1 ends here

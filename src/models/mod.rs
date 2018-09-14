@@ -2,6 +2,7 @@
 use quicli::prelude::*;
 use std::path::{Path, PathBuf};
 
+use gchemol::prelude::*;
 use gchemol::{
     io,
     Molecule
@@ -57,7 +58,7 @@ pub trait ChemicalModel {
 }
 // 894d0c1b-0482-46b9-a3dc-8f00b78833bc ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::ea1864bb-6cc4-42f1-93f5-cebd790c58ab][ea1864bb-6cc4-42f1-93f5-cebd790c58ab]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*parse][parse:1]]
 use std::str::FromStr;
 
 impl FromStr for ModelResults {
@@ -159,4 +160,4 @@ CH2
     let e = r.energy.expect("model result: energy");
     assert_relative_eq!(-0.329336, e, epsilon=1e-4);
 }
-// ea1864bb-6cc4-42f1-93f5-cebd790c58ab ends here
+// parse:1 ends here
