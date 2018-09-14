@@ -5,6 +5,7 @@ import os
 import ase
 import ase.io
 import numpy as np
+import subprocess as sp
 
 from ase.neb import NEB
 # imports:1 ends here
@@ -82,14 +83,14 @@ def set_mopac_calculator_for_sp(atoms):
     from ase.calculators.mopac import MOPAC
 
     # the default relscf parameter in ase is unnecessarily high
-    calc = MOPAC(method="PM6", relscf=0.1)
+    calc = MOPAC(method="PM6", relscf=0.01)
     atoms.set_calculator(calc)
 
 def set_mopac_calculator_for_opt(atoms):
     from ase.calculators.mopac import MOPAC
 
     # the default relscf parameter in ase is unnecessarily high
-    calc = MOPAC(method="PM6", task='GRADIENTS', relscf=0.1)
+    calc = MOPAC(method="PM6", task='GRADIENTS', relscf=0.01)
     atoms.set_calculator(calc)
 
 def mopac_opt(filename):
@@ -210,21 +211,15 @@ def read_images(filename):
 # neb:1 ends here
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*ts][ts:1]]
-def ts_search(images_filename, maxstep=20, method="dftb", keep_image_distance=True, climbing=False):
+def ts_search(images_filename, label=None, maxstep=20, method="dftb", keep_image_distance=True, climbing=False):
     """the main entry point for transition state searching
 
     images_filename: the filename containing multiple molecules (images)
     maxstep        : the max allowed number of steps
     """
-
     # load data
     images = read_images(images_filename)
     print('loaded {} images'.format(len(images)))
-
-    label, _ = os.path.splitext(os.path.basename(images_filename))
-    os.makedirs(label, exist_ok=True)
-    os.chdir(label)
-    print("created working directory: {}".format(label))
 
     # using dftb+
     for image in images:
@@ -236,6 +231,13 @@ def ts_search(images_filename, maxstep=20, method="dftb", keep_image_distance=Tr
             set_mopac_calculator_for_sp(image)
         else:
             raise RuntimeError("wrong calculator!")
+
+    # create working dirs
+    if label is None:
+        label, _ = os.path.splitext(os.path.basename(images_filename))
+    print("created working directory: {}".format(label))
+    os.makedirs(label, exist_ok=True)
+    os.chdir(label)
 
     # start neb calculation without climbing image
     if not climbing:
@@ -271,9 +273,38 @@ def ts_search(images_filename, maxstep=20, method="dftb", keep_image_distance=Tr
 # ts:1 ends here
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*batch][batch:1]]
+def run_boc(nimages, method, qst=False, keep=True):
+    cmdline = "rxview reactant.mol2 product.mol2 rx-boc.xyz -n {} -b --gap".format(nimages)
+    sp.run(cmdline.split())
+    ts_search("rx-boc.xyz", maxstep=500, method=method, keep_image_distance=keep, climbing=False)
+    if qst:
+        cmdline = "rxview reactant.mol2 product.mol2 -m rx-boc/ts.xyz rx-boc-stage2.xyz -n {} -b".format(nimages)
+        sp.run(cmdline.split())
+        ts_search("rx-boc-stage2.xyz", label="rx-boc", maxstep=500, method=method, keep_image_distance=keep, climbing=True)
+    else:
+        ts_search("rx-boc/neb-images.pdb", label="rx-boc", maxstep=500, method=method, keep_image_distance=keep, climbing=True)
+
+def run_lst(nimages, method, qst=False, keep=False):
+    cmdline = "rxview reactant.mol2 product.mol2 rx-lst.xyz -n {} --gap".format(nimages)
+    sp.run(cmdline.split())
+    ts_search("rx-lst.xyz", maxstep=500, method=method, keep_image_distance=keep, climbing=False)
+    if qst:
+        cmdline = "rxview reactant.mol2 product.mol2 -m rx-lst/ts.xyz rx-lst-stage2.xyz -n {}".format(nimages)
+        sp.run(cmdline.split())
+        ts_search("rx-lst-stage2.xyz", label="rx-lst", maxstep=500, method=method, keep_image_distance=keep, climbing=True)
+    else:
+        ts_search("rx-lst/neb-images.pdb", label="rx-lst", maxstep=500, method=method, keep_image_distance=keep, climbing=True)
+
+def run_idpp(nimages, method, qst=False, keep=False):
+    # create rxview images
+    create_neb_images("reactant.xyz", "product.xyz", outfilename="idpp.pdb", scheme="idpp", nimages=nimages)
+    # for idpp using the normal way
+    ts_search("idpp.pdb", maxstep=500, method=method, keep_image_distance=keep, climbing=False)
+    ts_search("idpp/neb-images.pdb", label="idpp", maxstep=500, method=method, keep_image_distance=keep, climbing=True)
+
+
 def run_all(method="dftb", qst=False):
     nimages = 11
-    import subprocess as sp
     cmdline = "babel reactant.mol2 reactant.xyz"
     sp.run(cmdline.split())
 
@@ -287,36 +318,12 @@ def run_all(method="dftb", qst=False):
     elif method == "mopac":
         mopac_opt("reactant.xyz")
         mopac_opt("product.xyz")
-
-    # rxview images
-    # LST style
-    cmdline = "rxview reactant.mol2 product.mol2 rx-lst.xyz -n {}".format(nimages)
-    sp.run(cmdline.split())
-
-    # BOC
-    cmdline = "rxview reactant.mol2 product.mol2 rx-boc.xyz -n {} -b".format(nimages)
-    sp.run(cmdline.split())
-
-    # idpp images
-    create_neb_images("reactant.xyz", "product.xyz", outfilename="idpp.pdb", scheme="idpp", nimages=nimages)
-
-    ts_search("rx-boc.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=False)
-    if qst:
-        cmdline = "rxview reactant.mol2 product.mol2 -m rx-boc/ts.xyz rx-boc-stage2.xyz -n {} -b".format(nimages)
-        sp.run(cmdline.split())
-        ts_search("rx-boc-stage2.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=True)
     else:
-        ts_search("rx-boc/neb-images.pdb", maxstep=500, method=method, keep_image_distance=True, climbing=True)
+        raise RuntimeError("not implemented!")
 
-    ts_search("rx-lst.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=False)
-    if qst:
-        cmdline = "rxview reactant.mol2 product.mol2 -m rx-lst/ts.xyz rx-lst-stage2.xyz -n {} -b".format(nimages)
-        sp.run(cmdline.split())
-        ts_search("rx-lst-stage2.xyz", maxstep=500, method=method, keep_image_distance=True, climbing=True)
-    else:
-        ts_search("rx-lst/neb-images.pdb", maxstep=500, method=method, keep_image_distance=True, climbing=True)
+    run_boc(nimages, method)
+    run_lst(nimages, method)
+    run_idpp(nimages, method)
 
-    # for idpp using the normal way
-    ts_search("idpp.pdb", maxstep=500, method=method, keep_image_distance=False, climbing=False)
-    ts_search("idpp/neb-images.pdb", maxstep=500, method=method, keep_image_distance=False, climbing=True)
+run_all("mopac", qst=False)
 # batch:1 ends here
