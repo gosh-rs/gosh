@@ -1,0 +1,13 @@
+# [[file:~/Workspace/Programming/gosh/gosh.note::*cargo][cargo:1]]
+[package]
+name = "runner"
+version = "0.0.1"
+authors = ["Wenping Guo <ybyygu@gmail.com>"]
+
+[dependencies]
+quicli = "*"
+duct = "*"
+gosh = {path = "../.."}
+#gchemol = { git = "https://github.com/ybyygu/gchemol.git" }
+gchemol = { path = "../../../gchemol" }
+# cargo:1 ends here
