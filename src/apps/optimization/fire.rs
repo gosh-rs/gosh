@@ -301,17 +301,4 @@ fn test_fire_opt() {
         mol.set_positions(&positions).unwrap();
     }
 }
-
-// fn get_test_mol() -> Molecule {
-//     let txt = " 6
-// Title Card Required
-// C              -0.131944         -0.282942          0.315957
-// H               0.401220         -1.210646          0.315957
-// H              -1.201944         -0.282942          0.315957
-// C               0.543331          0.892036          0.315957
-// H               0.010167          1.819741          0.315957
-// H               1.613331          0.892036          0.315957
-// ";
-//     Molecule::parse_from(txt, "text/xyz").expect("mol from xyz string")
-// }
 // test:1 ends here

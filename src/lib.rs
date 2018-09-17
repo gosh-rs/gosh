@@ -1,4 +1,4 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::aab14c1c-34e6-4e2d-b87a-77139ff545df][aab14c1c-34e6-4e2d-b87a-77139ff545df]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
 #![feature(test)]
 extern crate test;
 
@@ -12,5 +12,6 @@ extern crate gchemol;
 extern crate nalgebra;
 
 pub mod models;
+pub mod adaptors;
 pub mod apps;
-// aab14c1c-34e6-4e2d-b87a-77139ff545df ends here
+// base:1 ends here

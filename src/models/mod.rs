@@ -10,28 +10,9 @@ use gchemol::{
 
 pub mod dftb;
 pub mod lj;
+// 894d0c1b-0482-46b9-a3dc-8f00b78833bc ends here
 
-#[derive(Debug, Clone)]
-pub struct ModelResults {
-    pub molecule        : Option<Molecule>,
-    pub energy          : Option<f64>,
-    pub forces          : Option<Vec<[f64; 3]>>,
-    pub dipole_moment   : Option<[f64; 3]>,
-    pub force_constants : Option<Vec<[f64; 3]>>,
-}
-
-impl Default for ModelResults {
-    fn default() -> Self {
-        ModelResults {
-            molecule        : None,
-            energy          : None,
-            forces          : None,
-            dipole_moment   : None,
-            force_constants : None,
-        }
-    }
-}
-
+// [[file:~/Workspace/Programming/gosh/gosh.note::*chemical%20model][chemical model:1]]
 pub trait ChemicalModel {
     /// define how to calculate properties, such as energy, forces, ...
     fn compute(&self, mol: &Molecule) -> Result<ModelResults>;
@@ -51,15 +32,62 @@ pub trait ChemicalModel {
     fn dipole_moment(&self) -> [f64; 3] {
         unimplemented!()
     }
-
-    // fn polarizability(&self) ->
-    // fn dipole_derivatives(&self) ->
-    // fn force_constants(&self) ->
 }
-// 894d0c1b-0482-46b9-a3dc-8f00b78833bc ends here
+// chemical model:1 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*parse][parse:1]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*display/parse][display/parse:1]]
+use std::fmt;
 use std::str::FromStr;
+use std::collections::HashMap;
+
+const MODEL_RESULTS_FORMAT_VERSION: &str = "0.1";
+
+/// The computed results by external application
+#[derive(Debug, Clone, Default)]
+pub struct ModelResults {
+    pub molecule        : Option<Molecule>,
+    pub energy          : Option<f64>,
+    pub forces          : Option<Vec<[f64; 3]>>,
+    pub dipole          : Option<[f64; 3]>,
+    pub force_constants : Option<Vec<[f64; 3]>>,
+    // polarizability
+    // dipole_derivatives
+}
+
+impl fmt::Display for ModelResults {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut txt = format!("@model_results_format_version\n{}\n", MODEL_RESULTS_FORMAT_VERSION);
+
+        // structure
+        if let Some(mol) = &self.molecule {
+            txt.push_str("@structure\n");
+            let coords = mol.format_as("text/pxyz").expect("formatted molecule");
+            txt.push_str(&coords);
+        }
+        // energy
+        if let Some(energy) = &self.energy {
+            txt.push_str("@energy\n");
+            txt.push_str(&format!("{:-20.12E}\n", energy));
+        }
+        // forces
+        if let Some(forces) = &self.forces {
+            txt.push_str("@forces\n");
+            for [fx, fy, fz] in forces {
+                let line = format!("{:-20.12E} {:-20.12E} {:-20.12E}\n", fx, fy, fz);
+                txt.push_str(&line);
+            }
+        }
+
+        // dipole moments
+        if let Some(d) = &self.dipole {
+            txt.push_str("@dipole\n");
+            let line = format!("{:-20.12E} {:-20.12E} {:-20.12E}\n", d[0], d[1], d[2]);
+            txt.push_str(&line);
+        }
+
+        write!(f, "{}", txt)
+    }
+}
 
 impl FromStr for ModelResults {
     type Err = Error;
@@ -72,92 +100,101 @@ impl FromStr for ModelResults {
 fn parse_model_results(stream: &str) -> Result<ModelResults>{
     let mut results = ModelResults::default();
 
-    let mut lines = stream.lines().peekable();
-    loop {
-        if let Some(line) = lines.next() {
-            if line.starts_with("@") {
-                let header = line.split_whitespace().next();
-                match header {
-                    Some("@total_energy") => {
-                        if let Some(line) = lines.next() {
-                            let energy = line
-                                .trim()
-                                .parse()?;
-                            results.energy = Some(energy);
-                        } else {
-                            warn!("expected energy record not found!");
-                            break;
-                        }
-                    },
-                    Some("@forces") => {
-                        // unimplemented!()
-                    },
-                    Some("@dipole_moments") => {
-                        // unimplemented!()
-                    },
-                    Some("@structure") => {
-                        let mut s = String::new();
-                        loop {
-                            // easy return for next record
-                            if let Some(line) = lines.peek() {
-                                if line.starts_with("@") {
-                                    break;
-                                }
-                            } else {
-                                // file end
-                                break;
-                            }
-                            // read lines for structure
-                            if let Some(line) = lines.next() {
-                                s.push_str(&format!("{}\n", line));
-                            } else {
-                                // file end
-                                break;
-                            }
-                        }
+    // ignore commenting lines or blank lines
+    let mut lines = stream.lines()
+        .filter(|l| {
+            let l = l.trim();
+            ! l.starts_with("#") && ! l.is_empty()
+        })
+        .peekable();
 
-                        let mol = Molecule::parse_from(s, "text/xyz")?;
-                        results.molecule = Some(mol);
-                    }
-                    _ => {
-                        warn!("ignored header: {:?}", header);
-                    }
-                }
-            }
+    // collect records as header separated lines
+    // blank lines are ignored
+    let mut records: HashMap<&str, Vec<&str>> = HashMap::new();
+    let mut header = None;
+    for line in lines {
+        let line = line.trim();
+        if line.starts_with("@") {
+            header = line.split_whitespace().next();
         } else {
-            // file end
-            break;
+            if let Some(k) = header{
+                records
+                    .entry(k)
+                    .or_insert(vec![])
+                    .push(line);
+            }
+        }
+    }
+
+    // parse record values
+    if records.len() < 1 {
+        warn!("collected no results!");
+    }
+
+    for (k, lines) in records {
+        match k {
+            "@energy" => {
+                assert_eq!(1, lines.len(), "expect one line containing energy");
+                let energy = lines[0].trim().parse()?;
+                results.energy = Some(energy);
+            },
+            "@forces" => {
+                let mut forces: Vec<[f64; 3]> = vec![];
+                for line in lines {
+                    let parts: Vec<_> = line.split_whitespace().collect();
+                    if parts.len() != 3 {
+                        bail!("expect xyz forces: {}", line);
+                    }
+                    let fx = parts[0].parse()?;
+                    let fy = parts[1].parse()?;
+                    let fz = parts[2].parse()?;
+                    forces.push([fx, fy, fz]);
+                }
+
+                results.forces = Some(forces);
+            },
+            "@structure" => {
+                let mut s = lines.join("\n");
+                s.push_str("\n\n");
+                let mol = Molecule::parse_from(s, "text/pxyz")?;
+                results.molecule = Some(mol);
+            },
+            "@dipole" => {
+                assert_eq!(1, lines.len(), "expect one line containing dipole moment");
+                let parts: Vec<_> = lines[0].split_whitespace().collect();
+                let fx = parts[0].parse()?;
+                let fy = parts[1].parse()?;
+                let fz = parts[2].parse()?;
+                results.dipole = Some([fx, fy, fz]);
+            }
+            _ => {
+                warn!("ignored record: {:?}", k);
+            }
         }
     }
 
     Ok(results)
 }
+// display/parse:1 ends here
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
 #[test]
 fn test_model_parse_results() {
-    let output = "@result_file_format_version
-0.1
-@structure
-3
-CH2
-    C      7.50000000     11.59838500     11.36570800
-    H     12.79336700     22.88608500     13.03115500
-    H     25.95160100      9.92351500     13.03115500
-@total_energy        R 1
- -0.32933619218901E+00
-@dipole_moments      R 3
-  0.00000000000000E+00  0.00000000000000E+00  0.00000000000000E+00
-@forces              R 9
- -0.10525500903260E-03 -0.49341715067988E-04 -0.41578514351576E-04
- -0.10538090864721E-03 -0.44152035166424E-04 -0.46770596426924E-04
-  0.11741769879568E-03 -0.22970049507365E-03 -0.64344681036487E-04
-";
+    use gchemol::io;
 
-    let r = parse_model_results(output).expect("model results");
-    assert!(r.molecule.is_some());
-    assert_eq!(3, r.molecule.unwrap().natoms());
+    let txt = io::read_file("tests/files/model_results/sample.txt").unwrap();
+    let r = parse_model_results(&txt).expect("model results");
 
-    let e = r.energy.expect("model result: energy");
+    // reformat
+    let txt = format!("{}", r);
+
+    // parse again
+    let r = parse_model_results(&txt).expect("model results");
+
+    assert!(&r.molecule.is_some());
+    let ref mol = r.molecule.unwrap();
+    assert_eq!(3, mol.natoms());
+    let e = &r.energy.expect("model result: energy");
     assert_relative_eq!(-0.329336, e, epsilon=1e-4);
 }
-// parse:1 ends here
+// test:1 ends here

@@ -11,8 +11,8 @@ duct = "0.10"
 nalgebra = "*"
 linefeed = {git = "https://github.com/murarth/linefeed.git", rev="6ba931f" }
 #linefeed = "0.5"
-gchemol = {rev="v0.0.21", path = "/home/ybyygu/Workspace/Programming/gchemol" }
-#gchemol = {git = "https://github.com/ybyygu/gchemol.git" }
+#gchemol = {rev="v0.0.21", path = "/home/ybyygu/Workspace/Programming/gchemol" }
+gchemol = {git = "https://github.com/ybyygu/gchemol.git" }
 
 [dev-dependencies]
 approx = "0.3"
