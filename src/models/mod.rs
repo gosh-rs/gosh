@@ -105,8 +105,7 @@ fn parse_model_results(stream: &str) -> Result<ModelResults>{
         .filter(|l| {
             let l = l.trim();
             ! l.starts_with("#") && ! l.is_empty()
-        })
-        .peekable();
+        });
 
     // collect records as header separated lines
     // blank lines are ignored
