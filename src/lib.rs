@@ -1,4 +1,5 @@
 // [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
+#![feature(generators, generator_trait)]
 #![feature(test)]
 extern crate test;
 

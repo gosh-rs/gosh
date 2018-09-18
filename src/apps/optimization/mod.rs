@@ -5,7 +5,10 @@ use gchemol::geometry::prelude::*;
 
 type Point3D = [f64; 3];
 
-pub trait Optimizer {
+pub trait Optimizer: Application {
+    /// return displacement vectors predicted by the optimizer
+    fn displacements(&self, mr: &ModelProperties) -> Result<Vec<Point3D>>;
+
     /// test if optimization converged
     fn converged(&self, displacements: &Vec<Point3D>, mr: &ModelProperties) -> bool;
 
@@ -20,7 +23,13 @@ pub trait Optimizer {
     fn set_displacements(&mut self, displacements: &Vec<Point3D>);
 
     /// carry out optimization
-    fn run(&mut self) -> Result<()> {
+    /// # Parameters
+    /// - fmax: the convergence criteria of forces
+    /// # Panics
+    /// if fmax is not positive number.
+    fn run(&mut self, fmax: f64) -> Result<()> {
+        assert!(!fmax.is_sign_positive());
+
         let n = self.max_iter();
         let mut icycle = 0;
         loop {
@@ -44,9 +53,6 @@ pub trait Optimizer {
 
         Ok(())
     }
-
-    /// return displacement vectors predicted by the optimizer
-    fn displacements(&self, mr: &ModelProperties) -> Result<Vec<Point3D>>;
 }
 
 pub mod fire;

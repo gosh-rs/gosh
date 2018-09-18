@@ -263,10 +263,9 @@ fn test_vector_dot() {
 // utils:1 ends here
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
-use gchemol::Molecule;
-
 #[test]
 fn test_fire_opt() {
+    use gchemol::Molecule;
     use models::ChemicalModel;
     use models::lj::LennardJones;
 
