@@ -3,17 +3,25 @@
 // :header-args: :comments org :tangle src/adaptors/mopac.rs
 // :END:
 
-use quicli::prelude::*;
+use super::*;
+
 use gchemol::{
     io,
     Atom,
     Molecule,
 };
-use models::*;
 
 const DEBYE: f64 = 0.20819434;
 
-pub fn parse_mopac_output(output: &str) -> Result<ModelProperties> {
+pub struct MOPAC();
+
+impl ModelAdaptor for MOPAC {
+    fn parse_stream(&self, output: &str) -> Result<ModelProperties> {
+        parse_mopac_output(output)
+    }
+}
+
+fn parse_mopac_output(output: &str) -> Result<ModelProperties> {
     let mut mresults = ModelProperties::default();
     let mut lines = output.lines();
 

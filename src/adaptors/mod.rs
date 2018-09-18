@@ -3,8 +3,22 @@
 // :header-args: :comments org :tangle src/adaptors/mod.rs
 // :END:
 
-pub mod mopac;
+use std::path::Path;
+use models::*;
+use quicli::prelude::*;
 
-// pub trait ModelAdaptor {
-//     fn parse_output(outfile: PathBuf) -> Result<ModelProperties>;
-// }
+use gchemol::io;
+
+pub trait ModelAdaptor {
+    /// Parse calculated properties from output file.
+    fn parse_outfile(&self, outfile: &Path) -> Result<ModelProperties> {
+        let output = io::read_file(outfile)?;
+        self.parse_stream(&output)
+    }
+
+    /// Parse calculated properties from text stream.
+    fn parse_stream(&self, output: &str) -> Result<ModelProperties>;
+}
+
+mod mopac;
+pub use self::mopac::MOPAC;
