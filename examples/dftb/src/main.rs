@@ -1,4 +1,4 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::30323446-c43a-499f-857d-ee6245a729f6][30323446-c43a-499f-857d-ee6245a729f6]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*src][src:1]]
 #[macro_use] extern crate duct;
 #[macro_use] extern crate quicli;
 
@@ -28,4 +28,4 @@ main!(|args: Cli, log_level: verbosity| {
     let mresults = dftb::run(&mol, args.runfile)?;
     println!("{:#?}", mresults.energy);
 });
-// 30323446-c43a-499f-857d-ee6245a729f6 ends here
+// src:1 ends here

@@ -13,8 +13,8 @@ use models::*;
 
 const DEBYE: f64 = 0.20819434;
 
-pub fn parse_mopac_output(output: &str) -> Result<ModelResults> {
-    let mut mresults = ModelResults::default();
+pub fn parse_mopac_output(output: &str) -> Result<ModelProperties> {
+    let mut mresults = ModelProperties::default();
     let mut lines = output.lines();
 
     // collect energy

@@ -1,5 +1,5 @@
 # meta data, optional
-@model_result_file_format_version
+@model_properties_file_format_version
 0.1
 
 # total energy of system
@@ -17,9 +17,11 @@
     C      7.50000000     11.59838500     11.36570800
     H     12.79336700     22.88608500     13.03115500
     H     25.95160100      9.92351500     13.03115500
+
 # dipole moment, optinal, in 3xN
 @dipole
   0.00000000000000E+00  0.00000000000000E+00  0.00000000000000E+00
+
 # polarizability, optional, in 3xN
 @polarizability
  -0.54370868654757E-04 -0.12910053360377E-03  0.58525261312289E-04

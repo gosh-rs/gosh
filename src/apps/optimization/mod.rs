@@ -7,10 +7,10 @@ type Point3D = [f64; 3];
 
 pub trait Optimizer {
     /// test if optimization converged
-    fn converged(&self, displacements: &Vec<Point3D>, mr: &ModelResults) -> bool;
+    fn converged(&self, displacements: &Vec<Point3D>, mr: &ModelProperties) -> bool;
 
     /// Return the model for optimization
-    fn model_results(&self) -> Result<ModelResults>;
+    fn model_results(&self) -> Result<ModelProperties>;
 
     /// Return the max allowed iterations
     fn max_iter(&self) -> usize {
@@ -46,7 +46,7 @@ pub trait Optimizer {
     }
 
     /// return displacement vectors predicted by the optimizer
-    fn displacements(&self, mr: &ModelResults) -> Result<Vec<Point3D>>;
+    fn displacements(&self, mr: &ModelProperties) -> Result<Vec<Point3D>>;
 }
 
 pub mod fire;

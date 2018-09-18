@@ -1,4 +1,4 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::fdd244b4-5403-411a-8cc9-d3782769762e][fdd244b4-5403-411a-8cc9-d3782769762e]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*dftb.rs][dftb.rs:1]]
 use super::*;
 
 pub struct DftbModel {
@@ -14,7 +14,7 @@ impl Default for DftbModel {
 }
 
 // perform dftb+ calculations
-pub fn run<P: Into<PathBuf>>(mol: &Molecule, runfile: P) -> Result<ModelResults> {
+pub fn run<P: Into<PathBuf>>(mol: &Molecule, runfile: P) -> Result<ModelProperties> {
     let runfile = runfile.into();
     let txt = mol.format_as("dftb/input")?;
 
@@ -31,14 +31,14 @@ pub fn run<P: Into<PathBuf>>(mol: &Molecule, runfile: P) -> Result<ModelResults>
                                  e)
         )?;
 
-    let x: ModelResults = output.parse()?;
+    let x: ModelProperties = output.parse()?;
 
     Ok(x)
 }
 
 impl ChemicalModel for DftbModel {
-    fn compute(&self, mol: &Molecule) -> Result<ModelResults> {
+    fn compute(&self, mol: &Molecule) -> Result<ModelProperties> {
         run(&mol, &self.runfile)
     }
 }
-// fdd244b4-5403-411a-8cc9-d3782769762e ends here
+// dftb.rs:1 ends here

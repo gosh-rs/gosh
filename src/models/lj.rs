@@ -38,7 +38,7 @@ impl LennardJones {
 }
 
 impl ChemicalModel for LennardJones {
-    fn compute(&self, mol: &Molecule) -> Result<ModelResults> {
+    fn compute(&self, mol: &Molecule) -> Result<ModelProperties> {
         if mol.lattice.is_some() {
             warn!("LJ model: periodic lattice will be ignored!");
         }
@@ -70,7 +70,7 @@ impl ChemicalModel for LennardJones {
             }
         }
 
-        let mut mr = ModelResults::default();
+        let mut mr = ModelProperties::default();
         mr.energy = Some(energy);
 
         if self.derivative_order >= 1 {

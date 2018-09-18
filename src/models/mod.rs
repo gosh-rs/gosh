@@ -15,7 +15,7 @@ pub mod lj;
 // [[file:~/Workspace/Programming/gosh/gosh.note::*chemical%20model][chemical model:1]]
 pub trait ChemicalModel {
     /// define how to calculate properties, such as energy, forces, ...
-    fn compute(&self, mol: &Molecule) -> Result<ModelResults>;
+    fn compute(&self, mol: &Molecule) -> Result<ModelProperties>;
 
     fn positions(&self) -> Vec<[f64; 3]> {
         unimplemented!()
@@ -40,11 +40,11 @@ use std::fmt;
 use std::str::FromStr;
 use std::collections::HashMap;
 
-const MODEL_RESULTS_FORMAT_VERSION: &str = "0.1";
+const MODEL_PROPERTIES_FORMAT_VERSION: &str = "0.1";
 
 /// The computed results by external application
 #[derive(Debug, Clone, Default)]
-pub struct ModelResults {
+pub struct ModelProperties {
     pub molecule        : Option<Molecule>,
     pub energy          : Option<f64>,
     pub forces          : Option<Vec<[f64; 3]>>,
@@ -54,9 +54,9 @@ pub struct ModelResults {
     // dipole_derivatives
 }
 
-impl fmt::Display for ModelResults {
+impl fmt::Display for ModelProperties {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut txt = format!("@model_results_format_version\n{}\n", MODEL_RESULTS_FORMAT_VERSION);
+        let mut txt = format!("@model_properties_format_version\n{}\n", MODEL_PROPERTIES_FORMAT_VERSION);
 
         // structure
         if let Some(mol) = &self.molecule {
@@ -89,7 +89,7 @@ impl fmt::Display for ModelResults {
     }
 }
 
-impl FromStr for ModelResults {
+impl FromStr for ModelProperties {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
@@ -97,8 +97,8 @@ impl FromStr for ModelResults {
     }
 }
 
-fn parse_model_results(stream: &str) -> Result<ModelResults>{
-    let mut results = ModelResults::default();
+fn parse_model_results(stream: &str) -> Result<ModelProperties>{
+    let mut results = ModelProperties::default();
 
     // ignore commenting lines or blank lines
     let mut lines = stream.lines()
