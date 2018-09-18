@@ -11,6 +11,8 @@ use gchemol::{
 };
 use models::*;
 
+const DEBYE: f64 = 0.20819434;
+
 pub fn parse_mopac_output(output: &str) -> Result<ModelResults> {
     let mut mresults = ModelResults::default();
     let mut lines = output.lines();
@@ -69,7 +71,8 @@ pub fn parse_mopac_output(output: &str) -> Result<ModelResults> {
             let pos: f64  = parts[5].parse()?;
             let grad: f64 = parts[6].parse()?;
             let i = i % 3;
-            force[i] = - grad;
+            // kcal/mol to eV
+            force[i] = grad / -23.061;
             position[i] = pos;
             if i == 2 {
                 forces.push(force.clone());
@@ -96,10 +99,10 @@ pub fn parse_mopac_output(output: &str) -> Result<ModelResults> {
         if let Some(line) = lines.next() {
             let parts: Vec<_> = line.split_whitespace().collect();
             debug_assert_eq!(5, parts.len(), "{:?}", parts);
-            let x = parts[1].parse()?;
-            let y = parts[2].parse()?;
-            let z = parts[3].parse()?;
-            mresults.dipole = Some([x, y, z]);
+            let x: f64 = parts[1].parse()?;
+            let y: f64 = parts[2].parse()?;
+            let z: f64 = parts[3].parse()?;
+            mresults.dipole = Some([x * DEBYE, y * DEBYE, z * DEBYE]);
         } else {
             warn!("incomplete file, missing dipole record.");
         }

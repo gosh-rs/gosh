@@ -90,7 +90,7 @@ fn safe_call(runfile: &PathBuf, input: &str, dry: bool) -> Result<()> {
             )?;
 
         let x: ModelResults = output.parse()?;
-        println!("{:?}", x.energy);
+        println!("{:}", x);
     } else {
         info!("dry run mode");
     }
