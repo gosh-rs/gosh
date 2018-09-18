@@ -181,7 +181,7 @@ fn parse_model_results(stream: &str) -> Result<ModelResults>{
 fn test_model_parse_results() {
     use gchemol::io;
 
-    let txt = io::read_file("tests/files/model_results/sample.txt").unwrap();
+    let txt = io::read_file("tests/files/models/sample.txt").unwrap();
     let r = parse_model_results(&txt).expect("model results");
 
     // reformat
