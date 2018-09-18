@@ -11,7 +11,8 @@ use gchemol::io;
 
 pub trait ModelAdaptor {
     /// Parse calculated properties from output file.
-    fn parse_outfile(&self, outfile: &Path) -> Result<ModelProperties> {
+    fn parse_outfile<P: AsRef<Path>>(&self, outfile: P) -> Result<ModelProperties> {
+        let outfile = outfile.as_ref();
         let output = io::read_file(outfile)?;
         self.parse_stream(&output)
     }

@@ -1,7 +1,4 @@
-// mopac.rs
-// :PROPERTIES:
-// :header-args: :comments org :tangle src/adaptors/mopac.rs
-// :END:
+// base
 
 use super::*;
 use std::str::Lines;
@@ -151,4 +148,27 @@ fn get_tagged_line(lines: &mut Lines, tag: &str) -> Option<String> {
 
     // EOF
     None
+}
+
+// test
+
+#[test]
+fn test_mopac_parse() {
+    use gchemol::io;
+    let fname = "tests/files/models/mopac/mopac.out";
+
+    let m = MOPAC();
+    let mr = m.parse_outfile(fname).unwrap();
+
+    assert_relative_eq!(-720.18428, mr.energy.unwrap(), epsilon=1e-4);
+
+    let dipole = mr.dipole.unwrap();
+    assert_relative_eq!(0.10742828, dipole[0], epsilon=1e-4);
+
+    let forces = mr.forces.unwrap();
+    assert_eq!(13, forces.len());
+    assert_relative_eq!(0.33629483, forces[0][0], epsilon=1e-4);
+
+    let mol = mr.molecule.unwrap();
+    assert_eq!(13, mol.natoms());
 }
