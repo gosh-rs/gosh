@@ -15,14 +15,13 @@ const DEBYE: f64 = 0.20819434;
 pub struct MOPAC();
 
 impl ModelAdaptor for MOPAC {
-    fn parse_stream(&self, output: &str) -> Result<ModelProperties> {
-        parse_mopac_output(output)
+    fn parse_all(&self, output: &str) -> Result<Vec<ModelProperties>> {
+        parse_mopac_output(&output)
     }
 }
 
-fn parse_mopac_output(output: &str) -> Result<ModelProperties> {
+fn parse_mopac_output(output: &str) -> Result<Vec<ModelProperties>> {
     let mut lines = output.lines();
-
     let mut generator = || {
         let mut mresults = ModelProperties::default();
 
@@ -127,13 +126,8 @@ fn parse_mopac_output(output: &str) -> Result<ModelProperties> {
         }
     }
 
-    let n = all_results.len();
-    if n != 0 {
-        Ok(all_results[n-1].clone())
-    } else {
-        bail!("got nothing!");
-    }
 
+    Ok(all_results)
 }
 
 // jump to the line containg a special tag (using starts_with, ignoring leading

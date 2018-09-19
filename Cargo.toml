@@ -9,6 +9,7 @@ approx = "*"
 quicli = "*"
 duct = "0.10"
 nalgebra = "*"
+nom = "4.0"
 linefeed = {git = "https://github.com/murarth/linefeed.git", rev="6ba931f" }
 #linefeed = "0.5"
 #gchemol = {rev="v0.0.21", path = "/home/ybyygu/Workspace/Programming/gchemol" }
