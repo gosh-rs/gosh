@@ -1,8 +1,8 @@
 // base
 
 use super::*;
+use std::fs::File;
 use std::str::Lines;
-use std::ops::{Generator, GeneratorState};
 
 use gchemol::{
     io,
@@ -10,138 +10,34 @@ use gchemol::{
     Molecule,
 };
 
+// unit conversion
 const DEBYE: f64 = 0.20819434;
+const KCAL_MOL: f64 = 1.0/23.061;
 
 pub struct MOPAC();
 
 impl ModelAdaptor for MOPAC {
-    fn parse_all(&self, output: &str) -> Result<Vec<ModelProperties>> {
-        parse_mopac_output(&output)
-    }
-}
+    fn parse_all<P: AsRef<Path>>(&self, outfile: P) -> Result<Vec<ModelProperties>> {
+        let outfile = outfile.as_ref();
+        let f = File::open(outfile)?;
 
-fn parse_mopac_output(output: &str) -> Result<Vec<ModelProperties>> {
-    let mut lines = output.lines();
-    let mut generator = || {
-        let mut mresults = ModelProperties::default();
+        let mut parser = TextParser::default();
+        let mut all = vec![];
+        parser.parse(f, mopac_output, |p| all.push(p))?;
 
-        let mut found = false;
-
-        // collect energy
-        if let Some(line) = get_tagged_line(&mut lines, "TOTAL ENERGY") {
-            let parts: Vec<_> = line.split_whitespace().collect();
-            assert_eq!(5, parts.len(), "expect line containing energy: {:?}", parts);
-            let energy = parts[3].parse()?;
-            mresults.energy = Some(energy);
-            found = true;
-        }
-
-        // collect forces
-        //
-        // reference text:
-        //        FINAL  POINT  AND  DERIVATIVES
-        //
-        // PARAMETER     ATOM    TYPE            VALUE       GRADIENT
-        //     1          1  C    CARTESIAN X    -1.611300    -2.127778  KCAL/ANGSTROM
-        //     2          1  C    CARTESIAN Y    -0.850600   -13.758186  KCAL/ANGSTROM
-        //     3          1  C    CARTESIAN Z     0.144200     5.137547  KCAL/ANGSTROM
-        // ...
-
-        if let Some(_) = get_tagged_line(&mut lines, "FINAL  POINT  AND  DERIVATIVES") {
-            // ignore the next two lines
-            lines.next();
-            lines.next();
-
-            let mut mol = Molecule::new("mopc");
-            let mut forces    = vec![];
-
-            let mut force     = [0.0; 3];
-            let mut position  = [0.0; 3];
-            for (i, line) in lines.by_ref().enumerate() {
-                let line = line.trim();
-
-                // record ending
-                if line.is_empty() {
-                    break;
-                }
-
-                let parts: Vec<_> = line.split_whitespace().collect();
-                assert_eq!(8, parts.len(), "incorrect: {:?}", parts);
-                let sym  = parts[2];
-                let pos: f64  = parts[5].parse()?;
-                let grad: f64 = parts[6].parse()?;
-                let i = i % 3;
-                // kcal/mol to eV
-                force[i] = grad / -23.061;
-                position[i] = pos;
-                if i == 2 {
-                    forces.push(force.clone());
-                    mol.add_atom(Atom::new(sym, position));
-                }
-            }
-
-            if mol.natoms() < 1 {
-                bail!("forces are incomplete!");
-            }
-
-            mresults.molecule = Some(mol);
-            mresults.forces = Some(forces);
-            found = true;
-        }
-
-        // dipole
-        if let Some(_) = get_tagged_line(&mut lines, "DIPOLE") {
-            lines.next();
-            lines.next();
-
-            if let Some(line) = lines.next() {
-                let parts: Vec<_> = line.split_whitespace().collect();
-                debug_assert_eq!(5, parts.len(), "{:?}", parts);
-                let x: f64 = parts[1].parse()?;
-                let y: f64 = parts[2].parse()?;
-                let z: f64 = parts[3].parse()?;
-                mresults.dipole = Some([x * DEBYE, y * DEBYE, z * DEBYE]);
-                found = true;
-            } else {
-                warn!("incomplete file, missing dipole record.");
-            }
-        }
-
-        if found {
-            yield mresults;
-        }
-
-        Ok(())
-    };
-
-    let mut all_results = vec![];
-    loop {
-        match unsafe {generator.resume()} {
-            GeneratorState::Yielded(mresults) => {
-                all_results.push(mresults);
-            },
-            GeneratorState::Complete(_) => {
-                break;
-            }
-        }
+        Ok(all)
     }
 
+    fn parse_last<P: AsRef<Path>>(&self, outfile: P) -> Result<ModelProperties> {
+        let outfile = outfile.as_ref();
+        let f = File::open(outfile)?;
 
-    Ok(all_results)
-}
+        let mut parser = TextParser::default();
+        let mut last = ModelProperties::default();
+        parser.parse(f, mopac_output, |p| last = p)?;
 
-// jump to the line containg a special tag (using starts_with, ignoring leading
-// spaces)
-// Return the consumed line if found
-fn get_tagged_line(lines: &mut Lines, tag: &str) -> Option<String> {
-    for line in lines.by_ref() {
-        if line.trim_left().starts_with(tag) {
-            return Some(line.to_string())
-        }
+        Ok(last)
     }
-
-    // EOF
-    None
 }
 
 // nom
@@ -158,40 +54,20 @@ macro_rules! sp (
     )
 );
 
-//  **                                MOPAC2016                                  **
-named!(mopac_header<&str, (&str, &str)>, do_parse!(
-       sp!(tag!("**"))    >>
-    m: sp!(tag!("MOPAC")) >>
-    v: digit              >>
-       sp!(tag!("**"))    >>
-    (
-        (m, v)
-    )
-));
-
-#[test]
-fn test_mopac_header() {
-    let line = " **                                MOPAC2016                                  **";
-    let (r, (m, v)) = mopac_header(line).unwrap();
-    assert!(r == "");
-    assert!(m == "MOPAC");
-    assert!(v == "2016");
-}
-
-
 //           TOTAL ENERGY            =       -720.18428 EV
-named!(total_energy<&str, f64>, do_parse!(
-            sp!(tag!("TOTAL ENERGY")) >>
-            sp!(tag!("="))            >>
-    energy: sp!(double_s)             >>
-            sp!(tag!("EV"))           >>
+named!(get_total_energy<&str, f64>, do_parse!(
+            take_until!("TOTAL ENERGY            =") >>
+            tag!("TOTAL ENERGY")                     >>
+            sp!(tag!("="))                           >>
+    energy: sp!(double_s)                            >>
+            sp!(tag!("EV"))                          >>
     (energy)
 ));
 
 #[test]
 fn test_mopac_energy() {
-    let line = "          TOTAL ENERGY            =       -720.18428 EV";
-    let (r, en) = total_energy(line).unwrap();
+    let line = "TOTAL ENERGY            =       -720.18428 EV";
+    let (r, en) = get_total_energy(line).unwrap();
     assert!(r == "");
     assert_relative_eq!(-720.18428, en, epsilon=1e-4);
 }
@@ -200,15 +76,14 @@ fn test_mopac_energy() {
 //  POINT-CHG.    -0.521    -0.058     0.081     0.531
 //  HYBRID        -0.027    -0.069    -0.010     0.075
 //  SUM           -0.548    -0.127     0.071     0.567
-named!(dipole<&str, [f64; 3]>, do_parse!(
-        sp!(tag!("DIPOLE")) >> read_until_eol >>
+named!(get_dipole<&str, [f64; 3]>, do_parse!(
+        take_until!("DIPOLE           X         Y         Z") >> read_until_eol >>
         read_until_eol      >>
         read_until_eol      >>
         sp!(tag!("SUM"))    >>
     x:  sp!(double_s)       >>
     y:  sp!(double_s)       >>
     z:  sp!(double_s)       >>
-        read_until_eol      >>
 
     (
         [x, y, z]
@@ -222,7 +97,7 @@ fn test_mopac_dipole() {
  HYBRID        -0.027    -0.069    -0.010     0.075
  SUM           -0.548    -0.127     0.071     0.567
 ";
-    let (r, [x, y, z]) = dipole(txt).unwrap();
+    let (r, [x, y, z]) = get_dipole(txt).unwrap();
     assert_eq!(-0.548, x);
     assert_eq!(-0.127, y);
     assert_eq!(0.071, z);
@@ -237,7 +112,6 @@ fn test_mopac_dipole() {
 //     4          2  C    CARTESIAN X     1.631900     2.353930  KCAL/ANGSTROM
 //     5          2  C    CARTESIAN Y    -0.872000    -7.974745  KCAL/ANGSTROM
 //     6          2  C    CARTESIAN Z    -0.127300    12.066852  KCAL/ANGSTROM
-
 named!(sym_position_gradient<&str, (&str, f64, f64)>, do_parse!(
               sp!(digit)                               >>
               sp!(digit)                               >>
@@ -275,8 +149,10 @@ named!(get_atom<&str, Atom>, do_parse!(
 ));
 
 named!(get_atoms<&str, Vec<Atom>>, do_parse!(
-           sp!(tag!("PARAMETER")) >> read_until_eol >>
-    atoms: many1!(get_atom) >>
+    take_until!("FINAL  POINT  AND  DERIVATIVES") >> read_until_eol >>
+           read_until_eol                         >>
+           read_until_eol                         >>
+    atoms: many1!(get_atom)                       >>
 
     (
         atoms
@@ -285,7 +161,9 @@ named!(get_atoms<&str, Vec<Atom>>, do_parse!(
 
 #[test]
 fn test_atoms() {
-    let txt = "   PARAMETER     ATOM    TYPE            VALUE       GRADIENT
+    let txt = "       FINAL  POINT  AND  DERIVATIVES
+
+   PARAMETER     ATOM    TYPE            VALUE       GRADIENT
       1          1  C    CARTESIAN X    -1.743000   -80.695675  KCAL/ANGSTROM
       2          1  C    CARTESIAN Y    -0.725100    73.306387  KCAL/ANGSTROM
       3          1  C    CARTESIAN Z     0.044900   -23.565223  KCAL/ANGSTROM
@@ -305,6 +183,46 @@ fn test_atoms() {
     assert_eq!(atoms[0].position(), [-1.7430, -0.7251, 0.0449]);
 }
 
+named!(mopac_output<&str, ModelProperties>, do_parse!(
+    // make sure it is a normal mopac output file
+    take_until!("Cite this program as: MOPAC") >>
+    // force consistent energy
+    energy : get_total_energy                  >>
+    // structure and gradients (stored as momentum)
+    atoms  : get_atoms                         >>
+    // dipole moment
+    dipole : get_dipole                        >>
+
+    (
+        {
+            let mut p = ModelProperties::default();
+            p.energy = Some(energy);
+            p.dipole = Some([
+                dipole[0] * DEBYE,
+                dipole[1] * DEBYE,
+                dipole[2] * DEBYE,
+            ]);
+
+            let mut mol = Molecule::new("mopac");
+            let mut forces = vec![];
+            for a in atoms {
+                let [x, y, z] = a.momentum();
+
+                forces.push([
+                    -x * KCAL_MOL,
+                    -y * KCAL_MOL,
+                    -z * KCAL_MOL,
+                ]);
+                mol.add_atom(a);
+            }
+            p.forces = Some(forces);
+            p.molecule = Some(mol);
+
+            p
+        }
+    )
+));
+
 // test
 
 #[test]
@@ -313,7 +231,7 @@ fn test_mopac_parse() {
     let fname = "tests/files/models/mopac/mopac.out";
 
     let m = MOPAC();
-    let mr = m.parse_outfile(fname).unwrap();
+    let mr = m.parse_last(fname).unwrap();
 
     assert_relative_eq!(-720.18428, mr.energy.unwrap(), epsilon=1e-4);
 

@@ -13,32 +13,19 @@ use nom::{self, IResult};
 use gchemol::io;
 use models::*;
 
+/// Common interface for model adaptors
 pub trait ModelAdaptor {
-    /// Parse calculated properties from output file.
-    fn parse_outfile<P: AsRef<Path>>(&self, outfile: P) -> Result<ModelProperties> {
-        let outfile = outfile.as_ref();
-        let output = io::read_file(outfile)?;
-        self.parse_one(&output)
-    }
-
-    /// Parse a single entry of ModelProperties from line oriented iterator
-    fn parse_one(&self, output: &str) -> Result<ModelProperties> {
-        let mlist = self.parse_all(output)?;
-        let n = mlist.len();
-
-        // take the last part
-        if n > 0 {
-            Ok(mlist[n-1].clone())
-        } else {
-            bail!("got nothing!");
-        }
-    }
+    /// Parse the last entry of ModelProperties from a calculation output file
+    /// # Return
+    /// - ModelProperties, the calculated properties, including energy, forces, ...
+    fn parse_last<P: AsRef<Path>>(&self, outfile: P) -> Result<ModelProperties>;
 
     /// Parse all properties in multi-step calculation, sush as optimization or
     /// multi-molecule batch calculation.
     ///
-    /// Return a list of ModelProperties
-    fn parse_all(&self, output: &str) -> Result<Vec<ModelProperties>>;
+    /// # Return
+    /// - a list of ModelProperties
+    fn parse_all<P: AsRef<Path>>(&self, outfile: P) -> Result<Vec<ModelProperties>>;
 }
 
 pub struct TextParser {
@@ -46,6 +33,7 @@ pub struct TextParser {
     nlines: usize,
 }
 
+/// General interface for parsing a large text file
 impl Default for TextParser {
     fn default() -> Self {
         TextParser {

@@ -1,4 +1,5 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::*src][src:1]]
+// src
+
 #[macro_use] extern crate duct;
 #[macro_use] extern crate quicli;
 
@@ -57,7 +58,9 @@ main!(|args: Cli, log_level: verbosity| {
         for mol in mols.iter() {
             let txt = mol.render_with(&template)?;
             // 3. call external engine
-            safe_call(&args.runfile, &txt, args.dry);
+            let output = safe_call(&args.runfile, &txt, args.dry)?;
+            let x: ModelProperties = output.parse()?;
+            println!("{:}", x);
         }
     } else {
         info!("run in batch mode ...");
@@ -66,21 +69,23 @@ main!(|args: Cli, log_level: verbosity| {
             let part = mol.render_with(&template)?;
             txt.push_str(&part);
         }
-        println!("{:}", txt);
         // 3. call external engine
-        safe_call(&args.runfile, &txt, args.dry);
+        let output = safe_call(&args.runfile, &txt, args.dry)?;
+        let all = ModelProperties::parse_all(&output)?;
+        println!("got {:#?} parts", all.len());
     }
 });
 
 /// Call external script
-fn safe_call(runfile: &PathBuf, input: &str, dry: bool) -> Result<()> {
+fn safe_call(runfile: &PathBuf, input: &str, dry: bool) -> Result<String> {
     info!("run script file: {}", &runfile.display());
 
+    let mut output = String::new();
     if ! dry {
         // goto script parent directory
         let d = &runfile.parent().expect("failed to get run script's parent dir!");
         let cmdline = format!("{}", runfile.display());
-        let output = cmd!(&cmdline)
+        output = cmd!(&cmdline)
             .dir(d)
             .input(input)
             .read()
@@ -88,13 +93,9 @@ fn safe_call(runfile: &PathBuf, input: &str, dry: bool) -> Result<()> {
                                      &runfile.display(),
                                      e)
             )?;
-
-        let x: ModelProperties = output.parse()?;
-        println!("{:}", x);
     } else {
         info!("dry run mode");
     }
 
-    Ok(())
+    Ok(output)
 }
-// src:1 ends here

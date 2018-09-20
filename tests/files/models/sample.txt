@@ -1,6 +1,5 @@
-# meta data, optional
-@model_properties_file_format_version
-0.1
+# meta data, also work as a separator for multiple entries
+@model_properties_file_format_version 0.1
 
 # total energy of system
 @energy

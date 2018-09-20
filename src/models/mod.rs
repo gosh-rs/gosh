@@ -1,4 +1,5 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::894d0c1b-0482-46b9-a3dc-8f00b78833bc][894d0c1b-0482-46b9-a3dc-8f00b78833bc]]
+// base
+
 use quicli::prelude::*;
 use std::path::{Path, PathBuf};
 
@@ -10,9 +11,9 @@ use gchemol::{
 
 pub mod dftb;
 pub mod lj;
-// 894d0c1b-0482-46b9-a3dc-8f00b78833bc ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*chemical%20model][chemical model:1]]
+// chemical model
+
 pub trait ChemicalModel {
     /// define how to calculate properties, such as energy, forces, ...
     fn compute(&self, mol: &Molecule) -> Result<ModelProperties>;
@@ -33,9 +34,9 @@ pub trait ChemicalModel {
         unimplemented!()
     }
 }
-// chemical model:1 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*display/parse][display/parse:1]]
+// display/parse
+
 use std::fmt;
 use std::str::FromStr;
 use std::collections::HashMap;
@@ -54,9 +55,16 @@ pub struct ModelProperties {
     // dipole_derivatives
 }
 
+impl ModelProperties {
+    /// Parse mulitple entries of ModelProperties from string slice
+    pub fn parse_all(output: &str) -> Result<Vec<ModelProperties>> {
+        parse_model_results(output)
+    }
+}
+
 impl fmt::Display for ModelProperties {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut txt = format!("@model_properties_format_version\n{}\n", MODEL_PROPERTIES_FORMAT_VERSION);
+        let mut txt = format!("@model_properties_format_version {}\n", MODEL_PROPERTIES_FORMAT_VERSION);
 
         // structure
         if let Some(mol) = &self.molecule {
@@ -93,25 +101,19 @@ impl FromStr for ModelProperties {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        parse_model_results(s)
+        let all = parse_model_results(s)?;
+
+        Ok(all[all.len()-1].clone())
     }
 }
 
-fn parse_model_results(stream: &str) -> Result<ModelProperties>{
-    let mut results = ModelProperties::default();
-
-    // ignore commenting lines or blank lines
-    let mut lines = stream.lines()
-        .filter(|l| {
-            let l = l.trim();
-            ! l.starts_with("#") && ! l.is_empty()
-        });
-
+// parse a single entry of ModelProperties
+fn parse_model_results_single(part: &[&str]) -> Result<ModelProperties> {
     // collect records as header separated lines
     // blank lines are ignored
     let mut records: HashMap<&str, Vec<&str>> = HashMap::new();
     let mut header = None;
-    for line in lines {
+    for line in part {
         let line = line.trim();
         if line.starts_with("@") {
             header = line.split_whitespace().next();
@@ -130,6 +132,7 @@ fn parse_model_results(stream: &str) -> Result<ModelProperties>{
         warn!("collected no results!");
     }
 
+    let mut results = ModelProperties::default();
     for (k, lines) in records {
         match k {
             "@energy" => {
@@ -174,21 +177,45 @@ fn parse_model_results(stream: &str) -> Result<ModelProperties>{
 
     Ok(results)
 }
-// display/parse:1 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
+fn parse_model_results(stream: &str) -> Result<Vec<ModelProperties>> {
+    // ignore commenting lines or blank lines
+    let lines: Vec<_> = stream.lines()
+        .filter(|l| {
+            let l = l.trim();
+            ! l.starts_with("#") && ! l.is_empty()
+        }).collect();
+
+    let sep = lines[0];
+
+    let parts = lines[1..]
+        .split(|l| l.starts_with("@model_properties_format_version"));
+
+    let mut all_results = vec![];
+    for part in parts {
+        // collect records as header separated lines
+        // blank lines are ignored
+        let mp = parse_model_results_single(part)?;
+        all_results.push(mp);
+    }
+
+    Ok(all_results)
+}
+
+// test
+
 #[test]
 fn test_model_parse_results() {
     use gchemol::io;
 
     let txt = io::read_file("tests/files/models/sample.txt").unwrap();
-    let r = parse_model_results(&txt).expect("model results");
+    let r: ModelProperties = txt.parse().expect("model results");
 
     // reformat
     let txt = format!("{}", r);
 
     // parse again
-    let r = parse_model_results(&txt).expect("model results");
+    let r: ModelProperties = txt.parse().expect("model results");
 
     assert!(&r.molecule.is_some());
     let ref mol = r.molecule.unwrap();
@@ -196,4 +223,3 @@ fn test_model_parse_results() {
     let e = &r.energy.expect("model result: energy");
     assert_relative_eq!(-0.329336, e, epsilon=1e-4);
 }
-// test:1 ends here
