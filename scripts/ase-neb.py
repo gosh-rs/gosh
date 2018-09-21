@@ -247,22 +247,32 @@ def test_batch_neb(path):
 
     from ase.optimize import BFGS
 
-    def get_images():
+    def get_images(neb=False):
         images= ase.io.read(path, index=":")
         for image in images:
-            calc = GEMI()
-            image.set_calculator(calc)
+            if not neb:
+                calc = GEMI()
+                image.set_calculator(calc)
+            else:
+                set_mopac_calculator_for_sp(image)
         return images
 
-    print("start batched NEB..., {}", time.ctime())
+    print("start batched NEB...", time.ctime())
     neb = BatchNEB(get_images())
     n = BFGS(neb)
     n.run(fmax=0.2, steps=10)
     print("done, {}", time.ctime())
 
-    # normal NEB
-    print("start normal NEB..., {}", time.ctime())
+    # external NEB
+    print("start external NEB...", time.ctime())
     neb = NEB(get_images())
+    n = BFGS(neb)
+    n.run(fmax=0.2, steps=10)
+    print("done, {}", time.ctime())
+
+    # normal NEB
+    print("start normal NEB...", time.ctime())
+    neb = NEB(get_images(neb=True))
     n = BFGS(neb)
     n.run(fmax=0.2, steps=10)
     print("done, {}", time.ctime())
