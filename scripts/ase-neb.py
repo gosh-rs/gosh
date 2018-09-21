@@ -201,6 +201,73 @@ def parse_model_properties(stream):
     return all_entries
 # GEMI calculator:3 ends here
 
+# batch neb
+# calculate NEB images in batch to reduce IO costs
+
+
+# [[file:~/Workspace/Programming/gosh/gosh.note::*batch%20neb][batch neb:1]]
+class BatchNEB(NEB):
+    def __init__(self, images, **kwargs):
+        NEB.__init__(self, images, **kwargs)
+
+    def get_forces(self):
+        import subprocess
+
+        e0 = self.images[0].get_total_energy()
+        e1 = self.images[-1].get_total_energy()
+
+        ase.io.write("neb.xyz", self.images[1:-1])
+        cmdline = "runner neb.xyz -j > neb.mps"
+        errorcode = subprocess.call(cmdline, shell=True)
+
+        if errorcode:
+            raise RuntimeError("runner failed!")
+
+        txt = open("neb.mps").read()
+        entries = parse_model_properties(txt)
+        n = len(self.images)
+        assert n - 2 == len(entries)
+
+        for i in range(1, n-1):
+            image = self.images[i]
+            # ase is too complex than needed
+            image._calc.atoms = image.copy()
+            image._calc.results = entries[i-1]
+
+        return NEB.get_forces(self)
+# batch neb:1 ends here
+
+
+
+# test
+
+# [[file:~/Workspace/Programming/gosh/gosh.note::*batch%20neb][batch neb:2]]
+def test_batch_neb(path):
+    import time
+
+    from ase.optimize import BFGS
+
+    def get_images():
+        images= ase.io.read(path, index=":")
+        for image in images:
+            calc = GEMI()
+            image.set_calculator(calc)
+        return images
+
+    print("start batched NEB..., {}", time.ctime())
+    neb = BatchNEB(get_images())
+    n = BFGS(neb)
+    n.run(fmax=0.2, steps=10)
+    print("done, {}", time.ctime())
+
+    # normal NEB
+    print("start normal NEB..., {}", time.ctime())
+    neb = NEB(get_images())
+    n = BFGS(neb)
+    n.run(fmax=0.2, steps=10)
+    print("done, {}", time.ctime())
+# batch neb:2 ends here
+
 # mopac
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*mopac][mopac:1]]
@@ -253,14 +320,6 @@ def set_dmol3_calculator(atoms):
                   scf_density_convergence=1.0e-5)
     atoms.set_calculator(dmol3)
 # dmol3:1 ends here
-
-# batch neb
-# calculate NEB images in batch
-
-# [[file:~/Workspace/Programming/gosh/gosh.note::*batch%20neb][batch neb:1]]
-class BatchNEB(NEB):
-    pass
-# batch neb:1 ends here
 
 # neb
 
@@ -336,8 +395,8 @@ def run_neb(images, trajfile, fmax=0.1, maxstep=100, cineb=True, keep_image_dist
     neb = NEB(images, remove_rotation_and_translation=True, climb=cineb, k=ks)
     # n = FIRE(neb, trajectory=trajfile, force_consistent=False)
     # n = FIRE(neb, trajectory=trajfile)
-    # n = BFGS(neb, trajectory=trajfile)
-    n = LBFGS(neb, trajectory=trajfile, force_consistent=False)
+    # n = LBFGS(neb, trajectory=trajfile, force_consistent=False)
+    n = BFGS(neb, trajectory=trajfile)
     n.run(fmax=fmax, steps=maxstep)
 
     return neb
