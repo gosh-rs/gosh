@@ -4,13 +4,14 @@
 // :END:
 
 #[macro_use] extern crate duct;
-#[macro_use] extern crate quicli;
 
 extern crate gosh;
 extern crate gchemol;
 
 use std::path::PathBuf;
 use quicli::prelude::*;
+use quicli::main;
+use structopt::{self, StructOpt};
 
 use gchemol::{
     io,

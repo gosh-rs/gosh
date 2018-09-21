@@ -1,18 +1,22 @@
+# cargo
+
 # [[file:~/Workspace/Programming/gosh/gosh.note::*cargo][cargo:1]]
 [package]
 name = "gosh"
-version = "0.0.9"
+version = "0.0.10"
+edition = "2018"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 
 [dependencies]
 approx = "*"
 quicli = "*"
+structopt = "*"
 duct = "0.10"
 nalgebra = "*"
 nom = "4.0"
 linefeed = {git = "https://github.com/murarth/linefeed.git", rev="6ba931f" }
 #linefeed = "0.5"
-#gchemol = {rev="v0.0.21", path = "/home/ybyygu/Workspace/Programming/gchemol" }
+#gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol" }
 gchemol = {git = "https://github.com/ybyygu/gchemol.git" }
 
 [dev-dependencies]

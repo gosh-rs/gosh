@@ -1,7 +1,11 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::*mod.rs][mod.rs:1]]
+// mod.rs
+// :PROPERTIES:
+// :header-args: :tangle src/apps/mod.rs
+// :END:
+
 use quicli::prelude::*;
 
-use models::{
+use crate::models::{
     ChemicalModel,
     ModelProperties,
 };
@@ -19,4 +23,3 @@ pub trait Application {
     /// Set model system
     fn set_system(&mut self, mol: &Molecule);
 }
-// mod.rs:1 ends here

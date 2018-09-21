@@ -1,4 +1,6 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::b805a230-8b97-4b2e-ac45-0430598e1af8][b805a230-8b97-4b2e-ac45-0430598e1af8]]
+// base
+// #+name: b805a230-8b97-4b2e-ac45-0430598e1af8
+
 //! Implementation of the Nudged Elastic Band (NEB) method for finding minimum energy paths and saddle points
 //!
 //! References
@@ -109,9 +111,9 @@ impl NEB {
         Ok(())
     }
 }
-// b805a230-8b97-4b2e-ac45-0430598e1af8 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*utils][utils:1]]
+// utils
+
 // Return displacement vectors: positions_next - positions_this
 fn get_displacements_between(positions_next: &Vec<Point3D>, positions_this: &Vec<Point3D>) -> Vector3fVec {
     debug_assert!(positions_this.len() == positions_next.len());
@@ -144,9 +146,10 @@ fn get_neighboring_images_displacements(images: &Vec<Image>) -> Result<Vec<Vecto
 
     Ok(displs)
 }
-// utils:1 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::68a74344-0730-42bf-aa81-0c9405355dd1][68a74344-0730-42bf-aa81-0c9405355dd1]]
+// core
+// #+name: 68a74344-0730-42bf-aa81-0c9405355dd1
+
 impl NEB {
     /// calculate real energy and forces
     pub fn calculate<T: ChemicalModel>(&mut self, model: T) -> Result<()>{
@@ -335,9 +338,10 @@ fn real_forces_perpendicular(all_forces: &Vec<Vector3fVec>, tangents: &Vec<Vecto
 
     vforces
 }
-// 68a74344-0730-42bf-aa81-0c9405355dd1 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::d915c7b2-5fb5-4c26-8bde-baa6cfae3db9][d915c7b2-5fb5-4c26-8bde-baa6cfae3db9]]
+// original
+// #+name: d915c7b2-5fb5-4c26-8bde-baa6cfae3db9
+
 // original algorithm for tangent calculation
 // Ref: Classical and Quantum Dynamics in Condensed Phase Simulations; World Scientific, 1998; p 385.
 fn tangent_vectors_original(displacements: &Vec<Vector3fVec>) -> Result<Vec<Vector3fVec>>
@@ -360,9 +364,10 @@ fn tangent_vectors_original(displacements: &Vec<Vector3fVec>) -> Result<Vec<Vect
 
     Ok(tangents)
 }
-// d915c7b2-5fb5-4c26-8bde-baa6cfae3db9 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::c6fdc171-9b1c-4ba8-a7c0-d3dbf57237eb][c6fdc171-9b1c-4ba8-a7c0-d3dbf57237eb]]
+// improved tangent
+// #+name: c6fdc171-9b1c-4ba8-a7c0-d3dbf57237eb
+
 // Parameters
 // ----------
 // displacements: displacement vectors between neighboring images
@@ -419,20 +424,21 @@ fn tangent_vectors_improved
 
     Ok(tangents)
 }
-// c6fdc171-9b1c-4ba8-a7c0-d3dbf57237eb ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::82c2f7d1-cec4-4866-a9ba-7be37b872a95][82c2f7d1-cec4-4866-a9ba-7be37b872a95]]
+// elastic band
+// #+name: 82c2f7d1-cec4-4866-a9ba-7be37b872a95
+
 fn tangent_vectors_elastic_band(images: &Vec<Molecule>) -> Result<Vec<Vector3fVec>>
 {
     unimplemented!()
 }
-// 82c2f7d1-cec4-4866-a9ba-7be37b872a95 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
+// test
+
 #[test]
 fn test_neb() {
     use gchemol::io;
-    use models::lj::LennardJones;
+    use crate::models::lj::LennardJones;
 
     let mut images = io::read("tests/files/NEB/images.mol2").expect("neb test file");
 
@@ -446,4 +452,3 @@ fn test_neb() {
         // println!("{:}", i);
     }
 }
-// test:1 ends here

@@ -11,7 +11,7 @@ use quicli::prelude::*;
 use nom::{self, IResult};
 
 use gchemol::io;
-use models::*;
+use crate::models::*;
 
 /// Common interface for model adaptors
 pub trait ModelAdaptor {

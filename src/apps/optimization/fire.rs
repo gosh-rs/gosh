@@ -1,4 +1,5 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
+// base
+
 //! Implementation of the Fast-Inertial-Relaxation-Engine (FIRE) algorithm
 //!
 //! References
@@ -57,9 +58,9 @@ impl Default for FIRE {
         }
     }
 }
-// base:1 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*core][core:1]]
+// core
+
 impl FIRE {
     /// Determine whether we have optimized the structure
     pub fn converged(&self, forces: &Vec<Point3D>, displacement_vectors: &Vec<Point3D>) -> bool {
@@ -225,9 +226,9 @@ fn scale_disp_vectors(disp_vectors: &mut Vec<Point3D>, maxdisp: f64) {
         }
     }
 }
-// core:1 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*utils][utils:1]]
+// utils
+
 #[inline]
 fn vector_dot(vector1: &Vec<[f64; 3]>, vector2: &Vec<[f64; 3]>) -> f64 {
     let n = vector1.len();
@@ -260,14 +261,14 @@ fn test_vector_dot() {
     let x = vector_dot(&a, &b);
     assert_relative_eq!(30.0, x, epsilon=1e-4);
 }
-// utils:1 ends here
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
+// test
+
 #[test]
 fn test_fire_opt() {
     use gchemol::Molecule;
-    use models::ChemicalModel;
-    use models::lj::LennardJones;
+    use crate::models::ChemicalModel;
+    use crate::models::lj::LennardJones;
 
     // let mut mol = get_test_mol();
     let filename = "tests/files/LennardJones/LJ38r.xyz";
@@ -300,4 +301,3 @@ fn test_fire_opt() {
         mol.set_positions(&positions).unwrap();
     }
 }
-// test:1 ends here

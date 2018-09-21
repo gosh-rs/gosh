@@ -1,4 +1,13 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::c5024615-a25b-4b40-9305-890be0fe004b][c5024615-a25b-4b40-9305-890be0fe004b]]
+// main.rs
+// :PROPERTIES:
+// :header-args: :tangle src/main.rs
+// :END:
+// 一个简易 command line 程序, 方便使用 gosh 中的功能.
+
+//  可参考 cmd2
+// - [[https://github.com/python-cmd2/cmd2][python-cmd2/cmd2: cmd2 - Quickly build feature-rich and user-friendly interactive command line applications in Python]]
+
+
 extern crate linefeed;
 extern crate gchemol;
 #[macro_use]
@@ -16,8 +25,8 @@ use gchemol::{
     Molecule,
 };
 
-use cli::Commander;
 mod cli;
+use crate::cli::Commander;
 
 use std::process::Command;
 use std::path::{Path, PathBuf};
@@ -228,4 +237,3 @@ impl<Term: Terminal> Completer<Term> for GOSHCompleter {
         }
     }
 }
-// c5024615-a25b-4b40-9305-890be0fe004b ends here
