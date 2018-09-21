@@ -8,7 +8,8 @@ edition = "2018"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 
 [dependencies]
-approx = "*"
+serde = "*"
+serde_json = "*"
 quicli = "*"
 structopt = "*"
 duct = "0.10"

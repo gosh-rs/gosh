@@ -1,5 +1,6 @@
 // src
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*src][src:1]]
 #[macro_use] extern crate duct;
 #[macro_use] extern crate quicli;
 
@@ -72,7 +73,9 @@ main!(|args: Cli, log_level: verbosity| {
         // 3. call external engine
         let output = safe_call(&args.runfile, &txt, args.dry)?;
         let all = ModelProperties::parse_all(&output)?;
-        println!("got {:#?} parts", all.len());
+        for p in all {
+            println!("{:}", p);
+        }
     }
 });
 
@@ -99,3 +102,4 @@ fn safe_call(runfile: &PathBuf, input: &str, dry: bool) -> Result<String> {
 
     Ok(output)
 }
+// src:1 ends here

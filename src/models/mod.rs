@@ -1,5 +1,6 @@
 // base
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
 use quicli::prelude::*;
 use std::path::{Path, PathBuf};
 
@@ -11,9 +12,11 @@ use gchemol::{
 
 pub mod dftb;
 pub mod lj;
+// base:1 ends here
 
 // chemical model
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*chemical%20model][chemical model:1]]
 pub trait ChemicalModel {
     /// define how to calculate properties, such as energy, forces, ...
     fn compute(&self, mol: &Molecule) -> Result<ModelProperties>;
@@ -34,25 +37,37 @@ pub trait ChemicalModel {
         unimplemented!()
     }
 }
+// chemical model:1 ends here
 
 // display/parse
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*display/parse][display/parse:1]]
 use std::fmt;
 use std::str::FromStr;
 use std::collections::HashMap;
 
+use serde::{
+    self,
+    de::{
+        Deserialize
+    },
+    ser::{
+        Serialize
+    },
+};
+
 const MODEL_PROPERTIES_FORMAT_VERSION: &str = "0.1";
 
 /// The computed results by external application
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ModelProperties {
-    pub molecule        : Option<Molecule>,
     pub energy          : Option<f64>,
     pub forces          : Option<Vec<[f64; 3]>>,
     pub dipole          : Option<[f64; 3]>,
+    #[serde(skip_deserializing,skip_serializing)]
+    pub molecule        : Option<Molecule>,
+    #[serde(skip_deserializing,skip_serializing)]
     pub force_constants : Option<Vec<[f64; 3]>>,
-    // polarizability
-    // dipole_derivatives
 }
 
 impl ModelProperties {
@@ -201,15 +216,23 @@ fn parse_model_results(stream: &str) -> Result<Vec<ModelProperties>> {
 
     Ok(all_results)
 }
+// display/parse:1 ends here
 
 // test
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
 #[test]
 fn test_model_parse_results() {
     use gchemol::io;
+    use serde_json;
 
     let txt = io::read_file("tests/files/models/sample.txt").unwrap();
     let r: ModelProperties = txt.parse().expect("model results");
+
+    // serializing
+    let serialized = serde_json::to_string(&r).unwrap();
+    // and deserializing
+    let deserialized: ModelProperties = serde_json::from_str(&serialized).unwrap();
 
     // reformat
     let txt = format!("{}", r);
@@ -223,3 +246,4 @@ fn test_model_parse_results() {
     let e = &r.energy.expect("model result: energy");
     assert_relative_eq!(-0.329336, e, epsilon=1e-4);
 }
+// test:1 ends here

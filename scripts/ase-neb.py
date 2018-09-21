@@ -1,4 +1,6 @@
 #! /usr/bin/env python3
+# imports
+
 # [[file:~/Workspace/Programming/gosh/gosh.note::*imports][imports:1]]
 import os
 
@@ -9,6 +11,13 @@ import subprocess as sp
 
 from ase.neb import NEB
 # imports:1 ends here
+
+
+
+# - 参数文件放在./SKFiles目录里.
+# - dftb+要在命令搜索路径里(PATH).
+# - 修改: Hamiltonian_MaxAngularMomentum_*
+
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*dftb+][dftb+:2]]
 def set_dftb_calculator_for_opt(atoms):
@@ -68,6 +77,8 @@ def dftb_opt(filename):
     print("updated structure inplace: {}".format(filename))
 # dftb+:2 ends here
 
+# gaussian
+
 # [[file:~/Workspace/Programming/gosh/gosh.note::*gaussian][gaussian:1]]
 def set_gaussian_calculator(atoms):
     from ase.calculators.gaussian import Gaussian
@@ -77,6 +88,120 @@ def set_gaussian_calculator(atoms):
                     nproc=4)
     atoms.set_calculator(calc)
 # gaussian:1 ends here
+
+# GEMI calculator
+# General External Model Interface
+
+# [[file:~/Workspace/Programming/gosh/gosh.note::*GEMI%20calculator][GEMI calculator:1]]
+import json
+import re
+from collections import defaultdict
+
+from ase.calculators.calculator import FileIOCalculator
+
+class GEMI(FileIOCalculator):
+    implemented_properties = ['energy', 'forces']
+    command = 'runner PREFIX.xyz > PREFIX.mps'
+
+    def __init__(self, restart=None, ignore_bad_restart_file=False,
+                 label='gemi', atoms=None, **kwargs):
+        """
+        general external model caller interface
+        """
+        FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
+                                  label, atoms, **kwargs)
+
+    def write_input(self, atoms, properties=None, system_changes=None):
+        FileIOCalculator.write_input(self, atoms, properties, system_changes)
+        ase.io.write(self.label + '.xyz', atoms, **self.parameters)
+
+    def read_results(self):
+        output = open(self.label + '.mps').read()
+        lines = output.splitlines()
+
+        entries = parse_model_properties(output)
+        self.results = entries[-1]
+
+def ase_results_to_json(calculator):
+    """convert ase calculator results to json"""
+    d = {}
+    for k, v in calculator.results.items():
+        # convert numpy array to plain list
+        if k in ("forces", "dipole", "stress", "charges", "magmoms"):
+            d[k] = v.tolist()
+        else:
+            d[k] = v
+    return json.dumps(d)
+# GEMI calculator:1 ends here
+
+
+
+# tests
+
+# [[file:~/Workspace/Programming/gosh/gosh.note::*GEMI%20calculator][GEMI calculator:2]]
+def test_gemi():
+    from ase.optimize import BFGS
+
+    atoms = ase.io.read("./final.xyz")
+    calc = GEMI()
+    atoms.set_calculator(calc)
+    n = BFGS(atoms)
+    n.run(fmax=0.1)
+# GEMI calculator:2 ends here
+
+
+
+# parse model results
+
+# [[file:~/Workspace/Programming/gosh/gosh.note::*GEMI%20calculator][GEMI calculator:3]]
+def parse_one_part(part):
+    if not part.strip():
+        return
+
+    dict_properties = defaultdict(list)
+    k = None
+    for line in part.strip().splitlines():
+        if line.startswith("@"):
+            k = line.strip()[1:]
+        else:
+            if k and not line.startswith("#"):
+                dict_properties[k].append(line)
+
+    return dict_properties
+
+def refine_entry(entry):
+    d = {}
+    for k, v in entry.items():
+        if k == "energy":
+            d["energy"] = float(v[0])
+        elif k == "forces":
+            d["forces"] = []
+            for line in v:
+                x, y, z = [float(x) for x in line.split()]
+                d["forces"].append([x, y, z])
+        elif k == "dipole":
+            d["dipole"] = np.array([float(x) for x in v[0].split()])
+
+    d["forces"] = np.array(d["forces"])
+
+    return d
+
+
+def parse_model_properties(stream):
+    """parse calculated properties"""
+
+    parts = re.compile('^@model_properties_.*$', re.M).split(stream)
+    all_entries = []
+    for part in parts:
+        entry = parse_one_part(part)
+        if entry:
+            d = refine_entry(entry)
+            all_entries.append(d)
+
+    return all_entries
+# GEMI calculator:3 ends here
+
+# mopac
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*mopac][mopac:1]]
 def set_mopac_calculator_for_sp(atoms):
@@ -105,6 +230,9 @@ def mopac_opt(filename):
     print("updated structure inplace: {}".format(filename))
 # mopac:1 ends here
 
+# dmol3
+# 这个得服务器上用.
+
 # [[file:~/Workspace/Programming/gosh/gosh.note::*dmol3][dmol3:1]]
 def set_dmol3_calculator(atoms):
     from ase.calculators.dmol import DMol3
@@ -125,6 +253,16 @@ def set_dmol3_calculator(atoms):
                   scf_density_convergence=1.0e-5)
     atoms.set_calculator(dmol3)
 # dmol3:1 ends here
+
+# batch neb
+# calculate NEB images in batch
+
+# [[file:~/Workspace/Programming/gosh/gosh.note::*batch%20neb][batch neb:1]]
+class BatchNEB(NEB):
+    pass
+# batch neb:1 ends here
+
+# neb
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*neb][neb:1]]
 def create_neb_images(reactantfile,
@@ -210,6 +348,8 @@ def read_images(filename):
     return images
 # neb:1 ends here
 
+# ts
+
 # [[file:~/Workspace/Programming/gosh/gosh.note::*ts][ts:1]]
 def ts_search(images_filename, label=None, maxstep=20, method="dftb", keep_image_distance=True, climbing=False):
     """the main entry point for transition state searching
@@ -272,6 +412,8 @@ def ts_search(images_filename, label=None, maxstep=20, method="dftb", keep_image
     return neb
 # ts:1 ends here
 
+# batch
+
 # [[file:~/Workspace/Programming/gosh/gosh.note::*batch][batch:1]]
 def run_boc(nimages, method, qst=False, keep=True):
     cmdline = "rxview reactant.mol2 product.mol2 rx-boc.xyz -n {} -b --gap".format(nimages)
@@ -324,6 +466,4 @@ def run_all(method="dftb", qst=False):
     run_boc(nimages, method)
     run_lst(nimages, method)
     run_idpp(nimages, method)
-
-run_all("mopac", qst=False)
 # batch:1 ends here
