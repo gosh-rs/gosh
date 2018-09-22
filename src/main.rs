@@ -8,6 +8,7 @@
 // - [[https://github.com/python-cmd2/cmd2][python-cmd2/cmd2: cmd2 - Quickly build feature-rich and user-friendly interactive command line applications in Python]]
 
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*main.rs][main.rs:1]]
 extern crate linefeed;
 extern crate gchemol;
 #[macro_use]
@@ -16,27 +17,21 @@ extern crate quicli;
 use quicli::prelude::*;
 
 use std::rc::Rc;
-use std::io::Write;
 use linefeed::{Reader, ReadResult};
 use linefeed::terminal::Terminal;
 use linefeed::complete::{Completer, Completion};
 
-use gchemol::{
-    Molecule,
-};
-
 mod cli;
 use crate::cli::Commander;
 
-use std::process::Command;
-use std::path::{Path, PathBuf};
-use std::env;
+use std::path::{PathBuf};
+use dirs;
 
 fn get_history_file() -> Result<PathBuf> {
-    match env::home_dir() {
+    match dirs::home_dir() {
         Some(path) => {
             let filename = path.join(".gosh.history");
-            return Ok(filename);
+            Ok(filename)
         },
         None => bail!("Impossible to get your home dir!"),
     }
@@ -81,7 +76,7 @@ main!({
                 println!();
             },
             "load" => {
-                if args.len() == 0 {
+                if args.is_empty() {
                     println!("Please input path to a file containing molecule.");
                 } else {
                     let filename = args;
@@ -106,7 +101,7 @@ main!({
             },
 
             "write" => {
-                if args.len() == 0 {
+                if args.is_empty() {
                     println!("Please input path to save the molecule.");
                 } else {
                     let filename = args;
@@ -117,7 +112,7 @@ main!({
             },
 
             "format" => {
-                if args.len() == 0 {
+                if args.is_empty() {
                     println!("Please input path to user defined template file.");
                 } else {
                     let filename = args;
@@ -237,3 +232,4 @@ impl<Term: Terminal> Completer<Term> for GOSHCompleter {
         }
     }
 }
+// main.rs:1 ends here

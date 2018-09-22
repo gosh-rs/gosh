@@ -5,7 +5,6 @@
 
 use std::io::{Read, BufRead, BufReader};
 use std::path::Path;
-use std::str::Lines;
 
 use quicli::prelude::*;
 use nom::{self, IResult};
@@ -64,7 +63,7 @@ impl TextParser {
                 debug!("fill data");
                 for _ in 0..self.nlines {
                     // reach EOF
-                    if reader.read_line(&mut chunk)? <= 0 {
+                    if reader.read_line(&mut chunk)? == 0 {
                         eof = true;
                         break;
                     }

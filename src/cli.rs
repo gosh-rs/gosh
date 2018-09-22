@@ -1,3 +1,10 @@
+// cli
+// :PROPERTIES:
+// :header-args: :tangle src/cli.rs
+// :END:
+// 为命令行程序提供方便的功能接口.
+
+
 // [[file:~/Workspace/Programming/gosh/gosh.note::*cli][cli:1]]
 use quicli::prelude::*;
 use std::process::Command;
@@ -6,7 +13,6 @@ use std::process::Command;
 use gchemol::prelude::*;
 
 use gchemol::{
-    self,
     Molecule,
     io,
 };
@@ -28,7 +34,7 @@ impl Commander {
     }
 
     pub fn load(&mut self, filename: &str) -> Result<()> {
-        self.molecules = io::read(filename).map_err(|e| format_err!("failed to load molecules"))?;
+        self.molecules = io::read(filename).map_err(|_| format_err!("failed to load molecules"))?;
         self.filename = Some(filename.to_owned());
 
         Ok(())
@@ -36,7 +42,7 @@ impl Commander {
 
     pub fn write(&self, filename: &str) -> Result<()> {
         if ! self.molecules.is_empty() {
-            io::write(filename, &self.molecules).map_err(|e| format_err!("failed to save molecules."))?;
+            io::write(filename, &self.molecules).map_err(|_| format_err!("failed to save molecules."))?;
         } else {
             bail!("No active molecule available.");
         }
@@ -48,9 +54,9 @@ impl Commander {
         if ! self.molecules.is_empty() {
             let mol = &self.molecules[0];
             let template = io::read_file(template_file)
-                .map_err(|e| format_err!("failed to load template"))?;
+                .map_err(|_| format_err!("failed to load template"))?;
             let s = mol.render_with(&template)
-                .map_err(|e| format_err!("failed to render molecule"))?;
+                .map_err(|_| format_err!("failed to render molecule"))?;
             println!("{:}", s);
         } else {
             bail!("No active molecule available.");
@@ -71,7 +77,7 @@ impl Commander {
 
     pub fn clean(&mut self) -> Result<()> {
         if ! self.molecules.is_empty() {
-            self.molecules[0].clean();
+            self.molecules[0].clean()?;
         } else {
             bail!("No molecule available.");
         }
@@ -106,7 +112,7 @@ impl Commander {
     pub fn extern_cmdline(&self, cmdline: &str) -> Result<()> {
         let output = Command::new(cmdline)
             .output()
-            .map_err(|e| format_err!("external cmdline failed: {}", cmdline))?;
+            .map_err(|_| format_err!("external cmdline failed: {}", cmdline))?;
         if output.status.success() {
             println!("{}", String::from_utf8_lossy(&output.stdout));
         } else {
