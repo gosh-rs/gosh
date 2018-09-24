@@ -484,29 +484,25 @@ def ts_search(images_filename, label=None, maxstep=20, method="dftb", keep_image
 # batch
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*batch][batch:1]]
-def run_boc(nimages, method, qst=False, keep=True):
-    cmdline = "rxview reactant.mol2 product.mol2 rx-boc.xyz -n {} -b --gap".format(nimages)
+def run_boc(nimages, method, keep=True):
+    cmdline = "rxview reactant.xyz product.xyz rx-boc.xyz -n {} -b --gap".format(nimages)
     sp.run(cmdline.split())
     ts_search("rx-boc.xyz", maxstep=500, method=method, keep_image_distance=keep, climbing=False)
-    if qst:
-        cmdline = "rxview reactant.mol2 product.mol2 -m rx-boc/ts.xyz rx-boc-stage2.xyz -n {} -b".format(nimages)
-        sp.run(cmdline.split())
-        ts_search("rx-boc-stage2.xyz", label="rx-boc", maxstep=500, method=method, keep_image_distance=keep, climbing=True)
-    else:
-        ts_search("rx-boc/neb-images.pdb", label="rx-boc", maxstep=500, method=method, keep_image_distance=keep, climbing=True)
+    ts_search("rx-boc/neb-images.pdb", label="rx-boc", maxstep=500, method=method, keep_image_distance=keep, climbing=True)
 
-def run_lst(nimages, method, qst=False, keep=False):
-    cmdline = "rxview reactant.mol2 product.mol2 rx-lst.xyz -n {} --gap".format(nimages)
+def run_lst(nimages, method, keep=False):
+    if keep:
+        print("set k vars to fit original image distances ...")
+        cmdline = "rxview reactant.xyz product.xyz rx-lst.xyz -n {} --gap".format(nimages)
+    else:
+        print("set k = 1, to keep image evenly distributed ...")
+        cmdline = "rxview reactant.xyz product.xyz rx-lst.xyz -n {} --single".format(nimages)
+
     sp.run(cmdline.split())
     ts_search("rx-lst.xyz", maxstep=500, method=method, keep_image_distance=keep, climbing=False)
-    if qst:
-        cmdline = "rxview reactant.mol2 product.mol2 -m rx-lst/ts.xyz rx-lst-stage2.xyz -n {}".format(nimages)
-        sp.run(cmdline.split())
-        ts_search("rx-lst-stage2.xyz", label="rx-lst", maxstep=500, method=method, keep_image_distance=keep, climbing=True)
-    else:
-        ts_search("rx-lst/neb-images.pdb", label="rx-lst", maxstep=500, method=method, keep_image_distance=keep, climbing=True)
+    ts_search("rx-lst/neb-images.pdb", label="rx-lst", maxstep=500, method=method, keep_image_distance=keep, climbing=True)
 
-def run_idpp(nimages, method, qst=False, keep=False):
+def run_idpp(nimages, method, keep=False):
     # create rxview images
     create_neb_images("reactant.xyz", "product.xyz", outfilename="idpp.pdb", scheme="idpp", nimages=nimages)
     # for idpp using the normal way
@@ -514,25 +510,12 @@ def run_idpp(nimages, method, qst=False, keep=False):
     ts_search("idpp/neb-images.pdb", label="idpp", maxstep=500, method=method, keep_image_distance=keep, climbing=True)
 
 
-def run_all(method="dftb", qst=False):
+def run_all(method="dftb"):
     nimages = 11
-    cmdline = "babel reactant.mol2 reactant.xyz"
-    sp.run(cmdline.split())
-
-    cmdline = "babel product.mol2 product.xyz"
-    sp.run(cmdline.split())
-
-    # pre-optimization
-    if method == "dftb":
-        dftb_opt("reactant.xyz")
-        dftb_opt("product.xyz")
-    elif method == "mopac":
-        mopac_opt("reactant.xyz")
-        mopac_opt("product.xyz")
-    else:
-        raise RuntimeError("not implemented!")
-
     run_boc(nimages, method)
     run_lst(nimages, method)
     run_idpp(nimages, method)
+
+if __name__ == '__main__':
+    run_all("mopac")
 # batch:1 ends here
