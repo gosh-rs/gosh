@@ -101,7 +101,7 @@ from ase.calculators.calculator import FileIOCalculator
 
 class GEMI(FileIOCalculator):
     implemented_properties = ['energy', 'forces']
-    command = 'runner PREFIX.xyz > PREFIX.mps'
+    command = 'runner PREFIX.xyz > PREFIX.mps -e /share/apps/mopac/gemi/gemi-submit.sh -t /share/apps/mopac/gemi/gemi-input.hbs'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='gemi', atoms=None, **kwargs):
@@ -121,6 +121,21 @@ class GEMI(FileIOCalculator):
 
         entries = parse_model_properties(output)
         self.results = entries[-1]
+
+class GEMIDummy(FileIOCalculator):
+    implemented_properties = ['energy', 'forces']
+    command = 'runner PREFIX.xyz > PREFIX.mps -e /share/apps/mopac/gemi/gemi-submit.sh -t /share/apps/mopac/gemi/gemi-input.hbs'
+
+    def __init__(self, restart=None, ignore_bad_restart_file=False,
+                 label='gemi', atoms=None, **kwargs):
+        """
+        general external model caller interface
+        """
+        FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
+                                  label, atoms, **kwargs)
+    def calculate(self, atoms=None, properties=['energy'], system_changes=["positions"]):
+        pass
+
 
 def ase_results_to_json(calculator):
     """convert ase calculator results to json"""
@@ -201,6 +216,58 @@ def parse_model_properties(stream):
     return all_entries
 # GEMI calculator:3 ends here
 
+# mopac
+
+# [[file:~/Workspace/Programming/gosh/gosh.note::*mopac][mopac:1]]
+def set_mopac_calculator_for_sp(atoms):
+    from ase.calculators.mopac import MOPAC
+
+    # the default relscf parameter in ase is unnecessarily high
+    calc = MOPAC(method="PM6", relscf=0.001)
+    atoms.set_calculator(calc)
+
+def set_mopac_calculator_for_opt(atoms):
+    from ase.calculators.mopac import MOPAC
+
+    # the default relscf parameter in ase is unnecessarily high
+    calc = MOPAC(method="PM6", task='GRADIENTS', relscf=0.001)
+    atoms.set_calculator(calc)
+
+def mopac_opt(filename):
+    """read atoms from filename, and optimize using dftb+, then save back inplace."""
+
+    atoms = ase.io.read(filename)
+    set_mopac_calculator_for_opt(atoms)
+    e = atoms.get_total_energy()
+    print("opt energy = {:-10.4f}".format(e))
+    # avoid the bug for the xyz comment line
+    atoms.write(filename, plain=True)
+    print("updated structure inplace: {}".format(filename))
+# mopac:1 ends here
+
+# dmol3
+
+# [[file:~/Workspace/Programming/gosh/gosh.note::*dmol3][dmol3:1]]
+def set_dmol3_calculator(atoms):
+    from ase.calculators.dmol import DMol3
+
+    dmol3 = DMol3(symmetry='off',
+                  spin_polarization='restricted',
+                  charge=0,
+                  functional='blyp',
+                  basis='dnd',
+                  scf_iterations='-100',
+                  initial_hessian='improved',
+                  pseudopotential='none',
+                  integration_grid='medium',
+                  aux_density='octupole',
+                  occupation='fermi',
+                  scf_charge_mixing=0.2,
+                  scf_diis='6 pulay',
+                  scf_density_convergence=1.0e-5)
+    atoms.set_calculator(dmol3)
+# dmol3:1 ends here
+
 # batch neb
 # calculate NEB images in batch to reduce IO costs
 
@@ -217,7 +284,7 @@ class BatchNEB(NEB):
         e1 = self.images[-1].get_total_energy()
 
         ase.io.write("neb.xyz", self.images[1:-1])
-        cmdline = "runner neb.xyz -j > neb.mps"
+        cmdline = "runner neb.xyz -j -e /share/apps/mopac/gemi/gemi-submit.sh -t /share/apps/mopac/gemi/gemi-input.hbs > neb.mps"
         errorcode = subprocess.call(cmdline, shell=True)
 
         if errorcode:
@@ -278,59 +345,6 @@ def test_batch_neb(path):
     print("done, {}", time.ctime())
 # batch neb:2 ends here
 
-# mopac
-
-# [[file:~/Workspace/Programming/gosh/gosh.note::*mopac][mopac:1]]
-def set_mopac_calculator_for_sp(atoms):
-    from ase.calculators.mopac import MOPAC
-
-    # the default relscf parameter in ase is unnecessarily high
-    calc = MOPAC(method="PM6", relscf=0.1)
-    atoms.set_calculator(calc)
-
-def set_mopac_calculator_for_opt(atoms):
-    from ase.calculators.mopac import MOPAC
-
-    # the default relscf parameter in ase is unnecessarily high
-    calc = MOPAC(method="PM6", task='GRADIENTS', relscf=0.1)
-    atoms.set_calculator(calc)
-
-def mopac_opt(filename):
-    """read atoms from filename, and optimize using dftb+, then save back inplace."""
-
-    atoms = ase.io.read(filename)
-    set_mopac_calculator_for_opt(atoms)
-    e = atoms.get_total_energy()
-    print("opt energy = {:-10.4f}".format(e))
-    # avoid the bug for the xyz comment line
-    atoms.write(filename, plain=True)
-    print("updated structure inplace: {}".format(filename))
-# mopac:1 ends here
-
-# dmol3
-# 这个得服务器上用.
-
-# [[file:~/Workspace/Programming/gosh/gosh.note::*dmol3][dmol3:1]]
-def set_dmol3_calculator(atoms):
-    from ase.calculators.dmol import DMol3
-
-    dmol3 = DMol3(symmetry='off',
-                  spin_polarization='restricted',
-                  charge=0,
-                  functional='blyp',
-                  basis='dnd',
-                  scf_iterations='-100',
-                  initial_hessian='improved',
-                  pseudopotential='none',
-                  integration_grid='medium',
-                  aux_density='octupole',
-                  occupation='fermi',
-                  scf_charge_mixing=0.2,
-                  scf_diis='6 pulay',
-                  scf_density_convergence=1.0e-5)
-    atoms.set_calculator(dmol3)
-# dmol3:1 ends here
-
 # neb
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*neb][neb:1]]
@@ -377,7 +391,7 @@ def create_neb_images(reactantfile,
 
     return images
 
-def run_neb(images, trajfile, fmax=0.1, maxstep=100, cineb=True, keep_image_distance=True):
+def run_neb(images, trajfile, fmax=0.1, maxstep=100, cineb=True, keep_image_distance=True, batch=False):
     """run Nudged Elastic Band (NEB) calculation
 
     Parameters
@@ -388,6 +402,8 @@ def run_neb(images, trajfile, fmax=0.1, maxstep=100, cineb=True, keep_image_dist
     keep_image_distance: adjust spring constant k to keep original image distance
     """
     from ase.optimize import BFGS, FIRE, LBFGS
+
+    imax = locate_ts_image_index(images)
 
     # set spring constants
     if keep_image_distance:
@@ -402,7 +418,11 @@ def run_neb(images, trajfile, fmax=0.1, maxstep=100, cineb=True, keep_image_dist
     else:
         ks = 1
 
-    neb = NEB(images, remove_rotation_and_translation=True, climb=cineb, k=ks)
+    if batch:
+        neb = BatchNEB(images, remove_rotation_and_translation=False, climb=cineb, k=ks)
+    else:
+        neb = NEB(images, remove_rotation_and_translation=True, climb=cineb, k=ks)
+
     # n = FIRE(neb, trajectory=trajfile, force_consistent=False)
     # n = FIRE(neb, trajectory=trajfile)
     # n = LBFGS(neb, trajectory=trajfile, force_consistent=False)
@@ -415,12 +435,27 @@ def read_images(filename):
     """read images (multiple molecules) from filename"""
     images = ase.io.read(filename, index=":")
     return images
+
+def locate_ts_image_index(images):
+    energies = []
+    for i, image in enumerate(images):
+        e = image.get_total_energy()
+        energies.append(e)
+    print(energies)
+    imax = get_highest_energy_index(energies)
+    return imax
+
+def get_highest_energy_index(energies):
+    """Find the index of the image with the highest energy."""
+    valid_entries = [(i, e) for i, e in enumerate(energies) if e == e]
+    highest_energy_index = max(valid_entries, key=lambda x: x[1])[0]
+    return highest_energy_index
 # neb:1 ends here
 
 # ts
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*ts][ts:1]]
-def ts_search(images_filename, label=None, maxstep=20, method="dftb", keep_image_distance=True, climbing=False):
+def ts_search(images_filename, method, label=None, maxstep=20, keep_image_distance=True, climbing=False):
     """the main entry point for transition state searching
 
     images_filename: the filename containing multiple molecules (images)
@@ -430,8 +465,9 @@ def ts_search(images_filename, label=None, maxstep=20, method="dftb", keep_image
     images = read_images(images_filename)
     print('loaded {} images'.format(len(images)))
 
-    # using dftb+
+    batch = False
     for image in images:
+        # using dftb+
         if method == "dftb":
             set_dftb_calculator_for_sp(image)
         elif method == "gaussian":
@@ -439,7 +475,13 @@ def ts_search(images_filename, label=None, maxstep=20, method="dftb", keep_image
         elif method == "mopac":
             set_mopac_calculator_for_sp(image)
         else:
-            raise RuntimeError("wrong calculator!")
+            # using external model calculator
+            calc = GEMI()
+            image.set_calculator(calc)
+            batch = True
+
+    if batch:
+        print("*enable batch calculations...*")
 
     # create working dirs
     if label is None:
@@ -451,12 +493,22 @@ def ts_search(images_filename, label=None, maxstep=20, method="dftb", keep_image
     # start neb calculation without climbing image
     if not climbing:
         trajfile = '{}.traj'.format(label)
-        neb = run_neb(images, trajfile, maxstep=maxstep, fmax=0.5, cineb=False, keep_image_distance=keep_image_distance)
+        neb = run_neb(images, trajfile,
+                      maxstep=maxstep,
+                      fmax=0.5,
+                      cineb=False,
+                      keep_image_distance=keep_image_distance,
+                      batch=batch)
     else:
         # climbing
         print("climbing...")
         trajfile = '{}-ci.traj'.format(label)
-        neb = run_neb(images, trajfile, maxstep=maxstep, fmax=0.1, cineb=True, keep_image_distance=keep_image_distance)
+        neb = run_neb(images, trajfile,
+                      maxstep=maxstep,
+                      fmax=0.1,
+                      cineb=True,
+                      keep_image_distance=keep_image_distance,
+                      batch=batch)
 
     # a brief summary
     for i, image in enumerate(images):
@@ -509,7 +561,6 @@ def run_idpp(nimages, method, keep=False):
     ts_search("idpp.pdb", maxstep=500, method=method, keep_image_distance=keep, climbing=False)
     ts_search("idpp/neb-images.pdb", label="idpp", maxstep=500, method=method, keep_image_distance=keep, climbing=True)
 
-
 def run_all(method="dftb"):
     nimages = 11
     run_boc(nimages, method)
@@ -517,5 +568,5 @@ def run_all(method="dftb"):
     run_idpp(nimages, method)
 
 if __name__ == '__main__':
-    run_all("mopac")
+    run_all("gemi")
 # batch:1 ends here
