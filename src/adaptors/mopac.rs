@@ -189,7 +189,7 @@ named!(mopac_output<&str, ModelProperties>, do_parse!(
     // force consistent energy
     energy : get_total_energy                  >>
     // structure and gradients (stored as momentum)
-    atoms  : get_atoms                         >>
+    atoms  : opt!(complete!(get_atoms))                        >>
     // dipole moment
     dipole : get_dipole                        >>
 
@@ -205,18 +205,20 @@ named!(mopac_output<&str, ModelProperties>, do_parse!(
 
             let mut mol = Molecule::new("mopac");
             let mut forces = vec![];
-            for a in atoms {
-                let [x, y, z] = a.momentum();
+            if let Some(atoms) = atoms {
+                for a in atoms {
+                    let [x, y, z] = a.momentum();
 
-                forces.push([
-                    -x * KCAL_MOL,
-                    -y * KCAL_MOL,
-                    -z * KCAL_MOL,
-                ]);
-                mol.add_atom(a);
+                    forces.push([
+                        -x * KCAL_MOL,
+                        -y * KCAL_MOL,
+                        -z * KCAL_MOL,
+                    ]);
+                    mol.add_atom(a);
+                }
+                p.forces = Some(forces);
+                p.molecule = Some(mol);
             }
-            p.forces = Some(forces);
-            p.molecule = Some(mol);
 
             p
         }
@@ -228,7 +230,7 @@ named!(mopac_output<&str, ModelProperties>, do_parse!(
 #[test]
 fn test_mopac_parse() {
     use gchemol::io;
-    let fname = "tests/files/models/mopac/mopac.out";
+    let fname = "tests/files/models/mopac/mopac-grad-1scf.out";
 
     let m = MOPAC();
     let mr = m.parse_last(fname).unwrap();
@@ -244,4 +246,11 @@ fn test_mopac_parse() {
 
     let mol = mr.molecule.unwrap();
     assert_eq!(13, mol.natoms());
+
+    // parsing single point energy calculations
+    let fname = "tests/files/models/mopac/mopac-sp.out";
+
+    let m = MOPAC();
+    let mr = m.parse_last(fname).unwrap();
+    assert_eq!(Some(-748.27010), mr.energy)
 }

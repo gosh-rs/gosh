@@ -274,8 +274,8 @@ def set_dmol3_calculator(atoms):
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*batch%20neb][batch neb:1]]
 class BatchNEB(NEB):
-    def __init__(self, images, **kwargs):
-        NEB.__init__(self, images, **kwargs)
+    def __init__(self, images, remove_rotation_and_translation=False, **kwargs):
+        NEB.__init__(self, images, remove_rotation_and_translation=False, **kwargs)
 
     def get_forces(self):
         import subprocess
