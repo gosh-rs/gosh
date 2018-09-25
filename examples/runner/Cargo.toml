@@ -1,7 +1,9 @@
+# cargo
+
 # [[file:~/Workspace/Programming/gosh/gosh.note::*cargo][cargo:1]]
 [package]
 name = "runner"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 
 [dependencies]

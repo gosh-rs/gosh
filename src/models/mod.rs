@@ -118,7 +118,12 @@ impl FromStr for ModelProperties {
     fn from_str(s: &str) -> Result<Self> {
         let all = parse_model_results(s)?;
 
-        Ok(all[all.len()-1].clone())
+        let n = all.len();
+        if n == 0 {
+            bail!("no valid results found!");
+        }
+
+        Ok(all[n-1].clone())
     }
 }
 
