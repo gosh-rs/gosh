@@ -3,11 +3,15 @@
 # [[file:~/Workspace/Programming/gosh/gosh.note::*cargo][cargo:1]]
 [package]
 name = "runner"
-version = "0.0.3"
+version = "0.0.4"
+edition = "2018"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 
 [dependencies]
+structopt = "*"
 quicli = "*"
+dotenv = "*"
+tempfile = "*"
 duct = "*"
 gosh = {path = "../.."}
 #gchemol = { git = "https://github.com/ybyygu/gchemol.git" }
