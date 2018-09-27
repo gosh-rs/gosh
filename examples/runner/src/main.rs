@@ -20,8 +20,8 @@ use gchemol::{
 
 use gosh::models::*;
 
-/// A universal runner for Blackbox Model
 #[derive(Debug, StructOpt)]
+/// A universal runner for Blackbox Model
 struct Cli {
     /// Input molecule file
     #[structopt(parse(from_os_str))]
@@ -107,6 +107,7 @@ fn safe_call<P: AsRef<Path>>(runfile: P, input: &str) -> Result<String> {
     let tdir = new_scrdir()?;
 
     info!("scratch dir: {}", tdir.path().display());
+
     let cmdline = format!("{}", runfile.display());
     output = cmd!(&cmdline)
         .dir(tdir.path())
