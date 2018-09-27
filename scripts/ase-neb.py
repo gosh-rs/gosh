@@ -94,14 +94,15 @@ def set_gaussian_calculator(atoms):
 
 # [[file:~/Workspace/Programming/gosh/gosh.note::*GEMI%20calculator][GEMI calculator:1]]
 import json
+import subprocess
 import re
 from collections import defaultdict
 
-from ase.calculators.calculator import FileIOCalculator
+from ase.calculators.calculator import FileIOCalculator, Calculator
 
 class GEMI(FileIOCalculator):
     implemented_properties = ['energy', 'forces']
-    command = 'runner PREFIX.xyz > PREFIX.mps -e /share/apps/mopac/gemi/gemi-submit.sh -t /share/apps/mopac/gemi/gemi-input.hbs'
+    command = 'runner PREFIX.xyz -t /share/apps/mopac/sp'
 
     def __init__(self, restart=None, ignore_bad_restart_file=False,
                  label='gemi', atoms=None, **kwargs):
@@ -111,31 +112,26 @@ class GEMI(FileIOCalculator):
         FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
                                   label, atoms, **kwargs)
 
-    def write_input(self, atoms, properties=None, system_changes=None):
-        FileIOCalculator.write_input(self, atoms, properties, system_changes)
-        ase.io.write(self.label + '.xyz', atoms, **self.parameters)
+    def calculate(self, atoms=None, properties=['energy'], system_changes=["positions"]):
+        Calculator.calculate(self, atoms, properties, system_changes)
+        if self.command is None:
+            raise CalculatorSetupError(
+                'Please set ${} environment variable '
+                .format('ASE_' + self.name.upper() + '_COMMAND') +
+                'or supply the command keyword')
 
-    def read_results(self):
-        output = open(self.label + '.mps').read()
-        lines = output.splitlines()
+        ase.io.write("{}.xyz".format(self.prefix), self.atoms)
+        command = self.command.replace('PREFIX', self.prefix)
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
+        output, errorcode = process.communicate()
+
+        if errorcode:
+            raise CalculationFailed('{} in {} returned an error: {}'
+                                    .format(self.name, self.directory,
+                                            errorcode))
 
         entries = parse_model_properties(output)
         self.results = entries[-1]
-
-class GEMIDummy(FileIOCalculator):
-    implemented_properties = ['energy', 'forces']
-    command = 'runner PREFIX.xyz > PREFIX.mps -e /share/apps/mopac/gemi/gemi-submit.sh -t /share/apps/mopac/gemi/gemi-input.hbs'
-
-    def __init__(self, restart=None, ignore_bad_restart_file=False,
-                 label='gemi', atoms=None, **kwargs):
-        """
-        general external model caller interface
-        """
-        FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
-                                  label, atoms, **kwargs)
-    def calculate(self, atoms=None, properties=['energy'], system_changes=["positions"]):
-        pass
-
 
 def ase_results_to_json(calculator):
     """convert ase calculator results to json"""
@@ -284,14 +280,13 @@ class BatchNEB(NEB):
         e1 = self.images[-1].get_total_energy()
 
         ase.io.write("neb.xyz", self.images[1:-1])
-        cmdline = "runner neb.xyz -j -e /share/apps/mopac/gemi/gemi-submit.sh -t /share/apps/mopac/gemi/gemi-input.hbs > neb.mps"
-        errorcode = subprocess.call(cmdline, shell=True)
-
-        if errorcode:
+        cmdline = "runner neb.xyz -j -t /share/apps/mopac/sp"
+        process = subprocess.Popen(cmdline, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
+        output, err = process.communicate()
+        if err:
             raise RuntimeError("runner failed!")
 
-        txt = open("neb.mps").read()
-        entries = parse_model_properties(txt)
+        entries = parse_model_properties(output)
         n = len(self.images)
         assert n - 2 == len(entries)
 
