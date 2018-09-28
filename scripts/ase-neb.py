@@ -89,10 +89,10 @@ def set_gaussian_calculator(atoms):
     atoms.set_calculator(calc)
 # gaussian:1 ends here
 
-# GEMI calculator
-# General External Model Interface
+# balckbox model/calculator
+# Universal External Model Interface
 
-# [[file:~/Workspace/Programming/gosh/gosh.note::*GEMI%20calculator][GEMI calculator:1]]
+# [[file:~/Workspace/Programming/gosh/gosh.note::*balckbox%20model/calculator][balckbox model/calculator:1]]
 import json
 import subprocess
 import re
@@ -143,13 +143,13 @@ def ase_results_to_json(calculator):
         else:
             d[k] = v
     return json.dumps(d)
-# GEMI calculator:1 ends here
+# balckbox model/calculator:1 ends here
 
 
 
 # tests
 
-# [[file:~/Workspace/Programming/gosh/gosh.note::*GEMI%20calculator][GEMI calculator:2]]
+# [[file:~/Workspace/Programming/gosh/gosh.note::*balckbox%20model/calculator][balckbox model/calculator:2]]
 def test_gemi():
     from ase.optimize import BFGS
 
@@ -158,13 +158,13 @@ def test_gemi():
     atoms.set_calculator(calc)
     n = BFGS(atoms)
     n.run(fmax=0.1)
-# GEMI calculator:2 ends here
+# balckbox model/calculator:2 ends here
 
 
 
 # parse model results
 
-# [[file:~/Workspace/Programming/gosh/gosh.note::*GEMI%20calculator][GEMI calculator:3]]
+# [[file:~/Workspace/Programming/gosh/gosh.note::*balckbox%20model/calculator][balckbox model/calculator:3]]
 def parse_one_part(part):
     if not part.strip():
         return
@@ -210,7 +210,7 @@ def parse_model_properties(stream):
             all_entries.append(d)
 
     return all_entries
-# GEMI calculator:3 ends here
+# balckbox model/calculator:3 ends here
 
 # mopac
 
