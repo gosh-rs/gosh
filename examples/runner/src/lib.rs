@@ -23,7 +23,7 @@ pub fn new_scrdir() -> Result<TempDir> {
 // dotenv
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*dotenv][dotenv:1]]
-use dotenv::dotenv;
+use dotenv;
 use std::env;
 use std::path::{Path, PathBuf};
 use quicli::prelude::*;
@@ -33,10 +33,10 @@ fn enter_dir_with_env(dir: &Path) -> Result<()>{
     info!("read dotenv vars from {}", dir.display());
 
     // change to directory
-    env::set_current_dir(&dir)?;
+    // env::set_current_dir(&dir)?;
 
     // read environment variables
-    dotenv().ok();
+    dotenv::from_path(&dir).ok();
 
     for (key, value) in env::vars() {
         if key.starts_with("BBM") {

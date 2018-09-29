@@ -20,8 +20,8 @@ use gchemol::{
 
 use gosh::models::*;
 
-#[derive(Debug, StructOpt)]
 /// A universal runner for Blackbox Model
+#[derive(Debug, StructOpt)]
 struct Cli {
     /// Input molecule file
     #[structopt(parse(from_os_str))]
@@ -38,6 +38,10 @@ struct Cli {
     /// Template directory with all related files. The default is current directory.
     #[structopt(short="t", long="template-dir", parse(from_os_str))]
     tpldir: Option<PathBuf>,
+
+    /// Output the caputured structure. e.g.: -o foo.xyz
+    #[structopt(short="o", long="output", parse(from_os_str))]
+    output: Option<PathBuf>,
 
     #[structopt(flatten)]
     verbosity: Verbosity,
@@ -61,6 +65,7 @@ main!(|args: Cli, log_level: verbosity| {
     let template = io::read_file(ropts.tplfile)
         .map_err(|e| format_err!("failed to load template:\n {}", e))?;
 
+    let mut final_mols = vec![];
     if ! args.join {
         info!("run in normal mode ...");
         for mol in mols.iter() {
@@ -70,6 +75,11 @@ main!(|args: Cli, log_level: verbosity| {
                 let output = safe_call(&ropts.runfile, &txt)?;
                 let x: ModelProperties = output.parse()?;
                 println!("{:}", x);
+
+                // collect molecules
+                if let Some(mol) = x.molecule {
+                    final_mols.push(mol);
+                }
             } else {
                 println!("{:}", txt);
             }
@@ -87,11 +97,22 @@ main!(|args: Cli, log_level: verbosity| {
             let all = ModelProperties::parse_all(&output)?;
             for p in all {
                 println!("{:}", p);
+                // collect molecules
+                if let Some(mol) = p.molecule {
+                    final_mols.push(mol);
+                }
             }
         }  else {
             println!("{:}", txt);
         }
+    }
 
+    info!("found {} molecules.", final_mols.len());
+
+    // output molecules
+    if let Some(path) = args.output {
+        println!("file saved to: {:}", path.display());
+        io::write(path, &final_mols)?;
     }
 });
 
