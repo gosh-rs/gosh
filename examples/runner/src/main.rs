@@ -141,10 +141,15 @@ fn safe_call<P: AsRef<Path>>(runfile: P, input: &str) -> Result<String> {
         .dir(tdir.path())
         .input(input)
         .read()
-        .map_err(|e| format_err!("failed to submit:\n {:?}: {:?}",
-                                 &runfile.display(),
-                                 e)
-        )?;
+        .map_err(|e| {
+            // keep temporary directory alive for debugging
+            let path = tdir.into_path();
+            error!("Job failed.\nPlease check scratch directory:\n {}", path.display());
+
+            format_err!("failed to submit:\n {:?}: {:?}",
+                        &runfile.display(),
+                        e)
+        })?;
 
     Ok(output)
 }

@@ -14,6 +14,7 @@ pub fn new_scrdir() -> Result<TempDir> {
             Ok(tempdir_in(scr_root)?)
         },
         Err(err) => {
+            debug!("scratch root is not set");
             Ok(tempdir()?)
         }
     }
@@ -36,7 +37,7 @@ fn enter_dir_with_env(dir: &Path) -> Result<()>{
     // env::set_current_dir(&dir)?;
 
     // read environment variables
-    dotenv::from_path(&dir).ok();
+    dotenv::from_path(&dir.join(".env")).ok();
 
     for (key, value) in env::vars() {
         if key.starts_with("BBM") {
