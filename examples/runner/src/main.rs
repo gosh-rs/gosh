@@ -73,11 +73,14 @@ main!(|args: Cli, log_level: verbosity| {
             // 3. call external engine
             if ! args.dry {
                 let output = safe_call(&ropts.runfile, &txt)?;
-                let x: ModelProperties = output.parse()?;
-                println!("{:}", x);
+                let p: ModelProperties = output.parse()?;
+                println!("{:}", p);
 
                 // collect molecules
-                if let Some(mol) = x.molecule {
+                if let Some(mut mol) = p.molecule {
+                    if let Some(energy) = p.energy {
+                        mol.name = format!("energy = {:-10.4}", energy);
+                    }
                     final_mols.push(mol);
                 }
             } else {
@@ -98,7 +101,11 @@ main!(|args: Cli, log_level: verbosity| {
             for p in all {
                 println!("{:}", p);
                 // collect molecules
-                if let Some(mol) = p.molecule {
+                if let Some(mut mol) = p.molecule {
+                    // save energy as comment
+                    if let Some(energy) = p.energy {
+                        mol.name = format!("energy = {:-10.4}", energy);
+                    }
                     final_mols.push(mol);
                 }
             }
