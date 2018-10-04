@@ -1,0 +1,6 @@
+PM6 GNorm=0.01 Grad SCFCRT=1E-7 charge=0
+handlbar template for mopac
+optimizae geometry using default optimizer
+{{#each molecule.atoms as |a| ~}}
+{{format a.symbol width=3}} {{format a.x}} 1 {{format a.y}} 1 {{format a.z}} 1
+{{/each~}}
