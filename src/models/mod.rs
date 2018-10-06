@@ -10,30 +10,22 @@ use gchemol::{
     Molecule
 };
 
-pub mod dftb;
+pub mod blackbox;
 pub mod lj;
+
+pub use self::blackbox::BlackBox;
+pub use self::lj::LennardJones;
 // base:1 ends here
 
 // chemical model
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*chemical%20model][chemical model:1]]
 pub trait ChemicalModel {
-    /// define how to calculate properties, such as energy, forces, ...
+    /// Define how to compute molecular properties, such as energy, forces, ...
     fn compute(&self, mol: &Molecule) -> Result<ModelProperties>;
 
-    fn positions(&self) -> Vec<[f64; 3]> {
-        unimplemented!()
-    }
-
-    fn energy(&self) -> f64 {
-        unimplemented!()
-    }
-
-    fn forces(&self) -> Vec<[f64; 3]> {
-        unimplemented!()
-    }
-
-    fn dipole_moment(&self) -> [f64; 3] {
+    /// Define how to compute the properties of many molecules in batch
+    fn compute_many(&self, mols: &[Molecule]) -> Result<Vec<ModelProperties>> {
         unimplemented!()
     }
 }

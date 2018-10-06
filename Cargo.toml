@@ -8,6 +8,8 @@ edition = "2018"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 
 [dependencies]
+dotenv = "*"
+tempfile = "*"
 serde = "*"
 dirs = "*"
 serde_json = "*"
