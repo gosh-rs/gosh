@@ -4,19 +4,12 @@
 // :END:
 // command line tool for run a blackbox model
 
-#[macro_use] extern crate duct;
-#[macro_use] extern crate quicli;
-
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use quicli::prelude::*;
 use quicli::main;
 use ::structopt::StructOpt;
 
-use gchemol::{
-    io,
-    Molecule,
-    prelude::*,
-};
+use gchemol::io;
 
 use gosh::{
     models::*,
