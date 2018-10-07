@@ -2,7 +2,7 @@
 // :PROPERTIES:
 // :header-args: :comments org :tangle src/bin/bbmrun.rs
 // :END:
-// command line tool for run a blackbox model
+// command line tool for running a blackbox model
 
 use std::path::PathBuf;
 use quicli::prelude::*;
