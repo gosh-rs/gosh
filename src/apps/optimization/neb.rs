@@ -1,6 +1,6 @@
 // base
-// #+name: b805a230-8b97-4b2e-ac45-0430598e1af8
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
 //! Implementation of the Nudged Elastic Band (NEB) method for finding minimum energy paths and saddle points
 //!
 //! References
@@ -52,7 +52,7 @@ impl Default for NEB {
     fn default() -> Self {
         NEB {
             images           : vec![],
-            climbing         : true,
+            climbing         : false,
             spring_constants : vec![],
             climbing_tol     : 0.005,
         }
@@ -111,9 +111,11 @@ impl NEB {
         Ok(())
     }
 }
+// base:1 ends here
 
 // utils
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*utils][utils:1]]
 // Return displacement vectors: positions_next - positions_this
 fn get_displacements_between(positions_next: &Vec<Point3D>, positions_this: &Vec<Point3D>) -> Vector3fVec {
     debug_assert!(positions_this.len() == positions_next.len());
@@ -146,32 +148,40 @@ fn get_neighboring_images_displacements(images: &Vec<Image>) -> Result<Vec<Vecto
 
     Ok(displs)
 }
+// utils:1 ends here
 
 // core
-// #+name: 68a74344-0730-42bf-aa81-0c9405355dd1
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*core][core:1]]
 impl NEB {
+    /// Carry out NEB optimization
+    pub fn run(&mut self) -> Result<()> {
+        // self.calculate(model)?;
+        unimplemented!()
+    }
+
     /// calculate real energy and forces
-    pub fn calculate<T: ChemicalModel>(&mut self, model: T) -> Result<()>{
+    pub fn calculate<T: ChemicalModel>(&mut self, model: &T) -> Result<()>{
         let nimages = self.images.len();
         // FIXME: special treatment for initial state and final state
         // calculate image energies and forces
-        for i in 0..nimages {
-            // 0. run the model
-            let mr = {
-                let mol = &self.images[i].mol;
-                model.compute(mol)?
-            };
+        let mut mols = vec![];
+        for image in &self.images {
+            mols.push(image.mol.clone());
+        }
 
+        let arr_mp = model.compute_many(&mols)?;
+        for (i, mp) in arr_mp.into_iter().enumerate() {
+            // 0. run the model
             // 1. get the energy
-            if let Some(energy) = mr.energy {
+            if let Some(energy) = mp.energy {
                 self.images[i].energy = Some(energy);
             } else {
                 bail!("no energy");
             }
 
             // 2. get the forces
-            if let Some(forces) = mr.forces {
+            if let Some(forces) = mp.forces {
                 let fm = forces.to_dmatrix();
                 self.images[i].forces = Some(fm);
             } else {
@@ -219,8 +229,8 @@ impl NEB {
     /// Fix forces for the climbing image
     /// Parameters
     /// ----------
-    /// * forces_neb: calculated neb forces in regular way
-    /// * energies: molecule energy in each image
+    /// - forces_neb: calculated neb forces in regular way
+    /// - energies: molecule energy in each image
     fn fix_climbing_image(&self,
                           forces_neb: &mut Vec<Vector3fVec>,
                           energies: &Vec<f64>,
@@ -338,10 +348,11 @@ fn real_forces_perpendicular(all_forces: &Vec<Vector3fVec>, tangents: &Vec<Vecto
 
     vforces
 }
+// core:1 ends here
 
 // original
-// #+name: d915c7b2-5fb5-4c26-8bde-baa6cfae3db9
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*original][original:1]]
 // original algorithm for tangent calculation
 // Ref: Classical and Quantum Dynamics in Condensed Phase Simulations; World Scientific, 1998; p 385.
 fn tangent_vectors_original(displacements: &Vec<Vector3fVec>) -> Result<Vec<Vector3fVec>>
@@ -364,10 +375,11 @@ fn tangent_vectors_original(displacements: &Vec<Vector3fVec>) -> Result<Vec<Vect
 
     Ok(tangents)
 }
+// original:1 ends here
 
 // improved tangent
-// #+name: c6fdc171-9b1c-4ba8-a7c0-d3dbf57237eb
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*improved%20tangent][improved tangent:1]]
 // Parameters
 // ----------
 // displacements: displacement vectors between neighboring images
@@ -424,31 +436,91 @@ fn tangent_vectors_improved
 
     Ok(tangents)
 }
+// improved tangent:1 ends here
 
 // elastic band
-// #+name: 82c2f7d1-cec4-4866-a9ba-7be37b872a95
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*elastic%20band][elastic band:1]]
 fn tangent_vectors_elastic_band(images: &Vec<Molecule>) -> Result<Vec<Vector3fVec>>
 {
     unimplemented!()
 }
+// elastic band:1 ends here
 
-// test
+// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:2]]
+// combine forces of all images into one
+fn forces_mat_to_vec(arr_forces_mat: &[Vector3fVec]) -> Vec<Point3D> {
+    let mut forces = vec![];
+    for forces_mat in arr_forces_mat {
+        let n = forces_mat.ncols();
+        for i in 0..n {
+            let v = forces_mat.column(i);
+            let mut p = [0.0; 3];
+            p[0] = v[0];
+            p[1] = v[1];
+            p[2] = v[2];
+            forces.push(p);
+        }
+    }
+
+    forces
+}
 
 #[test]
-fn test_neb() {
+fn test_neb_opt() -> Result<()>{
     use gchemol::io;
-    use crate::models::lj::LennardJones;
+    use gchemol::Molecule;
+    use crate::models::ChemicalModel;
+    use crate::models::BlackBox;
+    use crate::apps::optimization::fire::FIRE;
 
-    let mut images = io::read("tests/files/NEB/images.mol2").expect("neb test file");
+    // load images
+    let filename = "/home/ybyygu/Incoming/rxview/mopac/ASE-NEB/todo2/C5HT/rx-boc.xyz";
+    let mut images = io::read(filename).expect("neb test file");
+    let nimages = images.len();
 
+    println!("Loaded {:} images", nimages);
+
+    // setup NEB
     let mut neb = NEB::new(images);
-    let mut lj = LennardJones::default();
-    lj.derivative_order = 1;
+    let mut fire = FIRE::default();
+    // let natoms = mol.natoms();
+    let bbm = BlackBox::from_dotenv("/share/apps/mopac/sp");
+    for i in 0..200 {
+        // setup model
+        neb.calculate(&bbm);
+        let arr_forces = neb.neb_forces()?;
+        println!("cycle {:}", i);
+        let forces = forces_mat_to_vec(&arr_forces);
+        let dvects = fire.displacement_vectors(&forces)?;
+        if fire.converged(&forces, &dvects) {
+            break;
+        }
 
-    neb.calculate(lj);
-    let x = neb.neb_forces().unwrap();
-    for i in x {
-        // println!("{:}", i);
+        // update positions
+        for i in 1..(nimages-1) {
+            let mol = &mut neb.images[i].mol;
+            let mut positions = mol.positions();
+            let natoms = mol.natoms();
+            let shift = (i - 1) * natoms;
+            for j in 0..natoms {
+                let x = shift + j;
+                for k in 0..3 {
+                    positions[j][k] += dvects[x][k];
+                }
+            }
+            mol.set_positions(&positions)?;
+        }
     }
+
+    // output
+    let mut mols = vec![];
+    for image in neb.images {
+        mols.push(image.mol.clone());
+    }
+
+    io::write("/tmp/aa.xyz", &mols)?;
+
+    Ok(())
 }
+// test:2 ends here

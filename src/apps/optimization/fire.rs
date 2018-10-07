@@ -1,5 +1,6 @@
 // base
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
 //! Implementation of the Fast-Inertial-Relaxation-Engine (FIRE) algorithm
 //!
 //! References
@@ -58,12 +59,14 @@ impl Default for FIRE {
         }
     }
 }
+// base:1 ends here
 
 // core
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*core][core:1]]
 impl FIRE {
     /// Determine whether we have optimized the structure
-    pub fn converged(&self, forces: &Vec<Point3D>, displacement_vectors: &Vec<Point3D>) -> bool {
+    pub fn converged(&self, forces: &[Point3D], displacement_vectors: &[Point3D]) -> bool {
         debug_assert!(forces.len() == displacement_vectors.len(), "vectors in different size");
         let fnorms = forces.norms();
         let dnorms = displacement_vectors.norms();
@@ -73,7 +76,7 @@ impl FIRE {
         let dmax = 0.05;
         let fcur = fnorms.max();
         let dcur = dnorms.max();
-        // println!("{:#?}", (fcur, dcur));
+        println!("{:?}", (fcur, dcur));
         if fcur < fmax && dcur < dmax {
             true
         } else {
@@ -82,7 +85,7 @@ impl FIRE {
     }
 
     /// get displacement vectors for all atoms
-    pub fn displacement_vectors(&mut self, forces: &Vec<Point3D>) -> Result<Vec<Point3D>> {
+    pub fn displacement_vectors(&mut self, forces: &[Point3D]) -> Result<Vec<Point3D>> {
         let natoms = forces.len();
         let velocities = self.velocities.take();
         if let Some(mut velocities) = velocities {
@@ -98,7 +101,7 @@ impl FIRE {
     }
 
     /// Propagate the system for one simulation step using FIRE algorithm.
-    fn propagate(&mut self, forces: &Vec<Point3D>, velocities: &mut Vec<Point3D>) -> Result<Vec<Point3D>> {
+    fn propagate(&mut self, forces: &[Point3D], velocities: &mut [Point3D]) -> Result<Vec<Point3D>> {
         // F1. calculate the power: P = F·V
         let power = vector_dot(&forces, &velocities);
 
@@ -160,8 +163,8 @@ fn zero_velocities(natoms: usize) -> Vec<Point3D> {
 // get particle displacement vectors by performing a regular MD step
 fn get_md_displacement_vectors
     (
-        forces     : &Vec<Point3D>,
-        velocities : &Vec<Point3D>,
+        forces     : &[Point3D],
+        velocities : &[Point3D],
         timestep   : f64
     ) -> Vec<Point3D>
 {
@@ -186,7 +189,7 @@ fn get_md_displacement_vectors
 
 // Update velocities
 // V = (1 - alpha) · V + alpha · F / |F| · |V|
-fn update_velocities(velocities: &mut Vec<Point3D>, forces: &Vec<Point3D>, alpha: f64) {
+fn update_velocities(velocities: &mut [Point3D], forces: &[Point3D], alpha: f64) {
     let n = velocities.len();
     let vnorm = vector_dot(&velocities, &velocities).sqrt();
     let fnorm = vector_dot(&forces, &forces).sqrt();
@@ -200,7 +203,7 @@ fn update_velocities(velocities: &mut Vec<Point3D>, forces: &Vec<Point3D>, alpha
 }
 
 // scale the displacement vectors if exceed a given max displacement.
-fn scale_disp_vectors(disp_vectors: &mut Vec<Point3D>, maxdisp: f64) {
+fn scale_disp_vectors(disp_vectors: &mut [Point3D], maxdisp: f64) {
     // get the max norm of displacement vector for atoms
     let mut norm_max = 0.0;
     for i in 0..disp_vectors.len() {
@@ -226,11 +229,13 @@ fn scale_disp_vectors(disp_vectors: &mut Vec<Point3D>, maxdisp: f64) {
         }
     }
 }
+// core:1 ends here
 
 // utils
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*utils][utils:1]]
 #[inline]
-fn vector_dot(vector1: &Vec<[f64; 3]>, vector2: &Vec<[f64; 3]>) -> f64 {
+fn vector_dot(vector1: &[[f64; 3]], vector2: &[[f64; 3]]) -> f64 {
     let n = vector1.len();
     debug_assert!(n == vector2.len());
 
@@ -261,9 +266,11 @@ fn test_vector_dot() {
     let x = vector_dot(&a, &b);
     assert_relative_eq!(30.0, x, epsilon=1e-4);
 }
+// utils:1 ends here
 
 // test
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
 #[test]
 fn test_fire_opt() {
     use gchemol::Molecule;
@@ -301,3 +308,4 @@ fn test_fire_opt() {
         mol.set_positions(&positions).unwrap();
     }
 }
+// test:1 ends here

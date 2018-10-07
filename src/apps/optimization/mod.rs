@@ -1,3 +1,8 @@
+// mod.rs
+// :PROPERTIES:
+// :header-args: :tangle src/apps/optimization/mod.rs
+// :END:
+
 // [[file:~/Workspace/Programming/gosh/gosh.note::*mod.rs][mod.rs:1]]
 use super::*;
 use gchemol::prelude::*;
@@ -5,12 +10,12 @@ use gchemol::geometry::prelude::*;
 
 type Point3D = [f64; 3];
 
-pub trait Optimizer: Application {
+pub trait Optimizer: ChemicalApp {
     /// return displacement vectors predicted by the optimizer
     fn displacements(&self, mr: &ModelProperties) -> Result<Vec<Point3D>>;
 
     /// test if optimization converged
-    fn converged(&self, displacements: &Vec<Point3D>, mr: &ModelProperties) -> bool;
+    fn converged(&self, displacements: &[Point3D], mr: &ModelProperties) -> bool;
 
     /// Return the model for optimization
     fn model_results(&self) -> Result<ModelProperties>;
@@ -20,7 +25,7 @@ pub trait Optimizer: Application {
         1000
     }
 
-    fn set_displacements(&mut self, displacements: &Vec<Point3D>);
+    fn set_displacements(&mut self, displacements: &[Point3D]);
 
     /// carry out optimization
     /// # Parameters
