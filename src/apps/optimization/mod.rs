@@ -10,50 +10,61 @@ use gchemol::geometry::prelude::*;
 
 type Point3D = [f64; 3];
 
-pub trait Optimizer: ChemicalApp {
-    /// return displacement vectors predicted by the optimizer
-    fn displacements(&self, mr: &ModelProperties) -> Result<Vec<Point3D>>;
+#[derive(Debug, Clone)]
+pub struct ConvergenceCriteria {
+    /// The maximum number of optimization cycles.
+    max_cycle: usize,
+    max_force: f64,
+    rms_force: f64,
+}
 
-    /// test if optimization converged
-    fn converged(&self, displacements: &[Point3D], mr: &ModelProperties) -> bool;
-
-    /// Return the model for optimization
-    fn model_results(&self) -> Result<ModelProperties>;
-
-    /// Return the max allowed iterations
-    fn max_iter(&self) -> usize {
-        1000
+impl Default for ConvergenceCriteria {
+    fn default() -> Self {
+        ConvergenceCriteria {
+            max_cycle: 100,
+            max_force: 0.2,
+            rms_force: 0.1,
+        }
     }
+}
 
-    fn set_displacements(&mut self, displacements: &[Point3D]);
+pub trait Optimizer: ChemicalApp {
+    /// Return cartesian displacements predicted by the optimizer
+    fn displacements(&self, p: &ModelProperties) -> Result<Vec<Point3D>>;
 
-    /// carry out optimization
+    /// Test if optimization converged
+    fn converged(&self, displacements: &[Point3D], mp: &ModelProperties) -> bool;
+
+    /// Optimize Molecule `mol` using a chemical model `model`
     /// # Parameters
     /// - fmax: the convergence criteria of forces
     /// # Panics
     /// if fmax is not positive number.
-    fn run(&mut self, fmax: f64) -> Result<()> {
-        assert!(!fmax.is_sign_positive());
-
-        let n = self.max_iter();
+    fn run<T: ChemicalModel>(&mut self, mol: &mut Molecule, model: T) -> Result<()> {
         let mut icycle = 0;
         loop {
-            // calculate energy, forces, ... using model
-            let mr = self.model_results()?;
+            info!("Optimization cycle {}", icycle);
+            // calculate energy, forces, ... by applying a chemical model
+            let mp = model.compute(&mol)?;
+
             // calculate displacement vectors using optimizer
-            let dvs = self.displacements(&mr)?;
-            let forces = &mr.forces;
-            if self.converged(&dvs, &mr) {
+            let dvs = self.displacements(&mp)?;
+            if self.converged(&dvs, &mp) {
+                info!("Optimization converged.");
                 break;
             }
 
             // update positions if not converged
-            self.set_displacements(&dvs);
+            let mut positions = mol.positions();
+            let natoms = mol.natoms();
+            for i in 0..natoms {
+                for k in 0..3 {
+                    positions[i][k] += dvs[i][k];
+                }
+            }
+            mol.set_positions(&positions)?;
 
             icycle += 1;
-        }
-        if icycle >= n {
-            warn!("opt convergence failed!");
         }
 
         Ok(())

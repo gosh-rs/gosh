@@ -113,55 +113,50 @@ impl NEB {
 }
 // base:1 ends here
 
-// utils
-
-// [[file:~/Workspace/Programming/gosh/gosh.note::*utils][utils:1]]
-// Return displacement vectors: positions_next - positions_this
-fn get_displacements_between(positions_next: &Vec<Point3D>, positions_this: &Vec<Point3D>) -> Vector3fVec {
-    debug_assert!(positions_this.len() == positions_next.len());
-
-    let pts1 = positions_this.to_dmatrix();
-    let pts2 = positions_next.to_dmatrix();
-
-    pts2 - pts1
-}
-
-// Return displacement vectors between every pair of neighboring images
-// displ = R_{i+1} - R_{i}
-fn get_neighboring_images_displacements(images: &Vec<Image>) -> Result<Vec<Vector3fVec>>
-{
-    let nmols = images.len();
-    assert!(nmols >= 3, "neb tangent original: not enough images");
-
-    // tangent vectors along the path
-    let mut displs = Vec::with_capacity(nmols - 1);
-
-    // for intermediate images: between neighboring images
-    for i in 0..(nmols-1) {
-        let positions_this = images[i].mol.positions();
-        let positions_next = images[i+1].mol.positions();
-
-        // normalized displacement vectors
-        let displ = get_displacements_between(&positions_next, &positions_this);
-        displs.push(displ);
-    }
-
-    Ok(displs)
-}
-// utils:1 ends here
-
 // core
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*core][core:1]]
+use crate::apps::optimization::fire::FIRE;
+
 impl NEB {
-    /// Carry out NEB optimization
-    pub fn run(&mut self) -> Result<()> {
-        // self.calculate(model)?;
-        unimplemented!()
+    /// Carry out NEB optimization using a chemical model
+    pub fn run<T: ChemicalModel>(&mut self, model: &T) -> Result<()> {
+        let nimages = self.images.len();
+
+        // optimization loop
+        let mut fire = FIRE::default();
+        for i in 0..200 {
+            // 1. real calculation
+            self.calculate(model)?;
+            let arr_forces = self.neb_forces()?;
+            println!("cycle {:}", i);
+            let forces = forces_mat_to_vec(&arr_forces);
+            let dvects = fire.displacement_vectors(&forces)?;
+            if fire.converged(&forces, &dvects) {
+                break;
+            }
+
+            // 2. update positions
+            for i in 1..(nimages-1) {
+                let mol = &mut self.images[i].mol;
+                let mut positions = mol.positions();
+                let natoms = mol.natoms();
+                let shift = (i - 1) * natoms;
+                for j in 0..natoms {
+                    let x = shift + j;
+                    for k in 0..3 {
+                        positions[j][k] += dvects[x][k];
+                    }
+                }
+                mol.set_positions(&positions)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// calculate real energy and forces
-    pub fn calculate<T: ChemicalModel>(&mut self, model: &T) -> Result<()>{
+    fn calculate<T: ChemicalModel>(&mut self, model: &T) -> Result<()>{
         let nimages = self.images.len();
         // FIXME: special treatment for initial state and final state
         // calculate image energies and forces
@@ -192,8 +187,8 @@ impl NEB {
         Ok(())
     }
 
-    /// Return the resulting NEB forces for all images
-    pub fn neb_forces(&self) -> Result<Vec<Vector3fVec>> {
+    /// Return the resulting NEB forces of all images excluding endpoints
+    fn neb_forces(&self) -> Result<Vec<Vector3fVec>> {
         // sanity check
         self.check_images()?;
 
@@ -348,7 +343,62 @@ fn real_forces_perpendicular(all_forces: &Vec<Vector3fVec>, tangents: &Vec<Vecto
 
     vforces
 }
+
+// combine forces of all images into one
+fn forces_mat_to_vec(arr_forces_mat: &[Vector3fVec]) -> Vec<Point3D> {
+    let mut forces = vec![];
+    for forces_mat in arr_forces_mat {
+        let n = forces_mat.ncols();
+        for i in 0..n {
+            let v = forces_mat.column(i);
+            let mut p = [0.0; 3];
+            p[0] = v[0];
+            p[1] = v[1];
+            p[2] = v[2];
+            forces.push(p);
+        }
+    }
+
+    forces
+}
 // core:1 ends here
+
+// utils
+
+// [[file:~/Workspace/Programming/gosh/gosh.note::*utils][utils:1]]
+// Return displacement vectors: positions_next - positions_this
+fn get_displacements_between(positions_next: &Vec<Point3D>, positions_this: &Vec<Point3D>) -> Vector3fVec {
+    debug_assert!(positions_this.len() == positions_next.len());
+
+    let pts1 = positions_this.to_dmatrix();
+    let pts2 = positions_next.to_dmatrix();
+
+    pts2 - pts1
+}
+
+// Return displacement vectors between every pair of neighboring images
+// displ = R_{i+1} - R_{i}
+fn get_neighboring_images_displacements(images: &Vec<Image>) -> Result<Vec<Vector3fVec>>
+{
+    let nmols = images.len();
+    assert!(nmols >= 3, "neb tangent original: not enough images");
+
+    // tangent vectors along the path
+    let mut displs = Vec::with_capacity(nmols - 1);
+
+    // for intermediate images: between neighboring images
+    for i in 0..(nmols-1) {
+        let positions_this = images[i].mol.positions();
+        let positions_next = images[i+1].mol.positions();
+
+        // normalized displacement vectors
+        let displ = get_displacements_between(&positions_next, &positions_this);
+        displs.push(displ);
+    }
+
+    Ok(displs)
+}
+// utils:1 ends here
 
 // original
 
@@ -446,81 +496,3 @@ fn tangent_vectors_elastic_band(images: &Vec<Molecule>) -> Result<Vec<Vector3fVe
     unimplemented!()
 }
 // elastic band:1 ends here
-
-// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:2]]
-// combine forces of all images into one
-fn forces_mat_to_vec(arr_forces_mat: &[Vector3fVec]) -> Vec<Point3D> {
-    let mut forces = vec![];
-    for forces_mat in arr_forces_mat {
-        let n = forces_mat.ncols();
-        for i in 0..n {
-            let v = forces_mat.column(i);
-            let mut p = [0.0; 3];
-            p[0] = v[0];
-            p[1] = v[1];
-            p[2] = v[2];
-            forces.push(p);
-        }
-    }
-
-    forces
-}
-
-#[test]
-fn test_neb_opt() -> Result<()>{
-    use gchemol::io;
-    use gchemol::Molecule;
-    use crate::models::ChemicalModel;
-    use crate::models::BlackBox;
-    use crate::apps::optimization::fire::FIRE;
-
-    // load images
-    let filename = "/home/ybyygu/Incoming/rxview/mopac/ASE-NEB/todo2/C5HT/rx-boc.xyz";
-    let mut images = io::read(filename).expect("neb test file");
-    let nimages = images.len();
-
-    println!("Loaded {:} images", nimages);
-
-    // setup NEB
-    let mut neb = NEB::new(images);
-    let mut fire = FIRE::default();
-    // let natoms = mol.natoms();
-    let bbm = BlackBox::from_dotenv("/share/apps/mopac/sp");
-    for i in 0..200 {
-        // setup model
-        neb.calculate(&bbm);
-        let arr_forces = neb.neb_forces()?;
-        println!("cycle {:}", i);
-        let forces = forces_mat_to_vec(&arr_forces);
-        let dvects = fire.displacement_vectors(&forces)?;
-        if fire.converged(&forces, &dvects) {
-            break;
-        }
-
-        // update positions
-        for i in 1..(nimages-1) {
-            let mol = &mut neb.images[i].mol;
-            let mut positions = mol.positions();
-            let natoms = mol.natoms();
-            let shift = (i - 1) * natoms;
-            for j in 0..natoms {
-                let x = shift + j;
-                for k in 0..3 {
-                    positions[j][k] += dvects[x][k];
-                }
-            }
-            mol.set_positions(&positions)?;
-        }
-    }
-
-    // output
-    let mut mols = vec![];
-    for image in neb.images {
-        mols.push(image.mol.clone());
-    }
-
-    io::write("/tmp/aa.xyz", &mols)?;
-
-    Ok(())
-}
-// test:2 ends here
