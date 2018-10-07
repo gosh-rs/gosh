@@ -13,8 +13,6 @@ use super::*;
 
 #[derive(Debug, Clone)]
 pub struct FIRE {
-    /// Target molecule for optimization
-    mol   : Molecule,
     /// the maximum time step allowed
     dt_max: f64,
     /// factor used to decrease alpha-parameter if downhill
@@ -41,10 +39,9 @@ pub struct FIRE {
     nsteps: usize,
 }
 
-impl FIRE {
-    pub fn new(mol: Molecule) -> Self {
+impl Default for FIRE {
+    fn default() -> Self {
         FIRE {
-            mol,
             // default parameters taken from the original paper
             dt_max     : 1.00,
             alpha_start: 0.10,
@@ -73,36 +70,28 @@ impl Optimizer for FIRE {
     /// Return cartesian displacements predicted by the optimizer
     fn displacements(&mut self, mp: &ModelProperties) -> Result<Vec<Point3D>> {
         if let Some(forces) = &mp.forces {
-            let natoms = forces.len();
-            let velocities = self.velocities.take();
-            if let Some(mut velocities) = velocities {
-                let r = self.propagate(&forces, &mut velocities);
-                self.velocities = Some(velocities);
-                r
-            } else {
-                let mut velocities = zero_velocities(natoms);
-                let r = self.propagate(&forces, &mut velocities);
-                self.velocities = Some(velocities);
-                r
-            }
+            self.displacement_vectors(&forces)
         } else {
             bail!("No forces available!");
         }
     }
+}
 
-    fn set_displacements(&mut self, dvs: &[Point3D]) -> Result<()> {
-        let mut positions = self.mol.positions();
-        let natoms = self.mol.natoms();
-        for i in 0..natoms {
-            for k in 0..3 {
-                positions[i][k] += dvs[i][k];
-            }
+impl FIRE {
+    /// Return cartesian displacements predicted by the optimizer
+    pub fn displacement_vectors(&mut self, forces: &[Point3D]) -> Result<Vec<Point3D>> {
+        let natoms = forces.len();
+        let velocities = self.velocities.take();
+        if let Some(mut velocities) = velocities {
+            let r = self.propagate(&forces, &mut velocities);
+            self.velocities = Some(velocities);
+            r
+        } else {
+            let mut velocities = zero_velocities(natoms);
+            let r = self.propagate(&forces, &mut velocities);
+            self.velocities = Some(velocities);
+            r
         }
-        self.mol.set_positions(&positions)
-    }
-
-    fn compute_model_properties<T: ChemicalModel>(&self, model: &T) -> Result<ModelProperties> {
-        model.compute(&self.mol)
     }
 }
 // optimizer trait:1 ends here
@@ -290,12 +279,12 @@ fn test_fire_opt() -> Result<()> {
 
     let filename = "tests/files/LennardJones/LJ38r.xyz";
     let mut mol = Molecule::from_file(filename).expect("LJ38 opt test file");
-    let mut fire = FIRE::new(mol);
+    let mut fire = FIRE::default();
 
     let mut lj = LennardJones::default();
     lj.derivative_order = 1;
 
-    fire.run(&lj, 100)?;
+    fire.run(&mut mol, &lj, 100)?;
 
     Ok(())
 }

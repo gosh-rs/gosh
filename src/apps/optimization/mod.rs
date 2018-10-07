@@ -32,12 +32,6 @@ pub trait Optimizer: ChemicalApp {
     /// Return cartesian displacements predicted by the optimizer
     fn displacements(&mut self, p: &ModelProperties) -> Result<Vec<Point3D>>;
 
-    /// Update positions with displacements
-    fn set_displacements(&mut self, dvs: &[Point3D]) -> Result<()>;
-
-    /// Define how to compute molecular properties
-    fn compute_model_properties<T: ChemicalModel>(&self, model: &T) -> Result<ModelProperties>;
-
     /// Determine whether we have optimized the structure
     fn converged(&self, displacements: &[Point3D], mp: &ModelProperties, icycle: usize) -> Result<bool> {
         if let Some(forces) = &mp.forces {
@@ -72,12 +66,12 @@ pub trait Optimizer: ChemicalApp {
     /// - maxcycle: The max allowed iterations
     /// # Panics
     /// if fmax is not positive number.
-    fn run<T: ChemicalModel>(&mut self, model: &T, maxcycle: usize) -> Result<()> {
+    fn run<T: ChemicalModel>(&mut self, mol: &mut Molecule, model: &T, maxcycle: usize) -> Result<()> {
         let mut icycle = 0;
         loop {
             info!("Optimization cycle {}", icycle);
             // calculate energy, forces, ... by applying a chemical model
-            let mp = self.compute_model_properties(model)?;
+            let mp = model.compute(&mol)?;
 
             // calculate displacement vectors using optimizer
             let dvs = self.displacements(&mp)?;
@@ -87,7 +81,14 @@ pub trait Optimizer: ChemicalApp {
             }
 
             // update positions if not converged
-            self.set_displacements(&dvs)?;
+            let mut positions = mol.positions();
+            let natoms = mol.natoms();
+            for i in 0..natoms {
+                for k in 0..3 {
+                    positions[i][k] += dvs[i][k];
+                }
+            }
+            mol.set_positions(&positions)?;
 
             icycle += 1;
             if icycle >= maxcycle {

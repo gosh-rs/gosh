@@ -113,48 +113,73 @@ impl NEB {
 }
 // base:1 ends here
 
+// opt trait
+
+// [[file:~/Workspace/Programming/gosh/gosh.note::*opt%20trait][opt trait:1]]
+impl NEB {
+    // create a pseudo molecule
+    fn create_neb_molecule(&mut self) -> Molecule {
+        let nimages = self.images.len();
+        let mut neb_mol = Molecule::new("neb");
+
+        for i in 1..(nimages-1) {
+            let mol = &mut self.images[i].mol;
+            for a in mol.atoms() {
+                neb_mol.add_atom(a.clone());
+            }
+        }
+
+        neb_mol
+    }
+
+    /// Carry out NEB optimization using a chemical model
+    pub fn run<T: ChemicalModel>(&mut self, model: &T) -> Result<()> {
+        let nimages = self.images.len();
+
+        // optimization loop
+        let mut fire = FIRE::default();
+        // let mut mol = self.create_neb_molecule();
+
+        for i in 0..200 {
+            // 1. real calculation
+            self.calculate(model)?;
+            let arr_forces = self.neb_forces()?;
+            let forces = forces_mat_to_vec(&arr_forces);
+            let mut mp = ModelProperties::default();
+            mp.forces = Some(forces);
+
+            let dvects = fire.displacements(&mp)?;
+            if fire.converged(&dvects, &mp, i)? {
+                break;
+            }
+
+            // 2. update positions
+            for i in 1..(nimages-1) {
+                let mol = &mut self.images[i].mol;
+                let mut positions = mol.positions();
+                let natoms = mol.natoms();
+                let shift = (i - 1) * natoms;
+                for j in 0..natoms {
+                    let x = shift + j;
+                    for k in 0..3 {
+                        positions[j][k] += dvects[x][k];
+                    }
+                }
+                mol.set_positions(&positions)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+// opt trait:1 ends here
+
 // core
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*core][core:1]]
 use crate::apps::optimization::fire::FIRE;
 
 impl NEB {
-    // /// Carry out NEB optimization using a chemical model
-    // pub fn run<T: ChemicalModel>(&mut self, model: &T) -> Result<()> {
-    //     let nimages = self.images.len();
-
-    //     // optimization loop
-    //     let mut fire = FIRE::default();
-    //     for i in 0..200 {
-    //         // 1. real calculation
-    //         self.calculate(model)?;
-    //         let arr_forces = self.neb_forces()?;
-    //         println!("cycle {:}", i);
-    //         let forces = forces_mat_to_vec(&arr_forces);
-    //         let dvects = fire.displacement_vectors(&forces)?;
-    //         if fire.converged(&forces, &dvects) {
-    //             break;
-    //         }
-
-    //         // 2. update positions
-    //         for i in 1..(nimages-1) {
-    //             let mol = &mut self.images[i].mol;
-    //             let mut positions = mol.positions();
-    //             let natoms = mol.natoms();
-    //             let shift = (i - 1) * natoms;
-    //             for j in 0..natoms {
-    //                 let x = shift + j;
-    //                 for k in 0..3 {
-    //                     positions[j][k] += dvects[x][k];
-    //                 }
-    //             }
-    //             mol.set_positions(&positions)?;
-    //         }
-    //     }
-
-    //     Ok(())
-    // }
-
     /// calculate real energy and forces
     fn calculate<T: ChemicalModel>(&mut self, model: &T) -> Result<()>{
         let nimages = self.images.len();
