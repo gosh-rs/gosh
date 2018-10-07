@@ -19,9 +19,8 @@ pub mod optimization;
 // Application based on model chemistry
 pub trait ChemicalApp {
     /// Set model chemistry level
-    fn set_model<T: ChemicalModel>(&mut self, model: T);
-
-    /// Set model system
-    fn set_system(&mut self, mol: &Molecule);
+    fn set_model<T: ChemicalModel>(&mut self, model: T) {
+        unimplemented!();
+    }
 }
 // mod.rs:1 ends here

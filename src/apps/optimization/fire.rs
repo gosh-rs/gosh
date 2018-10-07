@@ -13,6 +13,8 @@ use super::*;
 
 #[derive(Debug, Clone)]
 pub struct FIRE {
+    /// Target molecule for optimization
+    mol   : Molecule,
     /// the maximum time step allowed
     dt_max: f64,
     /// factor used to decrease alpha-parameter if downhill
@@ -39,9 +41,10 @@ pub struct FIRE {
     nsteps: usize,
 }
 
-impl Default for FIRE {
-    fn default() -> Self {
+impl FIRE {
+    pub fn new(mol: Molecule) -> Self {
         FIRE {
+            mol,
             // default parameters taken from the original paper
             dt_max     : 1.00,
             alpha_start: 0.10,
@@ -61,45 +64,53 @@ impl Default for FIRE {
 }
 // base:1 ends here
 
+// optimizer trait
+
+// [[file:~/Workspace/Programming/gosh/gosh.note::*optimizer%20trait][optimizer trait:1]]
+impl ChemicalApp for FIRE {}
+
+impl Optimizer for FIRE {
+    /// Return cartesian displacements predicted by the optimizer
+    fn displacements(&mut self, mp: &ModelProperties) -> Result<Vec<Point3D>> {
+        if let Some(forces) = &mp.forces {
+            let natoms = forces.len();
+            let velocities = self.velocities.take();
+            if let Some(mut velocities) = velocities {
+                let r = self.propagate(&forces, &mut velocities);
+                self.velocities = Some(velocities);
+                r
+            } else {
+                let mut velocities = zero_velocities(natoms);
+                let r = self.propagate(&forces, &mut velocities);
+                self.velocities = Some(velocities);
+                r
+            }
+        } else {
+            bail!("No forces available!");
+        }
+    }
+
+    fn set_displacements(&mut self, dvs: &[Point3D]) -> Result<()> {
+        let mut positions = self.mol.positions();
+        let natoms = self.mol.natoms();
+        for i in 0..natoms {
+            for k in 0..3 {
+                positions[i][k] += dvs[i][k];
+            }
+        }
+        self.mol.set_positions(&positions)
+    }
+
+    fn compute_model_properties<T: ChemicalModel>(&self, model: &T) -> Result<ModelProperties> {
+        model.compute(&self.mol)
+    }
+}
+// optimizer trait:1 ends here
+
 // core
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*core][core:1]]
 impl FIRE {
-    /// Determine whether we have optimized the structure
-    pub fn converged(&self, forces: &[Point3D], displacement_vectors: &[Point3D]) -> bool {
-        debug_assert!(forces.len() == displacement_vectors.len(), "vectors in different size");
-        let fnorms = forces.norms();
-        let dnorms = displacement_vectors.norms();
-
-        // FIXME: criteria parameters
-        let fmax = 0.03;
-        let dmax = 0.05;
-        let fcur = fnorms.max();
-        let dcur = dnorms.max();
-        println!("{:?}", (fcur, dcur));
-        if fcur < fmax && dcur < dmax {
-            true
-        } else {
-            false
-        }
-    }
-
-    /// get displacement vectors for all atoms
-    pub fn displacement_vectors(&mut self, forces: &[Point3D]) -> Result<Vec<Point3D>> {
-        let natoms = forces.len();
-        let velocities = self.velocities.take();
-        if let Some(mut velocities) = velocities {
-            let r = self.propagate(&forces, &mut velocities);
-            self.velocities = Some(velocities);
-            r
-        } else {
-            let mut velocities = zero_velocities(natoms);
-            let r = self.propagate(&forces, &mut velocities);
-            self.velocities = Some(velocities);
-            r
-        }
-    }
-
     /// Propagate the system for one simulation step using FIRE algorithm.
     fn propagate(&mut self, forces: &[Point3D], velocities: &mut [Point3D]) -> Result<Vec<Point3D>> {
         // F1. calculate the power: P = F·V
@@ -272,40 +283,20 @@ fn test_vector_dot() {
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
 #[test]
-fn test_fire_opt() {
+fn test_fire_opt() -> Result<()> {
     use gchemol::Molecule;
     use crate::models::ChemicalModel;
     use crate::models::lj::LennardJones;
 
-    // let mut mol = get_test_mol();
     let filename = "tests/files/LennardJones/LJ38r.xyz";
     let mut mol = Molecule::from_file(filename).expect("LJ38 opt test file");
+    let mut fire = FIRE::new(mol);
+
     let mut lj = LennardJones::default();
     lj.derivative_order = 1;
 
-    let mut fire = FIRE::default();
-    let natoms = mol.natoms();
-    for i in 0..1000 {
-        let mresult = lj.compute(&mol).expect("lj calculation");
-        let energy = mresult.energy.expect("lj energy");
-        debug!("step {}: energy = {:-6.3}", i, energy);
-        // println!("step {}: energy = {:-6.3}", i, energy);
+    fire.run(&lj, 100)?;
 
-        let forces = mresult.forces.expect("lj forces");
-        let dvects = fire.displacement_vectors(&forces).expect("dv");
-        // update positions
-        let mut positions = mol.positions();
-        for j in 0..natoms {
-            for k in 0..3 {
-                positions[j][k] += dvects[j][k];
-            }
-        }
-
-        if fire.converged(&forces, &dvects) {
-            break;
-        }
-
-        mol.set_positions(&positions).unwrap();
-    }
+    Ok(())
 }
 // test:1 ends here

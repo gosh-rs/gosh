@@ -119,41 +119,41 @@ impl NEB {
 use crate::apps::optimization::fire::FIRE;
 
 impl NEB {
-    /// Carry out NEB optimization using a chemical model
-    pub fn run<T: ChemicalModel>(&mut self, model: &T) -> Result<()> {
-        let nimages = self.images.len();
+    // /// Carry out NEB optimization using a chemical model
+    // pub fn run<T: ChemicalModel>(&mut self, model: &T) -> Result<()> {
+    //     let nimages = self.images.len();
 
-        // optimization loop
-        let mut fire = FIRE::default();
-        for i in 0..200 {
-            // 1. real calculation
-            self.calculate(model)?;
-            let arr_forces = self.neb_forces()?;
-            println!("cycle {:}", i);
-            let forces = forces_mat_to_vec(&arr_forces);
-            let dvects = fire.displacement_vectors(&forces)?;
-            if fire.converged(&forces, &dvects) {
-                break;
-            }
+    //     // optimization loop
+    //     let mut fire = FIRE::default();
+    //     for i in 0..200 {
+    //         // 1. real calculation
+    //         self.calculate(model)?;
+    //         let arr_forces = self.neb_forces()?;
+    //         println!("cycle {:}", i);
+    //         let forces = forces_mat_to_vec(&arr_forces);
+    //         let dvects = fire.displacement_vectors(&forces)?;
+    //         if fire.converged(&forces, &dvects) {
+    //             break;
+    //         }
 
-            // 2. update positions
-            for i in 1..(nimages-1) {
-                let mol = &mut self.images[i].mol;
-                let mut positions = mol.positions();
-                let natoms = mol.natoms();
-                let shift = (i - 1) * natoms;
-                for j in 0..natoms {
-                    let x = shift + j;
-                    for k in 0..3 {
-                        positions[j][k] += dvects[x][k];
-                    }
-                }
-                mol.set_positions(&positions)?;
-            }
-        }
+    //         // 2. update positions
+    //         for i in 1..(nimages-1) {
+    //             let mol = &mut self.images[i].mol;
+    //             let mut positions = mol.positions();
+    //             let natoms = mol.natoms();
+    //             let shift = (i - 1) * natoms;
+    //             for j in 0..natoms {
+    //                 let x = shift + j;
+    //                 for k in 0..3 {
+    //                     positions[j][k] += dvects[x][k];
+    //                 }
+    //             }
+    //             mol.set_positions(&positions)?;
+    //         }
+    //     }
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     /// calculate real energy and forces
     fn calculate<T: ChemicalModel>(&mut self, model: &T) -> Result<()>{
