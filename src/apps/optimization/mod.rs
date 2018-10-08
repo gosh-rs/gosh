@@ -40,7 +40,7 @@ pub trait Optimizer: ChemicalApp {
             let dnorms = displacements.norms();
 
             // FIXME: criteria parameters
-            let fmax = 0.03;
+            let fmax = 0.10;
             let dmax = 0.05;
             let fcur = fnorms.max();
             let dcur = dnorms.max();
@@ -69,7 +69,6 @@ pub trait Optimizer: ChemicalApp {
     fn run<T: ChemicalModel>(&mut self, mol: &mut Molecule, model: &T, maxcycle: usize) -> Result<()> {
         let mut icycle = 0;
         loop {
-            info!("Optimization cycle {}", icycle);
             // calculate energy, forces, ... by applying a chemical model
             let mp = model.compute(&mol)?;
 
@@ -101,6 +100,8 @@ pub trait Optimizer: ChemicalApp {
     }
 }
 
+pub mod cg;
 pub mod fire;
+pub mod lbfgs;
 pub mod neb;
 // mod.rs:1 ends here

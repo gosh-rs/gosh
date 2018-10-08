@@ -132,6 +132,25 @@ impl NEB {
         neb_mol
     }
 
+    fn neb_energy(&self) -> Option<f64> {
+        use std::f64;
+        let mut emax = f64::MIN;
+
+        for image in &self.images {
+            if let Some(e) = image.energy {
+                if e > emax {
+                    emax = e;
+                }
+            }
+        }
+
+        if emax > f64::MIN {
+            Some(emax)
+        } else {
+            None
+        }
+    }
+
     /// Carry out NEB optimization using a chemical model
     pub fn run<T: ChemicalModel>(&mut self, model: &T) -> Result<()> {
         let nimages = self.images.len();
@@ -147,6 +166,7 @@ impl NEB {
             let forces = forces_mat_to_vec(&arr_forces);
             let mut mp = ModelProperties::default();
             mp.forces = Some(forces);
+            mp.energy = self.neb_energy();
 
             let dvects = fire.displacements(&mp)?;
             if fire.converged(&dvects, &mp, i)? {
