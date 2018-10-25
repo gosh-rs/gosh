@@ -67,10 +67,20 @@ impl ModelProperties {
     pub fn parse_all(output: &str) -> Result<Vec<ModelProperties>> {
         parse_model_results(output)
     }
+
+    /// Return true if there is no useful properties
+    pub fn is_empty(&self) -> bool {
+        //self.energy.is_none() && self.forces.is_none() && self.molecule.is_none()
+        self.energy.is_none() && self.forces.is_none()
+    }
 }
 
 impl fmt::Display for ModelProperties {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // if self.is_empty() {
+        //     panic!("Refuse to display an empty ModelProperties!")
+        // }
+
         let mut txt = format!("@model_properties_format_version {}\n", MODEL_PROPERTIES_FORMAT_VERSION);
 
         // structure
@@ -191,6 +201,10 @@ fn parse_model_results_single(part: &[&str]) -> Result<ModelProperties> {
 }
 
 fn parse_model_results(stream: &str) -> Result<Vec<ModelProperties>> {
+    if stream.trim().is_empty() {
+        bail!("Attemp to parse empty string!");
+    }
+
     // ignore commenting lines or blank lines
     let lines: Vec<_> = stream.lines()
         .filter(|l| {

@@ -44,8 +44,10 @@ impl ModelAdaptor for MOPAC {
 
 use gchemol::parser::*;
 
-/// whitespace including one or more spaces or tabs
-named!(space_token<&str, &str>, eat_separator!(&b" \t"[..]));
+/// A whitespace wrapper consuming " \t\r" (no newline)
+named!(pub space_token<&str, &str>, eat_separator!(&b" \t\r"[..]));
+
+#[macro_export]
 macro_rules! sp (
     ($i:expr, $($args:tt)*) => (
         {
@@ -59,7 +61,7 @@ named!(get_total_energy<&str, f64>, do_parse!(
             take_until!("TOTAL ENERGY            =") >>
             tag!("TOTAL ENERGY")                     >>
             sp!(tag!("="))                           >>
-    energy: sp!(double_s)                            >>
+    energy: sp!(double)                              >>
             sp!(tag!("EV"))                          >>
     (energy)
 ));
@@ -81,9 +83,9 @@ named!(get_dipole<&str, [f64; 3]>, do_parse!(
         read_until_eol      >>
         read_until_eol      >>
         sp!(tag!("SUM"))    >>
-    x:  sp!(double_s)       >>
-    y:  sp!(double_s)       >>
-    z:  sp!(double_s)       >>
+    x:  sp!(double)         >>
+    y:  sp!(double)         >>
+    z:  sp!(double)         >>
 
     (
         [x, y, z]
@@ -118,8 +120,8 @@ named!(sym_position_gradient<&str, (&str, f64, f64)>, do_parse!(
     sym     : sp!(alpha)                               >>
               sp!(tag!("CARTESIAN"))                   >>
               sp!(alt!(tag!("X")|tag!("Y")|tag!("Z"))) >>
-    position: sp!(double_s)                            >>
-    gradient: sp!(double_s)                            >>
+    position: sp!(double)                              >>
+    gradient: sp!(double)                              >>
               read_until_eol                           >>
     (
         (sym, position, gradient)
@@ -189,7 +191,7 @@ named!(mopac_output<&str, ModelProperties>, do_parse!(
     // force consistent energy
     energy : get_total_energy                  >>
     // structure and gradients (stored as momentum)
-    atoms  : opt!(complete!(get_atoms))                        >>
+    atoms  : opt!(complete!(get_atoms))        >>
     // dipole moment
     dipole : get_dipole                        >>
 

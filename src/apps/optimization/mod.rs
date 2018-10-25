@@ -103,5 +103,6 @@ pub trait Optimizer: ChemicalApp {
 pub mod cg;
 pub mod fire;
 pub mod lbfgs;
+// pub mod cg_descent;
 pub mod neb;
 // mod.rs:1 ends here

@@ -44,10 +44,16 @@ main!(|args: Cli, log_level: verbosity| {
     let mopac = MOPAC();
     if args.all {
         for d in mopac.parse_all(&outfile)? {
+            if d.is_empty() {
+                bail!("ee")
+            }
             println!("{:}", d);
         }
     } else {
         let d = mopac.parse_last(&outfile)?;
+        if d.is_empty() {
+            bail!("ee")
+        }
         println!("{:}", d);
     }
 });

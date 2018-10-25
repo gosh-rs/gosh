@@ -20,8 +20,11 @@ nalgebra = "*"
 nom = "4.0"
 linefeed = {git = "https://github.com/murarth/linefeed.git", rev="6ba931f" }
 #linefeed = "0.5"
-#gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol" }
-gchemol = {git = "https://github.com/ybyygu/gchemol.git" }
+gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol" }
+#gchemol = {git = "https://github.com/ybyygu/gchemol.git" }
+#liblbfgs = {git = "https://github.com/ybyygu/rust-liblbfgs.git" }
+liblbfgs = {path = "/home/ybyygu/Workspace/Programming/rust-libs/lbfgs" }
+cg_descent = {path = "/home/ybyygu/Workspace/Programming/rust-libs/cg_descent.rs" }
 
 [dev-dependencies]
 approx = "0.3"

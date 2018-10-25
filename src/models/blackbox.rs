@@ -126,6 +126,7 @@ impl ChemicalModel for BlackBox {
     fn compute(&self, mol: &Molecule) -> Result<ModelProperties> {
         // 1. render input text with the template
         let txt = self.render_input(&mol)?;
+        debug!("{}", txt);
 
         // 2. call external engine
         let output = safe_call(&self.runfile, &txt)?;

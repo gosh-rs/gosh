@@ -30,6 +30,10 @@ struct Cli {
     #[structopt(long="dry-run")]
     dry: bool,
 
+    /// Optimize molecule using builtin optimizer
+    #[structopt(long="opt")]
+    opt: bool,
+
     /// Template directory with all related files. The default is current directory.
     #[structopt(short="t", long="template-dir", parse(from_os_str))]
     tpldir: Option<PathBuf>,
@@ -60,15 +64,23 @@ main!(|args: Cli, log_level: verbosity| {
         for mol in mols.iter() {
             // 3. call external engine
             if ! args.dry {
-                let p = bbm.compute(&mol)?;
-                println!("{:}", p);
-
-                // collect molecules
-                if let Some(mut mol) = p.molecule {
-                    if let Some(energy) = p.energy {
-                        mol.name = format!("energy = {:-10.4}", energy);
+                if args.opt {
+                    use gosh::apps::optimization::lbfgs::lbfgs_opt;
+                    println!("optimization with LBFGS");
+                    let mut mol = mol.clone();
+                    mol.recenter();
+                    let mp = lbfgs_opt(&mol, &bbm)?;
+                    println!("{:#?}", mp);
+                } else {
+                    let p = bbm.compute(&mol)?;
+                    println!("{:}", p);
+                    // collect molecules
+                    if let Some(mut mol) = p.molecule {
+                        if let Some(energy) = p.energy {
+                            mol.name = format!("energy = {:-10.4}", energy);
+                        }
+                        final_mols.push(mol);
                     }
-                    final_mols.push(mol);
                 }
             } else {
                 println!("{:}", bbm.render_input(mol)?);
