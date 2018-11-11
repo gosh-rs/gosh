@@ -25,6 +25,7 @@ gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol" }
 #liblbfgs = {git = "https://github.com/ybyygu/rust-liblbfgs.git" }
 liblbfgs = {path = "/home/ybyygu/Workspace/Programming/rust-libs/lbfgs" }
 cg_descent = {path = "/home/ybyygu/Workspace/Programming/rust-libs/cg_descent.rs" }
+textparser = {git = "https://github.com/ybyygu/text-parser.git" }
 
 [dev-dependencies]
 approx = "0.3"

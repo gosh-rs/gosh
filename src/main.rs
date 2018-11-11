@@ -1,18 +1,7 @@
-// main.rs
-// :PROPERTIES:
-// :header-args: :tangle src/main.rs
-// :END:
-// 一个简易 command line 程序, 方便使用 gosh 中的功能.
-
-//  可参考 cmd2
-// - [[https://github.com/python-cmd2/cmd2][python-cmd2/cmd2: cmd2 - Quickly build feature-rich and user-friendly interactive command line applications in Python]]
-
-
-// [[file:~/Workspace/Programming/gosh/gosh.note::*main.rs][main.rs:1]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::c86846f0-9374-4cdf-b5b3-6e4e2d09f66f][c86846f0-9374-4cdf-b5b3-6e4e2d09f66f]]
 extern crate linefeed;
 extern crate gchemol;
-#[macro_use]
-extern crate quicli;
+use quicli::main;
 
 use quicli::prelude::*;
 
@@ -232,4 +221,4 @@ impl<Term: Terminal> Completer<Term> for GOSHCompleter {
         }
     }
 }
-// main.rs:1 ends here
+// c86846f0-9374-4cdf-b5b3-6e4e2d09f66f ends here

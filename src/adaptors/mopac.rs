@@ -42,19 +42,19 @@ impl ModelAdaptor for MOPAC {
 
 // nom
 
-use gchemol::parser::*;
+use textparser::*;
 
-/// A whitespace wrapper consuming " \t\r" (no newline)
-named!(pub space_token<&str, &str>, eat_separator!(&b" \t\r"[..]));
+// /// A whitespace wrapper consuming " \t\r" (no newline)
+// named!(pub space_token<&str, &str>, eat_separator!(&b" \t\r"[..]));
 
-#[macro_export]
-macro_rules! sp (
-    ($i:expr, $($args:tt)*) => (
-        {
-            sep!($i, space_token, $($args)*)
-        }
-    )
-);
+// #[macro_export]
+// macro_rules! sp (
+//     ($i:expr, $($args:tt)*) => (
+//         {
+//             sep!($i, space_token, $($args)*)
+//         }
+//     )
+// );
 
 //           TOTAL ENERGY            =       -720.18428 EV
 named!(get_total_energy<&str, f64>, do_parse!(
