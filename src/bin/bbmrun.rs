@@ -71,7 +71,14 @@ main!(|args: Cli, log_level: verbosity| {
                     let mut mol = mol.clone();
                     mol.recenter();
                     let mp = lbfgs_opt(&mol, &bbm, 0.005)?;
-                    println!("{:#?}", mp);
+                    println!("{:}", mp);
+                    // collect molecules
+                    if let Some(mut mol) = mp.molecule {
+                        if let Some(energy) = mp.energy {
+                            mol.name = format!("energy = {:-10.4}", energy);
+                        }
+                        final_mols.push(mol);
+                    }
                 } else {
                     let p = bbm.compute(&mol)?;
                     println!("{:}", p);
@@ -113,7 +120,11 @@ main!(|args: Cli, log_level: verbosity| {
 
     // output molecules
     if let Some(path) = args.output {
-        println!("file saved to: {:}", path.display());
-        io::write(path, &final_mols)?;
+        if final_mols.len() == 0 {
+            error!("no molecules was collected!");
+        } else {
+            println!("file saved to: {:}", path.display());
+            io::write(path, &final_mols)?;
+        }
     }
 });
