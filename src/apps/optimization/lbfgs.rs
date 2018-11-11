@@ -1,12 +1,13 @@
 // base
+// #+name: c36b9ffa-9d7a-4a57-a46f-dc8b7f7f0ab6
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::c36b9ffa-9d7a-4a57-a46f-dc8b7f7f0ab6][c36b9ffa-9d7a-4a57-a46f-dc8b7f7f0ab6]]
 //! Implementation of the limited memory BFGS algorithm.
 //! # References
 //! - https://github.com/siesta-project/flos/blob/master/flos/optima/lbfgs.lua
 
 use super::*;
-// base:1 ends here
+// c36b9ffa-9d7a-4a57-a46f-dc8b7f7f0ab6 ends here
 
 // core
 
@@ -14,8 +15,12 @@ use super::*;
 use liblbfgs::LBFGS;
 
 /// Optimize molecule using blackbox model
-pub fn lbfgs_opt<T: ChemicalModel>(mol: &Molecule, model: &T) -> Result<ModelProperties> {
-    let mut lbfgs = LBFGS::default();
+/// # Parameters
+/// - mol: target molecule
+/// - model: chemical model for properties evaluation
+/// - fmax: the max force for convergence
+pub fn lbfgs_opt<T: ChemicalModel>(mol: &Molecule, model: &T, fmax: f64) -> Result<ModelProperties> {
+    let mut lbfgs = LBFGS::new(fmax);
 
     let mp = model.compute(&mol)?;
     if let Some(energy) = mp.energy {
@@ -52,16 +57,11 @@ pub fn lbfgs_opt<T: ChemicalModel>(mol: &Molecule, model: &T) -> Result<ModelPro
                   Ok(fx)
               },
               |prgr| {
-                  // println!("{:#?}", prgr);
                   println!("niter = {:}, fx = {:-10.4}, gnorm = {:-10.4}",
                            prgr.niter,
                            prgr.fx,
                            prgr.gnorm);
-                  if prgr.gnorm < 0.05 {
-                      true
-                  } else {
-                      false
-                  }
+                  false
               }
     )?;
 

@@ -4,6 +4,7 @@
 // :END:
 // command line tool for running a blackbox model
 
+
 use std::path::PathBuf;
 use quicli::prelude::*;
 use quicli::main;
@@ -69,7 +70,7 @@ main!(|args: Cli, log_level: verbosity| {
                     println!("optimization with LBFGS");
                     let mut mol = mol.clone();
                     mol.recenter();
-                    let mp = lbfgs_opt(&mol, &bbm)?;
+                    let mp = lbfgs_opt(&mol, &bbm, 0.005)?;
                     println!("{:#?}", mp);
                 } else {
                     let p = bbm.compute(&mol)?;
