@@ -1,14 +1,10 @@
-// [[file:~/Workspace/Programming/gosh/gosh.note::c86846f0-9374-4cdf-b5b3-6e4e2d09f66f][c86846f0-9374-4cdf-b5b3-6e4e2d09f66f]]
-extern crate linefeed;
-extern crate gchemol;
-use quicli::main;
+// cmd loop
 
+// [[file:~/Workspace/Programming/gosh/gosh.note::*cmd%20loop][cmd loop:1]]
+use quicli::main;
 use quicli::prelude::*;
 
-use std::rc::Rc;
-use linefeed::{Reader, ReadResult};
-use linefeed::terminal::Terminal;
-use linefeed::complete::{Completer, Completion};
+use linefeed::{Interface, ReadResult};
 
 mod cli;
 use crate::cli::Commander;
@@ -27,7 +23,7 @@ fn get_history_file() -> Result<PathBuf> {
 }
 
 main!({
-    let mut reader = Reader::new("rusty gosh")?;
+    let mut reader = Interface::new("rusty gosh")?;
 
     let version = env!("CARGO_PKG_VERSION");
     println!("This is the rusty gosh shell version {}.", version);
@@ -35,7 +31,6 @@ main!({
     println!("Press Ctrl-D or enter \"quit\" or \"q\" to exit.");
     println!("");
 
-    reader.set_completer(Rc::new(GOSHCompleter));
     reader.set_prompt("gosh> ");
 
     let mut commander = Commander::new();
@@ -48,7 +43,7 @@ main!({
         }
     }
 
-    while let Ok(ReadResult::Input(line)) = reader.read_line() {
+    while let ReadResult::Input(line) = reader.read_line()? {
         if !line.trim().is_empty() {
             reader.add_history(line.clone());
         }
@@ -178,47 +173,4 @@ fn split_first_word(s: &str) -> (&str, &str) {
         None => (s, "")
     }
 }
-
-struct GOSHCompleter;
-
-impl<Term: Terminal> Completer<Term> for GOSHCompleter {
-    fn complete(&self, word: &str, reader: &Reader<Term>,
-            start: usize, _end: usize) -> Option<Vec<Completion>> {
-        let line = reader.buffer();
-
-        let mut words = line[..start].split_whitespace();
-
-        match words.next() {
-            // Complete command name
-            None => {
-                let mut compls = Vec::new();
-
-                for &(cmd, _) in GOSH_COMMANDS {
-                    if cmd.starts_with(word) {
-                        compls.push(Completion::simple(cmd.to_owned()));
-                    }
-                }
-
-                Some(compls)
-            }
-            // Complete command parameters
-            Some("load") | Some("write") => {
-                if words.count() == 0 {
-                    let mut res = Vec::new();
-
-                    for (name, _) in reader.variables() {
-                        if name.starts_with(word) {
-                            res.push(Completion::simple(name.to_owned()));
-                        }
-                    }
-
-                    Some(res)
-                } else {
-                    None
-                }
-            }
-            _ => None
-        }
-    }
-}
-// c86846f0-9374-4cdf-b5b3-6e4e2d09f66f ends here
+// cmd loop:1 ends here
