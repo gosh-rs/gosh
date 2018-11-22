@@ -1,8 +1,13 @@
-// bin/bbmrun.rs
+// bbmrun.rs
 // :PROPERTIES:
 // :header-args: :comments org :tangle src/bin/bbmrun.rs
 // :END:
 // command line tool for running a blackbox model
+
+// features:
+// - geometry optimization
+// - collect optimization trajectory
+// - output optimized structure
 
 
 use std::path::PathBuf;

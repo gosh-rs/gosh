@@ -12,7 +12,7 @@ use super::*;
 // core
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*core][core:1]]
-use liblbfgs::LBFGS;
+use ::lbfgs::LBFGS;
 
 /// Optimize molecule using blackbox model
 /// # Parameters
