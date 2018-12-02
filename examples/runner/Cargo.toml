@@ -1,6 +1,7 @@
 # cargo
+# #+name: 0c4ee8f3-a96b-4c0a-861c-d50322d84e40
 
-# [[file:~/Workspace/Programming/gosh/gosh.note::*cargo][cargo:1]]
+# [[file:~/Workspace/Programming/gosh/gosh.note::0c4ee8f3-a96b-4c0a-861c-d50322d84e40][0c4ee8f3-a96b-4c0a-861c-d50322d84e40]]
 [package]
 name = "runner"
 version = "0.0.7"
@@ -8,7 +9,6 @@ edition = "2018"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 
 [dependencies]
-structopt = "*"
 quicli = "*"
 dotenv = "*"
 tempfile = "*"
@@ -16,4 +16,4 @@ duct = "*"
 gosh = {path = "../.."}
 #gchemol = { git = "https://github.com/ybyygu/gchemol.git" }
 gchemol = { path = "../../../gchemol" }
-# cargo:1 ends here
+# 0c4ee8f3-a96b-4c0a-861c-d50322d84e40 ends here

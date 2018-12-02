@@ -1,6 +1,7 @@
 // main
+// #+name: 3a667829-9840-43e1-9353-4ae239ffa053
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*main][main:1]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::3a667829-9840-43e1-9353-4ae239ffa053][3a667829-9840-43e1-9353-4ae239ffa053]]
 #[macro_use] extern crate duct;
 #[macro_use] extern crate quicli;
 
@@ -10,7 +11,6 @@ extern crate gchemol;
 use std::path::{Path, PathBuf};
 
 use quicli::prelude::*;
-use ::structopt::StructOpt;
 
 use gchemol::{
     io,
@@ -153,4 +153,4 @@ fn safe_call<P: AsRef<Path>>(runfile: P, input: &str) -> Result<String> {
 
     Ok(output)
 }
-// main:1 ends here
+// 3a667829-9840-43e1-9353-4ae239ffa053 ends here

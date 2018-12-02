@@ -1,6 +1,14 @@
 // base
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
+//! Line searching decides how far to step along a descent direction.
+//!
+//! # References:
+//!
+//! - Jorge Nocedal and Stephen J. Wright (2006). Numerical Optimization Springer. ISBN 0-387-30303-0.
+
+use gchemol::geometry::prelude::*;
+
 pub struct Backtracking {
     epsilon: f64,
 }
@@ -35,7 +43,7 @@ impl StrongWolfe {
     {
         // sanity check
         assert!(alpha.is_sign_positive());
-        assert!(self.c1 < self.c2);
+        assert!(0.0 < self.c1 && self.c1 < self.c2 && self.c2 < 1.0);
         let n = xk.len();
         assert_eq!(n, dk.len());
 
@@ -51,7 +59,7 @@ impl StrongWolfe {
         let x_next = x_this + alpha * direction;
         let fx_next = feval(&x_next, &mut g_next);
         // wolfe condition 1
-        if fx_this - fx_next >= - self.c1 * alpha * dk * g_this {
+        if fx_this - fx_next >= -self.c1 * alpha * dk * g_this {
             // wolfe condition 2
             if (dk * g_next).abs() <= (self.c2 * dk * g_this).abs() {
                 true

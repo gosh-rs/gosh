@@ -11,9 +11,10 @@
 
 
 use std::path::PathBuf;
+// fix quicli 2018 edition error
+use quicli::prelude::structopt::StructOpt;
 use quicli::prelude::*;
 use quicli::main;
-use ::structopt::StructOpt;
 
 use gchemol::io;
 
