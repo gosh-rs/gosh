@@ -105,4 +105,5 @@ pub mod fire;
 pub mod lbfgs;
 // pub mod cg_descent;
 pub mod neb;
+pub mod line;
 // mod.rs:1 ends here
