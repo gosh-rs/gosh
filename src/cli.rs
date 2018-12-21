@@ -1,17 +1,10 @@
-// cli
-// :PROPERTIES:
-// :header-args: :tangle src/cli.rs
-// :END:
-// 为命令行程序提供方便的功能接口.
+// cmd
 
-
-// [[file:~/Workspace/Programming/gosh/gosh.note::*cli][cli:1]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*cmd][cmd:1]]
 use quicli::prelude::*;
 use std::process::Command;
 
-
 use gchemol::prelude::*;
-
 use gchemol::{
     Molecule,
     io,
@@ -122,4 +115,4 @@ impl Commander {
         Ok(())
     }
 }
-// cli:1 ends here
+// cmd:1 ends here
