@@ -157,7 +157,6 @@ impl NEB {
 
         // optimization loop
         let mut fire = FIRE::default();
-        // let mut mol = self.create_neb_molecule();
 
         for i in 0..200 {
             // 1. real calculation
@@ -446,8 +445,9 @@ fn get_neighboring_images_displacements(images: &Vec<Image>) -> Result<Vec<Vecto
 // utils:1 ends here
 
 // original
+// #+name: 5e0de55c-1e4b-4fd0-8c87-e57c77074514
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*original][original:1]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::5e0de55c-1e4b-4fd0-8c87-e57c77074514][5e0de55c-1e4b-4fd0-8c87-e57c77074514]]
 // original algorithm for tangent calculation
 // Ref: Classical and Quantum Dynamics in Condensed Phase Simulations; World Scientific, 1998; p 385.
 fn tangent_vectors_original(displacements: &Vec<Vector3fVec>) -> Result<Vec<Vector3fVec>>
@@ -470,11 +470,12 @@ fn tangent_vectors_original(displacements: &Vec<Vector3fVec>) -> Result<Vec<Vect
 
     Ok(tangents)
 }
-// original:1 ends here
+// 5e0de55c-1e4b-4fd0-8c87-e57c77074514 ends here
 
 // improved tangent
+// #+name: 97b9cb3e-e333-40c8-b0ba-dd13e354e14e
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*improved%20tangent][improved tangent:1]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::97b9cb3e-e333-40c8-b0ba-dd13e354e14e][97b9cb3e-e333-40c8-b0ba-dd13e354e14e]]
 // Parameters
 // ----------
 // displacements: displacement vectors between neighboring images
@@ -531,13 +532,14 @@ fn tangent_vectors_improved
 
     Ok(tangents)
 }
-// improved tangent:1 ends here
+// 97b9cb3e-e333-40c8-b0ba-dd13e354e14e ends here
 
 // elastic band
+// #+name: 01dc017e-7f38-4216-bd7c-5f0a8fcbfa8e
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*elastic%20band][elastic band:1]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::01dc017e-7f38-4216-bd7c-5f0a8fcbfa8e][01dc017e-7f38-4216-bd7c-5f0a8fcbfa8e]]
 fn tangent_vectors_elastic_band(images: &Vec<Molecule>) -> Result<Vec<Vector3fVec>>
 {
     unimplemented!()
 }
-// elastic band:1 ends here
+// 01dc017e-7f38-4216-bd7c-5f0a8fcbfa8e ends here

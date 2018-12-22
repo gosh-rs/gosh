@@ -3,25 +3,19 @@
 // :header-args: :comments org :tangle src/bin/mopac-adaptor.rs
 // :END:
 
-#[macro_use] extern crate duct;
+#[macro_use]
+extern crate duct;
 
-extern crate gosh;
 extern crate gchemol;
+extern crate gosh;
 
 use std::path::PathBuf;
-// fix quicli 2018 edition error
-use quicli::prelude::structopt::StructOpt;
-use quicli::prelude::*;
-use quicli::main;
 
-use gchemol::{
-    io,
-    Molecule,
-    prelude::*,
-};
+use gchemol::{io, prelude::*, Molecule};
+use gosh::cmd_utils::*;
 
-use gosh::models::*;
 use gosh::adaptors::*;
+use gosh::models::*;
 
 /// Read MOPAC calculated results, format them as standard external model results.
 #[derive(Debug, StructOpt)]
@@ -38,7 +32,10 @@ struct Cli {
     verbosity: Verbosity,
 }
 
-main!(|args: Cli, log_level: verbosity| {
+fn main() -> Result<()> {
+    let args = Cli::from_args();
+    args.verbosity.setup_env_logger(&env!("CARGO_PKG_NAME"))?;
+
     // 1. read mopac output
     let outfile = &args.outfile;
 
@@ -46,15 +43,17 @@ main!(|args: Cli, log_level: verbosity| {
     if args.all {
         for d in mopac.parse_all(&outfile)? {
             if d.is_empty() {
-                bail!("ee")
+                bail!("ee");
             }
             println!("{:}", d);
         }
     } else {
         let d = mopac.parse_last(&outfile)?;
         if d.is_empty() {
-            bail!("ee")
+            bail!("ee");
         }
         println!("{:}", d);
     }
-});
+
+    Ok(())
+}

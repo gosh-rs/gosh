@@ -1,7 +1,7 @@
 // base
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
-use quicli::prelude::*;
+use crate::core_utils::*;
 use std::path::{Path, PathBuf};
 
 use gchemol::prelude::*;
@@ -230,8 +230,9 @@ fn parse_model_results(stream: &str) -> Result<Vec<ModelProperties>> {
 // display/parse:1 ends here
 
 // test
+// #+name: 64cade33-a332-46b6-b3d9-f15309ff98ad
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::64cade33-a332-46b6-b3d9-f15309ff98ad][64cade33-a332-46b6-b3d9-f15309ff98ad]]
 #[test]
 fn test_model_parse_results() {
     use gchemol::io;
@@ -257,4 +258,4 @@ fn test_model_parse_results() {
     let e = &r.energy.expect("model result: energy");
     assert_relative_eq!(-0.329336, e, epsilon=1e-4);
 }
-// test:1 ends here
+// 64cade33-a332-46b6-b3d9-f15309ff98ad ends here

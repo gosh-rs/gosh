@@ -1,8 +1,7 @@
 // cmd loop
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*cmd%20loop][cmd loop:1]]
-use quicli::main;
-use quicli::prelude::*;
+use gosh::cmd_utils::*;
 
 use linefeed::{Interface, ReadResult};
 
@@ -22,7 +21,7 @@ fn get_history_file() -> Result<PathBuf> {
     }
 }
 
-main!({
+fn main() -> CliResult {
     let mut reader = Interface::new("rusty gosh")?;
 
     let version = env!("CARGO_PKG_VERSION");
@@ -151,7 +150,9 @@ main!({
             _ => println!("{:?}: not a command", line),
         }
     }
-});
+
+    Ok(())
+}
 
 static GOSH_COMMANDS: &'static [(&'static str, &'static str)] = &[
     ("help",             "You're looking at it"),

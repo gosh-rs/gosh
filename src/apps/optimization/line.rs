@@ -7,7 +7,6 @@
 //!
 //! - Jorge Nocedal and Stephen J. Wright (2006). Numerical Optimization Springer. ISBN 0-387-30303-0.
 
-use quicli::prelude::*;
 use super::*;
 use gchemol::geometry::prelude::*;
 // header:1 ends here

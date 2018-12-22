@@ -1,7 +1,7 @@
 // cmd
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*cmd][cmd:1]]
-use quicli::prelude::*;
+use gosh::core_utils::*;
 use std::process::Command;
 
 use gchemol::prelude::*;

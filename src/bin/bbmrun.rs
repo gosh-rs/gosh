@@ -10,17 +10,12 @@
 // - output optimized structure
 
 
+use gosh::cmd_utils::*;
 use std::path::PathBuf;
-// fix quicli 2018 edition error
-use quicli::prelude::structopt::StructOpt;
-use quicli::prelude::*;
-use quicli::main;
 
 use gchemol::io;
 
-use gosh::{
-    models::*,
-};
+use gosh::models::*;
 
 /// An universal runner for Blackbox Model
 #[derive(Debug, StructOpt)]
@@ -30,30 +25,33 @@ struct Cli {
     molfile: PathBuf,
 
     /// Join multiple molecules into a single input
-    #[structopt(short="j", long="join")]
+    #[structopt(short = "j", long = "join")]
     join: bool,
 
     /// Dry-run mode: generate input file, but no real calculation.
-    #[structopt(long="dry-run")]
+    #[structopt(long = "dry-run")]
     dry: bool,
 
     /// Optimize molecule using builtin optimizer
-    #[structopt(long="opt")]
+    #[structopt(long = "opt")]
     opt: bool,
 
     /// Template directory with all related files. The default is current directory.
-    #[structopt(short="t", long="template-dir", parse(from_os_str))]
+    #[structopt(short = "t", long = "template-dir", parse(from_os_str))]
     tpldir: Option<PathBuf>,
 
     /// Output the caputured structure. e.g.: -o foo.xyz
-    #[structopt(short="o", long="output", parse(from_os_str))]
+    #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: Option<PathBuf>,
 
     #[structopt(flatten)]
     verbosity: Verbosity,
 }
 
-main!(|args: Cli, log_level: verbosity| {
+fn main() -> CliResult {
+    let args = Cli::from_args();
+    args.verbosity.setup_env_logger(&env!("CARGO_PKG_NAME"))?;
+
     // 1. load molecules
     info!("input molecule file: {}", &args.molfile.display());
     let mols = io::read(args.molfile)?;
@@ -66,11 +64,11 @@ main!(|args: Cli, log_level: verbosity| {
     };
 
     let mut final_mols = vec![];
-    if ! args.join {
+    if !args.join {
         info!("run in normal mode ...");
         for mol in mols.iter() {
             // 3. call external engine
-            if ! args.dry {
+            if !args.dry {
                 if args.opt {
                     use gosh::apps::optimization::lbfgs::lbfgs_opt;
                     println!("optimization with LBFGS");
@@ -102,7 +100,7 @@ main!(|args: Cli, log_level: verbosity| {
         }
     } else {
         info!("run in batch mode ...");
-        if ! args.dry {
+        if !args.dry {
             let all = bbm.compute_many(&mols)?;
             for p in all {
                 println!("{:}", p);
@@ -115,7 +113,7 @@ main!(|args: Cli, log_level: verbosity| {
                     final_mols.push(mol);
                 }
             }
-        }  else {
+        } else {
             for mol in mols.iter() {
                 println!("{:}", bbm.render_input(mol)?);
             }
@@ -133,4 +131,6 @@ main!(|args: Cli, log_level: verbosity| {
             io::write(path, &final_mols)?;
         }
     }
-});
+
+    Ok(())
+}

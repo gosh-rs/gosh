@@ -13,15 +13,15 @@ tempfile = "*"
 serde = "*"
 dirs = "*"
 serde_json = "*"
-quicli = "0.3"
+quicli = "0.4"
 duct = "0.10"
 nalgebra = "*"
 nom = "4.0"
 linefeed = "0.5"
+structopt = "0.2"
 gchemol = {git = "https://github.com/ybyygu/gchemol.git" }
 lbfgs = {git = "https://github.com/ybyygu/rust-lbfgs.git" }
 #liblbfgs = {git = "https://github.com/ybyygu/rust-liblbfgs.git" }
-#lbfgs = {path = "/home/ybyygu/Workspace/Programming/rust-libs/lbfgs" }
 textparser = {git = "https://github.com/ybyygu/text-parser.git" }
 cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
 #cg_descent = {path = "/home/ybyygu/Workspace/Programming/rust-libs/cg_descent.rs" }
