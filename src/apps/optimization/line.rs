@@ -29,10 +29,15 @@ fn backtracking_search(direction: &[f64], forces_this: &[f64], forces_prev: &[f6
 }
 // backtracking:1 ends here
 
-// base
-// 参考文献: 袁亚湘, 非线性优化计算方法, 北京: 科学出版社, 2008, 算法2.4.5 (37页).
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
+
+// 参考文献:
+// - 袁亚湘, 非线性优化计算方法, 北京: 科学出版社, 2008, 算法2.4.5 (37页).
+// - https://en.wikipedia.org/wiki/Golden-section_search
+
+
+// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:2]]
+/// Golden section search algorithm for unimodal function.
 #[derive(Clone, Debug, Default)]
 pub struct GoldenSectionSearch {
     /// Max allowed iterations. If set it as 0, the iteration will loop forever.
@@ -54,23 +59,24 @@ pub struct GoldenSectionSearch {
 }
 
 impl GoldenSectionSearch {
-    pub fn new(a: f64, b: f64) -> Self {
-        assert!(a >= b || !a.is_sign_positive(), "bad section range!");
+    pub fn new(a: f64, b: f64, epsilon: f64) -> Self {
+        assert!(a < b, "bad section range!");
+        assert!(epsilon.is_sign_positive(), "epsilon should be positive!");
 
         GoldenSectionSearch {
-            // golden ratio
-            tau: 0.5 * (5f64.sqrt() + 1.0),
-            epsilon: 1e-5,
             a,
             b,
+            epsilon,
 
+            // golden ratio
+            tau: 0.5 * (5f64.sqrt() + 1.0),
             ..Default::default()
         }
     }
 
-    /// find a satisfactory position between point `a` and `b` using the Golden
-    /// Section Search algorithm
-    pub fn find<E>(&mut self, mut f: E) -> Result<()>
+    /// Given a function f with a single local minimum in the interval [a, b], returns a
+    /// subset interval [c, d] that contains the minimum with d - c <= epsilon * 0.618.
+    pub fn find<E>(&mut self, mut f: E) -> Result<(f64, f64)>
     where
         E: FnMut(f64) -> Result<f64>,
     {
@@ -95,10 +101,12 @@ impl GoldenSectionSearch {
                 // step 4
                 if self.fbeta <= self.falpha {
                     self.b = self.alpha;
-                } else {
+                }
+                if self.fbeta >= self.falpha {
                     self.a = self.beta;
                 }
-                break;
+
+                return Ok((self.a, self.b));
             }
 
             if self.fbeta > self.falpha {
@@ -106,20 +114,45 @@ impl GoldenSectionSearch {
                 self.a = self.beta;
                 self.beta = self.alpha;
                 self.alpha = self.a + (self.b - self.a) / self.tau;
+                // see python codes in Wikipedia
+                self.fbeta = self.falpha;
                 self.falpha = f(self.alpha)?;
             } else {
                 self.b = self.alpha;
                 self.alpha = self.beta;
                 self.beta = self.b - (self.b - self.a) / self.tau;
+                // see python codes in Wikipedia
+                self.falpha = self.fbeta;
                 self.fbeta = f(self.beta)?;
             }
 
-            if k >= self.max_iterations {
+            if self.max_iterations > 0 && k >= self.max_iterations {
                 bail!("Reached max iterations!");
             }
         }
 
-        Ok(())
+        error!("max allowed iterations!");
+        Ok((self.a, self.b))
     }
 }
-// base:1 ends here
+// base:2 ends here
+
+// test
+
+// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
+#[test]
+fn test_golden_section_search() {
+    let mut gss = GoldenSectionSearch::new(0.0, 2.0, 1e-6);
+    let (a, b) = gss
+        .find(|x| Ok(x.powi(4) - 14.0 * x.powi(3) + 60.0 * x.powi(2) - 70.0 * x))
+        .expect("gss");
+
+    relative_eq!(a, 0.7809, epsilon = 1e-4);
+    relative_eq!(b, 0.7809, epsilon = 1e-4);
+
+    let mut gss = GoldenSectionSearch::new(1.0, 5.0, 1e-5);
+    let (a, b) = gss.find(|x| Ok((x - 2.0).powi(2))).expect("gss");
+    relative_eq!(a, 2.0, epsilon = 1e-4);
+    relative_eq!(b, 2.0, epsilon = 1e-4);
+}
+// test:1 ends here
