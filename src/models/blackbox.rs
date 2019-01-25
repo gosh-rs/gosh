@@ -53,7 +53,7 @@ pub fn new_scrdir() -> Result<TempDir> {
             Ok(tempdir_in(scr_root)?)
         },
         Err(err) => {
-            debug!("scratch root is not set");
+            debug!("scratch root is not set: {:?}", err);
             Ok(tempdir()?)
         }
     }
@@ -126,7 +126,7 @@ impl ChemicalModel for BlackBox {
     fn compute(&self, mol: &Molecule) -> Result<ModelProperties> {
         // 1. render input text with the template
         let txt = self.render_input(&mol)?;
-        debug!("{}", txt);
+        // debug!("{}", txt);
 
         // 2. call external engine
         let output = safe_call(&self.runfile, &txt)?;
@@ -162,13 +162,12 @@ fn safe_call<P: AsRef<Path>>(runfile: P, input: &str) -> Result<String> {
 
     info!("run script file: {}", &runfile.display());
 
-    let mut output = String::new();
     let tdir = new_scrdir()?;
 
     info!("scratch dir: {}", tdir.path().display());
 
     let cmdline = format!("{}", runfile.display());
-    output = cmd!(&cmdline)
+    let output = cmd!(&cmdline)
         .dir(tdir.path())
         .input(input)
         .read()

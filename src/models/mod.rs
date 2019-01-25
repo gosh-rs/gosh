@@ -1,65 +1,44 @@
-// base
+// imports
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*imports][imports:1]]
 use crate::core_utils::*;
-use std::path::{Path, PathBuf};
 
 use gchemol::prelude::*;
 use gchemol::{
     io,
     Molecule
 };
+// imports:1 ends here
 
+// mods
+
+// [[file:~/Workspace/Programming/gosh/gosh.note::*mods][mods:1]]
 pub mod blackbox;
 pub mod lj;
 
 pub use self::blackbox::BlackBox;
 pub use self::lj::LennardJones;
-// base:1 ends here
-
-// chemical model
-
-// [[file:~/Workspace/Programming/gosh/gosh.note::*chemical%20model][chemical model:1]]
-pub trait ChemicalModel {
-    /// Define how to compute molecular properties, such as energy, forces, ...
-    fn compute(&self, mol: &Molecule) -> Result<ModelProperties>;
-
-    /// Define how to compute the properties of many molecules in batch
-    fn compute_many(&self, mols: &[Molecule]) -> Result<Vec<ModelProperties>> {
-        unimplemented!()
-    }
-}
-// chemical model:1 ends here
+// mods:1 ends here
 
 // display/parse
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*display/parse][display/parse:1]]
+use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
-use std::collections::HashMap;
-
-use serde::{
-    self,
-    de::{
-        Deserialize
-    },
-    ser::{
-        Serialize
-    },
-};
 
 const MODEL_PROPERTIES_FORMAT_VERSION: &str = "0.1";
 
 /// The computed results by external application
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ModelProperties {
-    pub energy          : Option<f64>,
-    pub forces          : Option<Vec<[f64; 3]>>,
-    pub dipole          : Option<[f64; 3]>,
-    #[serde(skip_deserializing,skip_serializing)]
-    pub molecule        : Option<Molecule>,
-    #[serde(skip_deserializing,skip_serializing)]
-    pub force_constants : Option<Vec<[f64; 3]>>,
+    pub energy: Option<f64>,
+    pub forces: Option<Vec<[f64; 3]>>,
+    pub dipole: Option<[f64; 3]>,
+    #[serde(skip_deserializing, skip_serializing)]
+    pub molecule: Option<Molecule>,
+    #[serde(skip_deserializing, skip_serializing)]
+    pub force_constants: Option<Vec<[f64; 3]>>,
 }
 
 impl ModelProperties {
@@ -81,7 +60,10 @@ impl fmt::Display for ModelProperties {
         //     panic!("Refuse to display an empty ModelProperties!")
         // }
 
-        let mut txt = format!("@model_properties_format_version {}\n", MODEL_PROPERTIES_FORMAT_VERSION);
+        let mut txt = format!(
+            "@model_properties_format_version {}\n",
+            MODEL_PROPERTIES_FORMAT_VERSION
+        );
 
         // structure
         if let Some(mol) = &self.molecule {
@@ -125,7 +107,7 @@ impl FromStr for ModelProperties {
             bail!("no valid results found!");
         }
 
-        Ok(all[n-1].clone())
+        Ok(all[n - 1].clone())
     }
 }
 
@@ -140,11 +122,8 @@ fn parse_model_results_single(part: &[&str]) -> Result<ModelProperties> {
         if line.starts_with("@") {
             header = line.split_whitespace().next();
         } else {
-            if let Some(k) = header{
-                records
-                    .entry(k)
-                    .or_insert(vec![])
-                    .push(line);
+            if let Some(k) = header {
+                records.entry(k).or_insert(vec![]).push(line);
             }
         }
     }
@@ -161,7 +140,7 @@ fn parse_model_results_single(part: &[&str]) -> Result<ModelProperties> {
                 assert_eq!(1, lines.len(), "expect one line containing energy");
                 let energy = lines[0].trim().parse()?;
                 results.energy = Some(energy);
-            },
+            }
             "@forces" => {
                 let mut forces: Vec<[f64; 3]> = vec![];
                 for line in lines {
@@ -176,13 +155,13 @@ fn parse_model_results_single(part: &[&str]) -> Result<ModelProperties> {
                 }
 
                 results.forces = Some(forces);
-            },
+            }
             "@structure" => {
                 let mut s = lines.join("\n");
                 s.push_str("\n\n");
                 let mol = Molecule::parse_from(s, "text/pxyz")?;
                 results.molecule = Some(mol);
-            },
+            }
             "@dipole" => {
                 assert_eq!(1, lines.len(), "expect one line containing dipole moment");
                 let parts: Vec<_> = lines[0].split_whitespace().collect();
@@ -206,16 +185,15 @@ fn parse_model_results(stream: &str) -> Result<Vec<ModelProperties>> {
     }
 
     // ignore commenting lines or blank lines
-    let lines: Vec<_> = stream.lines()
+    let lines: Vec<_> = stream
+        .lines()
         .filter(|l| {
             let l = l.trim();
-            ! l.starts_with("#") && ! l.is_empty()
-        }).collect();
+            !l.starts_with("#") && !l.is_empty()
+        })
+        .collect();
 
-    let sep = lines[0];
-
-    let parts = lines[1..]
-        .split(|l| l.starts_with("@model_properties_format_version"));
+    let parts = lines[1..].split(|l| l.starts_with("@model_properties_format_version"));
 
     let mut all_results = vec![];
     for part in parts {
@@ -230,9 +208,8 @@ fn parse_model_results(stream: &str) -> Result<Vec<ModelProperties>> {
 // display/parse:1 ends here
 
 // test
-// #+name: 64cade33-a332-46b6-b3d9-f15309ff98ad
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::64cade33-a332-46b6-b3d9-f15309ff98ad][64cade33-a332-46b6-b3d9-f15309ff98ad]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
 #[test]
 fn test_model_parse_results() {
     use gchemol::io;
@@ -258,4 +235,18 @@ fn test_model_parse_results() {
     let e = &r.energy.expect("model result: energy");
     assert_relative_eq!(-0.329336, e, epsilon=1e-4);
 }
-// 64cade33-a332-46b6-b3d9-f15309ff98ad ends here
+// test:1 ends here
+
+// chemical model
+
+// [[file:~/Workspace/Programming/gosh/gosh.note::*chemical%20model][chemical model:1]]
+pub trait ChemicalModel {
+    /// Define how to compute molecular properties, such as energy, forces, ...
+    fn compute(&self, mol: &Molecule) -> Result<ModelProperties>;
+
+    /// Define how to compute the properties of many molecules in batch
+    fn compute_many(&self, _mols: &[Molecule]) -> Result<Vec<ModelProperties>> {
+        unimplemented!()
+    }
+}
+// chemical model:1 ends here

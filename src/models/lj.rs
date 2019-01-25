@@ -1,3 +1,5 @@
+// src
+
 // [[file:~/Workspace/Programming/gosh/gosh.note::*src][src:1]]
 use super::*;
 
@@ -14,10 +16,10 @@ pub struct LennardJones {
 impl Default for LennardJones {
     fn default() -> Self {
         LennardJones {
-            epsilon          : 1.0,
-            sigma            : 1.0,
+            epsilon: 1.0,
+            sigma: 1.0,
             // energy only
-            derivative_order : 0,
+            derivative_order: 0,
         }
     }
 }
@@ -48,7 +50,7 @@ impl ChemicalModel for LennardJones {
         let mut forces = Vec::with_capacity(natoms);
 
         // initialize with zeros
-        for i in 0..natoms {
+        for _ in 0..natoms {
             forces.push([0.0; 3]);
         }
 
@@ -93,12 +95,12 @@ fn test_lj_model() {
     let mol = Molecule::from_file("tests/files/LennardJones/LJ3.xyz").expect("lj3 test file");
     let mr = lj.compute(&mol).expect("lj model: LJ3");
     let e = mr.energy.expect("lj model energy: LJ3");
-    assert_relative_eq!(-3.0, e, epsilon=1e-3);
+    assert_relative_eq!(-3.0, e, epsilon = 1e-3);
 
     let forces = mr.forces.expect("lj model forces: LJ3");
     for i in 0..mol.natoms() {
         for j in 0..3 {
-            assert_relative_eq!(0.0, forces[i][j], epsilon=1e-3);
+            assert_relative_eq!(0.0, forces[i][j], epsilon = 1e-3);
         }
     }
 
@@ -106,12 +108,12 @@ fn test_lj_model() {
     let mol = Molecule::from_file("tests/files/LennardJones/LJ38.xyz").expect("lj38 test file");
     let mr = lj.compute(&mol).expect("lj model: LJ38");
     let e = mr.energy.expect("lj model energy: LJ38");
-    assert_relative_eq!(-173.92843, e, epsilon=1e-3);
+    assert_relative_eq!(-173.92843, e, epsilon = 1e-3);
 
     let forces = mr.forces.expect("lj model forces: LJ3");
     for i in 0..mol.natoms() {
         for j in 0..3 {
-            assert_relative_eq!(0.0, forces[i][j], epsilon=1e-3);
+            assert_relative_eq!(0.0, forces[i][j], epsilon = 1e-3);
         }
     }
 }
