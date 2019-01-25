@@ -21,10 +21,8 @@ linefeed = "0.5"
 structopt = "0.2"
 gchemol = {git = "https://github.com/ybyygu/gchemol.git" }
 lbfgs = {git = "https://github.com/ybyygu/rust-lbfgs.git" }
-#liblbfgs = {git = "https://github.com/ybyygu/rust-liblbfgs.git" }
 textparser = {git = "https://github.com/ybyygu/text-parser.git" }
 cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
-#cg_descent = {path = "/home/ybyygu/Workspace/Programming/rust-libs/cg_descent.rs" }
 
 [dev-dependencies]
 approx = "0.3"

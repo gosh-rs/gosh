@@ -1,7 +1,27 @@
 // base
-// Represents an universal blackbox (external) model defined by user scripts
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
+//! Represents an universal blackbox (external) model defined by user scripts
+//!
+//! # Usage
+//!
+//! ```ignore
+//! use gosh::models::*;
+//! 
+//! // initialize blackbox model from directory
+//! let dir = "/share/apps/mopac/sp";
+//! let bbm = BlackBox::from_dir(dir);
+//! 
+//! // use settings from current directory
+//! let bbm = BlackBox::default();
+//! 
+//! // calculate one molecule
+//! let mp = bbm.compute(&mol)?;
+//! 
+//! // calculate a list of molecules
+//! let mp_all = bbm.compute_many(&mols)?;
+//! ```
+
 use super::*;
 
 pub struct BlackBox {
@@ -19,10 +39,15 @@ impl Default for BlackBox {
 }
 // base:1 ends here
 
-// render
+// pub
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*render][render:1]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*pub][pub:1]]
 impl BlackBox {
+    /// Construct blackbox model under directory context.
+    pub fn from_dir<P: AsRef<Path>>(dir: P) -> Self {
+        Self::from_dotenv(dir)
+    }
+
     /// Render input using template
     pub fn render_input(&self, mol: &Molecule) -> Result<String> {
         // 1. load input template
@@ -35,7 +60,7 @@ impl BlackBox {
         Ok(txt)
     }
 }
-// render:1 ends here
+// pub:1 ends here
 
 // scratch
 
