@@ -20,7 +20,6 @@ nom = "4.0"
 linefeed = "0.5"
 structopt = "0.2"
 gchemol = {git = "https://github.com/ybyygu/gchemol.git", tag="v0.0.27"}
-#gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol"}
 lbfgs = {git = "https://github.com/ybyygu/rust-lbfgs.git", tag="v0.0.13" }
 textparser = {git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.2" }
 cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
