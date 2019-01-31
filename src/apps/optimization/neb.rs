@@ -209,7 +209,11 @@ impl NEB {
             mols.push(image.mol.clone());
         }
 
-        let arr_mp = model.compute_many(&mols)?;
+        let arr_mp: Vec<_> = mols
+            .iter()
+            .map(|m| model.compute(m).expect("bbm"))
+            .collect();
+        // let arr_mp = model.compute_many(&mols)?;
         for (i, mp) in arr_mp.into_iter().enumerate() {
             // 0. run the model
             // 1. get the energy
