@@ -20,13 +20,17 @@ pub use self::blackbox::BlackBox;
 pub use self::lj::LennardJones;
 // mods:1 ends here
 
-// display/parse
+// imports
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*display/parse][display/parse:1]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*imports][imports:1]]
 use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
+// imports:1 ends here
 
+// base
+
+// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
 const MODEL_PROPERTIES_FORMAT_VERSION: &str = "0.1";
 
 /// The computed results by external application
@@ -40,7 +44,11 @@ pub struct ModelProperties {
     #[serde(skip_deserializing, skip_serializing)]
     pub force_constants: Option<Vec<[f64; 3]>>,
 }
+// base:1 ends here
 
+// display/parse
+
+// [[file:~/Workspace/Programming/gosh/gosh.note::*display/parse][display/parse:1]]
 impl ModelProperties {
     /// Parse mulitple entries of ModelProperties from string slice
     pub fn parse_all(output: &str) -> Result<Vec<ModelProperties>> {
@@ -56,10 +64,6 @@ impl ModelProperties {
 
 impl fmt::Display for ModelProperties {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // if self.is_empty() {
-        //     panic!("Refuse to display an empty ModelProperties!")
-        // }
-
         let mut txt = format!(
             "@model_properties_format_version {}\n",
             MODEL_PROPERTIES_FORMAT_VERSION

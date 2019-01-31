@@ -113,44 +113,10 @@ impl NEB {
 }
 // base:1 ends here
 
-// opt trait
+// entry
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*opt%20trait][opt trait:1]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*entry][entry:1]]
 impl NEB {
-    // create a pseudo molecule
-    fn create_neb_molecule(&mut self) -> Molecule {
-        let nimages = self.images.len();
-        let mut neb_mol = Molecule::new("neb");
-
-        for i in 1..(nimages-1) {
-            let mol = &mut self.images[i].mol;
-            for a in mol.atoms() {
-                neb_mol.add_atom(a.clone());
-            }
-        }
-
-        neb_mol
-    }
-
-    fn neb_energy(&self) -> Option<f64> {
-        use std::f64;
-        let mut emax = f64::MIN;
-
-        for image in &self.images {
-            if let Some(e) = image.energy {
-                if e > emax {
-                    emax = e;
-                }
-            }
-        }
-
-        if emax > f64::MIN {
-            Some(emax)
-        } else {
-            None
-        }
-    }
-
     /// Carry out NEB optimization using a chemical model
     pub fn run<T: ChemicalModel>(&mut self, model: &T) -> Result<()> {
         let nimages = self.images.len();
@@ -191,7 +157,7 @@ impl NEB {
         Ok(())
     }
 }
-// opt trait:1 ends here
+// entry:1 ends here
 
 // core
 
@@ -199,8 +165,42 @@ impl NEB {
 use crate::apps::optimization::fire::FIRE;
 
 impl NEB {
+    // create a pseudo molecule
+    fn create_neb_molecule(&mut self) -> Molecule {
+        let nimages = self.images.len();
+        let mut neb_mol = Molecule::new("neb");
+
+        for i in 1..(nimages - 1) {
+            let mol = &mut self.images[i].mol;
+            for a in mol.atoms() {
+                neb_mol.add_atom(a.clone());
+            }
+        }
+
+        neb_mol
+    }
+
+    fn neb_energy(&self) -> Option<f64> {
+        use std::f64;
+        let mut emax = f64::MIN;
+
+        for image in &self.images {
+            if let Some(e) = image.energy {
+                if e > emax {
+                    emax = e;
+                }
+            }
+        }
+
+        if emax > f64::MIN {
+            Some(emax)
+        } else {
+            None
+        }
+    }
+
     /// calculate real energy and forces
-    fn calculate<T: ChemicalModel>(&mut self, model: &T) -> Result<()>{
+    fn calculate<T: ChemicalModel>(&mut self, model: &T) -> Result<()> {
         let nimages = self.images.len();
         // FIXME: special treatment for initial state and final state
         // calculate image energies and forces
@@ -270,12 +270,13 @@ impl NEB {
     /// ----------
     /// - forces_neb: calculated neb forces in regular way
     /// - energies: molecule energy in each image
-    fn fix_climbing_image(&self,
-                          forces_neb: &mut Vec<Vector3fVec>,
-                          energies: &Vec<f64>,
-                          forces: &Vec<Vector3fVec>,
-                          tangents: &Vec<Vector3fVec>) -> Result<()>
-    {
+    fn fix_climbing_image(
+        &self,
+        forces_neb: &mut Vec<Vector3fVec>,
+        energies: &Vec<f64>,
+        forces: &Vec<Vector3fVec>,
+        tangents: &Vec<Vector3fVec>,
+    ) -> Result<()> {
         let n = self.images.len();
 
         // energy tolerance for determing climbing images
@@ -283,10 +284,10 @@ impl NEB {
 
         // locate the climbing image
         let mut candidates = vec![];
-        for i in 1..(n-1) {
-            let eprev = energies[i-1];
-            let ethis = energies[i  ];
-            let enext = energies[i+1];
+        for i in 1..(n - 1) {
+            let eprev = energies[i - 1];
+            let ethis = energies[i];
+            let enext = energies[i + 1];
 
             if ethis - eprev > tol && ethis - enext > tol {
                 candidates.push(i);
@@ -311,7 +312,7 @@ impl NEB {
     fn collect_energies_and_forces(&self) -> Result<(Vec<f64>, Vec<Vector3fVec>)> {
         let n = self.images.len();
         let mut energies = Vec::with_capacity(n);
-        let mut forces   = Vec::with_capacity(n);
+        let mut forces = Vec::with_capacity(n);
 
         for i in 0..n {
             if let Some(e) = &self.images[i].energy {
@@ -337,10 +338,11 @@ impl NEB {
 // displacements: displacement vectors between neighboring molecules (size = N - 1)
 // spring_constants: spring constants for neighboring images (size = N - 1)
 // tangents: tangents to NEB path for intermediate images excluding endpoints (size = N - 2)
-fn spring_forces_parallel(displacements: &Vec<Vector3fVec>,
-                          spring_constants: &Vec<f64>,
-                          tangents: &Vec<Vector3fVec>) -> Vec<Vector3fVec>
-{
+fn spring_forces_parallel(
+    displacements: &Vec<Vector3fVec>,
+    spring_constants: &Vec<f64>,
+    tangents: &Vec<Vector3fVec>,
+) -> Vec<Vector3fVec> {
     let nmols = tangents.len() + 2;
     debug_assert!(nmols - 1 == displacements.len());
     debug_assert!(nmols - 1 == spring_constants.len());
@@ -348,17 +350,17 @@ fn spring_forces_parallel(displacements: &Vec<Vector3fVec>,
     let mut forces = Vec::with_capacity(nmols - 2);
     // calculate spring forces for all intermediate images
     // loop over intermediate images excluding two endpoints
-    for i in 1..(nmols-1) {
+    for i in 1..(nmols - 1) {
         // displacement vectors: R_{i} - R_{i-1}
-        let displ_prev = &displacements[i-1];
+        let displ_prev = &displacements[i - 1];
         // displacement vectors: R_{i+1} - R_{i}
         let displ_next = &displacements[i];
         // spring constant of the previous pair
-        let kprev = spring_constants[i-1];
+        let kprev = spring_constants[i - 1];
         // spring constant of the next pair
         let knext = spring_constants[i];
         // tangent vector corresponding to current image
-        let tangent = &tangents[i-1];
+        let tangent = &tangents[i - 1];
         let f = (displ_next.norm() * knext - displ_prev.norm() * kprev) * tangent;
         forces.push(f);
     }
@@ -370,7 +372,10 @@ fn spring_forces_parallel(displacements: &Vec<Vector3fVec>,
 // ----------
 // all_forces: real forces of molecule in each image including endpoints (size = N)
 // tangents: tangent vectors of all intermediate images excluding endpoints (size = N - 2)
-fn real_forces_perpendicular(all_forces: &Vec<Vector3fVec>, tangents: &Vec<Vector3fVec>) -> Vec<Vector3fVec> {
+fn real_forces_perpendicular(
+    all_forces: &Vec<Vector3fVec>,
+    tangents: &Vec<Vector3fVec>,
+) -> Vec<Vector3fVec> {
     let nmols = all_forces.len();
     debug_assert!(nmols - 2 == tangents.len());
 
@@ -380,7 +385,7 @@ fn real_forces_perpendicular(all_forces: &Vec<Vector3fVec>, tangents: &Vec<Vecto
     for i in 1..(nmols - 1) {
         let fi = &all_forces[i];
         // tangent vector corresponding to current image
-        let ti = &tangents[i-1];
+        let ti = &tangents[i - 1];
         let f = fi - fi.dot(ti) * ti;
         vforces.push(f);
     }
@@ -445,9 +450,8 @@ fn get_neighboring_images_displacements(images: &Vec<Image>) -> Result<Vec<Vecto
 // utils:1 ends here
 
 // original
-// #+name: 5e0de55c-1e4b-4fd0-8c87-e57c77074514
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::5e0de55c-1e4b-4fd0-8c87-e57c77074514][5e0de55c-1e4b-4fd0-8c87-e57c77074514]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*original][original:1]]
 // original algorithm for tangent calculation
 // Ref: Classical and Quantum Dynamics in Condensed Phase Simulations; World Scientific, 1998; p 385.
 fn tangent_vectors_original(displacements: &Vec<Vector3fVec>) -> Result<Vec<Vector3fVec>>
@@ -470,12 +474,11 @@ fn tangent_vectors_original(displacements: &Vec<Vector3fVec>) -> Result<Vec<Vect
 
     Ok(tangents)
 }
-// 5e0de55c-1e4b-4fd0-8c87-e57c77074514 ends here
+// original:1 ends here
 
 // improved tangent
-// #+name: 97b9cb3e-e333-40c8-b0ba-dd13e354e14e
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::97b9cb3e-e333-40c8-b0ba-dd13e354e14e][97b9cb3e-e333-40c8-b0ba-dd13e354e14e]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*improved%20tangent][improved tangent:1]]
 // Parameters
 // ----------
 // displacements: displacement vectors between neighboring images
@@ -532,14 +535,13 @@ fn tangent_vectors_improved
 
     Ok(tangents)
 }
-// 97b9cb3e-e333-40c8-b0ba-dd13e354e14e ends here
+// improved tangent:1 ends here
 
 // elastic band
-// #+name: 01dc017e-7f38-4216-bd7c-5f0a8fcbfa8e
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::01dc017e-7f38-4216-bd7c-5f0a8fcbfa8e][01dc017e-7f38-4216-bd7c-5f0a8fcbfa8e]]
+// [[file:~/Workspace/Programming/gosh/gosh.note::*elastic%20band][elastic band:1]]
 fn tangent_vectors_elastic_band(images: &Vec<Molecule>) -> Result<Vec<Vector3fVec>>
 {
     unimplemented!()
 }
-// 01dc017e-7f38-4216-bd7c-5f0a8fcbfa8e ends here
+// elastic band:1 ends here
