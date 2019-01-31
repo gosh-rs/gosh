@@ -3,25 +3,26 @@
 # [[file:~/Workspace/Programming/gosh/gosh.note::*cargo][cargo:1]]
 [package]
 name = "gosh"
-version = "0.0.16"
+version = "0.0.17"
 edition = "2018"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 
 [dependencies]
-dotenv = "*"
-tempfile = "*"
-serde = "*"
-dirs = "*"
-serde_json = "*"
+dotenv = "0.13"
+tempfile = "3.0"
+serde = "1.0"
+dirs = "1.0"
+serde_json = "1.0"
 quicli = "0.4"
 duct = "0.10"
-nalgebra = "*"
+nalgebra = "0.16"
 nom = "4.0"
 linefeed = "0.5"
 structopt = "0.2"
-gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol"}
-lbfgs = {git = "https://github.com/ybyygu/rust-lbfgs.git" }
-textparser = {path = "/home/ybyygu/Workspace/Programming/rust-libs/text-parser" }
+gchemol = {git = "https://github.com/ybyygu/gchemol.git", tag="v0.0.27"}
+#gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol"}
+lbfgs = {git = "https://github.com/ybyygu/rust-lbfgs.git", tag="v0.0.13" }
+textparser = {git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.2" }
 cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
 
 [dev-dependencies]
