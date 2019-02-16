@@ -31,7 +31,6 @@ fn backtracking_search(direction: &[f64], forces_this: &[f64], forces_prev: &[f6
 
 // base
 
-
 // [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
 /// Golden section search algorithm for unimodal function.
 #[derive(Clone, Debug, Default)]
@@ -109,16 +108,16 @@ impl GoldenSectionSearch {
                 // step 3
                 self.a = self.beta;
                 self.beta = self.alpha;
-                self.alpha = self.a + (self.b - self.a) / self.tau;
                 // see python codes in Wikipedia
                 self.fbeta = self.falpha;
+                self.alpha = self.a + (self.b - self.a) / self.tau;
                 self.falpha = f(self.alpha);
             } else {
                 self.b = self.alpha;
                 self.alpha = self.beta;
-                self.beta = self.b - (self.b - self.a) / self.tau;
                 // see python codes in Wikipedia
                 self.falpha = self.fbeta;
+                self.beta = self.b - (self.b - self.a) / self.tau;
                 self.fbeta = f(self.beta);
             }
 
@@ -127,7 +126,7 @@ impl GoldenSectionSearch {
             }
         }
 
-        error!("max allowed iterations!");
+        warn!("max allowed iterations!");
         Ok((self.a, self.b))
     }
 }
