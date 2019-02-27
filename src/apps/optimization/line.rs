@@ -178,13 +178,13 @@ fn test_golden_section_search() {
     let (a, b) = golden_section_search(0.0, 2.0)
         .find(|x| x.powi(4) - 14.0 * x.powi(3) + 60.0 * x.powi(2) - 70.0 * x)
         .expect("gss");
-    relative_eq!(a, 0.7809, epsilon = 1e-2);
-    relative_eq!(b, 0.7809, epsilon = 1e-2);
+    assert_relative_eq!(a, 0.7809, epsilon = 1e-2);
+    assert_relative_eq!(b, 0.7809, epsilon = 1e-2);
 
     let (a, b) = golden_section_search(1.0, 5.0)
         .find(|x| (x - 2.0).powi(2))
         .expect("gss");
-    relative_eq!(a, 2.0, epsilon = 1e-2);
-    relative_eq!(b, 2.0, epsilon = 1e-2);
+    assert_relative_eq!(a, 2.0, epsilon = 1e-2);
+    assert_relative_eq!(b, 2.0, epsilon = 1e-2);
 }
 // test:1 ends here
