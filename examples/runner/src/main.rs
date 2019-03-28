@@ -2,21 +2,19 @@
 // #+name: 3a667829-9840-43e1-9353-4ae239ffa053
 
 // [[file:~/Workspace/Programming/gosh/gosh.note::3a667829-9840-43e1-9353-4ae239ffa053][3a667829-9840-43e1-9353-4ae239ffa053]]
-#[macro_use] extern crate duct;
-#[macro_use] extern crate quicli;
+#[macro_use]
+extern crate duct;
+#[macro_use]
+extern crate quicli;
 
-extern crate gosh;
 extern crate gchemol;
+extern crate gosh;
 
 use std::path::{Path, PathBuf};
 
 use quicli::prelude::*;
 
-use gchemol::{
-    io,
-    Molecule,
-    prelude::*,
-};
+use gchemol::{io, prelude::*, Molecule};
 
 use gosh::models::*;
 
@@ -28,19 +26,19 @@ struct Cli {
     molfile: PathBuf,
 
     /// Join multiple molecules into a single input
-    #[structopt(short="j", long="join")]
+    #[structopt(short = "j", long = "join")]
     join: bool,
 
     /// Dry-run mode: generate input file, but no real calculation.
-    #[structopt(long="dry-run")]
+    #[structopt(long = "dry-run")]
     dry: bool,
 
     /// Template directory with all related files. The default is current directory.
-    #[structopt(short="t", long="template-dir", parse(from_os_str))]
+    #[structopt(short = "t", long = "template-dir", parse(from_os_str))]
     tpldir: Option<PathBuf>,
 
     /// Output the caputured structure. e.g.: -o foo.xyz
-    #[structopt(short="o", long="output", parse(from_os_str))]
+    #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: Option<PathBuf>,
 
     #[structopt(flatten)]
@@ -62,16 +60,16 @@ main!(|args: Cli, log_level: verbosity| {
     };
 
     // 2. load input template
-    let template = io::read_file(ropts.tplfile)
-        .map_err(|e| format_err!("failed to load template:\n {}", e))?;
+    let template =
+        io::read_file(ropts.tplfile).map_err(|e| format_err!("failed to load template:\n {}", e))?;
 
     let mut final_mols = vec![];
-    if ! args.join {
+    if !args.join {
         info!("run in normal mode ...");
         for mol in mols.iter() {
             let txt = mol.render_with(&template)?;
             // 3. call external engine
-            if ! args.dry {
+            if !args.dry {
                 let output = safe_call(&ropts.runfile, &txt)?;
                 let p: ModelProperties = output.parse()?;
                 println!("{:}", p);
@@ -95,7 +93,7 @@ main!(|args: Cli, log_level: verbosity| {
             txt.push_str(&part);
         }
         // 3. call external engine
-        if ! args.dry {
+        if !args.dry {
             let output = safe_call(&ropts.runfile, &txt)?;
             let all = ModelProperties::parse_all(&output)?;
             for p in all {
@@ -109,7 +107,7 @@ main!(|args: Cli, log_level: verbosity| {
                     final_mols.push(mol);
                 }
             }
-        }  else {
+        } else {
             println!("{:}", txt);
         }
     }
@@ -144,11 +142,12 @@ fn safe_call<P: AsRef<Path>>(runfile: P, input: &str) -> Result<String> {
         .map_err(|e| {
             // keep temporary directory alive for debugging
             let path = tdir.into_path();
-            error!("Job failed.\nPlease check scratch directory:\n {}", path.display());
+            error!(
+                "Job failed.\nPlease check scratch directory:\n {}",
+                path.display()
+            );
 
-            format_err!("failed to submit:\n {:?}: {:?}",
-                        &runfile.display(),
-                        e)
+            format_err!("failed to submit:\n {:?}: {:?}", &runfile.display(), e)
         })?;
 
     Ok(output)

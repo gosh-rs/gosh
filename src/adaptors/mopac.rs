@@ -4,15 +4,11 @@ use super::*;
 use std::fs::File;
 use std::str::Lines;
 
-use gchemol::{
-    io,
-    Atom,
-    Molecule,
-};
+use gchemol::{io, Atom, Molecule};
 
 // unit conversion
 const DEBYE: f64 = 0.20819434;
-const KCAL_MOL: f64 = 1.0/23.061;
+const KCAL_MOL: f64 = 1.0 / 23.061;
 
 pub struct MOPAC();
 
@@ -43,18 +39,6 @@ impl ModelAdaptor for MOPAC {
 // nom
 
 use textparser::*;
-
-// /// A whitespace wrapper consuming " \t\r" (no newline)
-// named!(pub space_token<&str, &str>, eat_separator!(&b" \t\r"[..]));
-
-// #[macro_export]
-// macro_rules! sp (
-//     ($i:expr, $($args:tt)*) => (
-//         {
-//             sep!($i, space_token, $($args)*)
-//         }
-//     )
-// );
 
 //           TOTAL ENERGY            =       -720.18428 EV
 named!(get_total_energy<&str, f64>, do_parse!(
