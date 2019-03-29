@@ -2,7 +2,6 @@
 // :PROPERTIES:
 // :header-args: :comments org :tangle src/adaptors/mod.rs
 // :END:
-// #+name: f874ebc3-afbd-463b-b284-3ce7d0a90535
 
 use std::io::{Read, BufRead, BufReader};
 use std::path::Path;
@@ -34,4 +33,6 @@ pub trait ModelAdaptor {
 type Part<'a> =  ModelProperties;
 
 mod mopac;
+mod vasp;
 pub use self::mopac::MOPAC;
+pub use self::vasp::Vasp;
