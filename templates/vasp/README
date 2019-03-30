@@ -1,0 +1,13 @@
+bbm: Black Box Model
+
+bbm/.env: configurations for bbm files
+- BBM_TPL_FILE: handlebar template for formatting molecule stream
+- BBM_RUN_FILE: script file for submitting calculation
+- BBM_SCR_DIR : scratch directory for DFT calculation
+
+bbm/submit.sh:
+- read structure stream from stdin
+- format it with input.hbs (BBM_TPL_FILE) and prepare input file for VASP (or other engine) calculation
+- call DFT code
+- call adaptor (vasp-adaptor etc) to extract results from output file (OUTCAR for vasp)
+- write energy/forces to stdout in gosh ModelProperties format
