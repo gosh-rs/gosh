@@ -3,8 +3,8 @@ handlebars template # syntax ref: https://handlebarsjs.com/
 {{#each molecule.unit_cell.va as |v| ~}} {{format v}} {{/each}}
 {{#each molecule.unit_cell.vb as |v| ~}} {{format v}} {{/each}}
 {{#each molecule.unit_cell.vc as |v| ~}} {{format v}} {{/each}}
-{{#each molecule.element_types as |e| ~}} {{e.0}} {{/each}}
-{{#each molecule.element_types as |e| ~}} {{e.1}} {{/each}}
+{{#each molecule.species as |e| ~}} {{e.element_symbol}} {{/each}}
+{{#each molecule.species as |e| ~}} {{e.number_of_atoms}} {{/each}}
 Selective dynamics
 Direct
 {{#each molecule.atoms as |a| ~}}
