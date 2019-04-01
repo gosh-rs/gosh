@@ -236,7 +236,7 @@ fn test_model_parse_results() {
     assert!(&r.molecule.is_some());
     let ref mol = r.molecule.unwrap();
     assert_eq!(3, mol.natoms());
-    let e = &r.energy.expect("model result: energy");
+    let e = r.energy.expect("model result: energy");
     assert_relative_eq!(-0.329336, e, epsilon=1e-4);
 }
 // test:1 ends here

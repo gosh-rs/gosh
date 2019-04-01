@@ -1,0 +1,22 @@
+SystemLabel               siesta
+NumberOfAtoms             {{molecule.number_of_atoms}}
+NumberOfSpecies           {{molecule.number_of_species}}
+%block ChemicalSpeciesLabel
+{{#each molecule.species as |s| ~}}
+{{s.index}} {{s.element_number}} {{s.element_symbol}} {{s.number_of_atoms}}
+{{/each~}}
+%endblock ChemicalSpeciesLabel
+AtomicCoordinatesFormat   NotScaledCartesianAng
+%block AtomicCoordinatesAndAtomicSpecies
+{{#each molecule.atoms as |a| ~}}
+{{format a.x}} {{format a.y}} {{format a.z}} {{a.element_index}}
+{{/each~}}
+%endblock AtomicCoordinatesAndAtomicSpecies
+LatticeConstant            1.0 ang
+%block LatticeVectors
+{{#each molecule.unit_cell.va as |v| ~}} {{format v}} {{/each}}
+{{#each molecule.unit_cell.vb as |v| ~}} {{format v}} {{/each}}
+{{#each molecule.unit_cell.vc as |v| ~}} {{format v}} {{/each}}
+%endblock LatticeVectors
+# reading more FDF information from default.fdf
+%include default.fdf

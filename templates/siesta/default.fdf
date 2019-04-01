@@ -1,0 +1,53 @@
+# default input parameters for siesta calculations
+
+PAO.BasisType           split       # split or splitgauss
+PAO.BasisSize           DZP         # basis set
+XC.functional           GGA         # Exchange-correlation functional type
+XC.authors              PBE         # Particular parametrization of xc func
+SpinPolarized           .false.     # Spin unpolarized calculation
+
+# DFT, Grid, SCF
+# for zeolite we use gamma point only
+MeshCutoff              300. Ry     # Equivalent planewave cutoff for the grid
+MaxSCFIterations        200         # Maximum number of SCF iterations per step
+DM.UseSaveDM            .true.      # initialize DM from previous run
+SCFMustConverge         .false.
+DM.NumberPulay          10          # Default value: 0
+DM.NumberKick           20          # Default value: 0
+DM.KickMixingWeight     0.02        # Default value: 0.50
+
+
+# the siesta defaults are good for zeolite, keep it commented out
+# KgridCutoff             0.0 bohr
+# %block kgridMonkhorstPack
+# 1 0 0 0
+# 0 1 0 0
+# 0 0 1 0
+# %endblock kgridMonkhorstPack
+
+# Eigenvalue problem: order-N or diagonalization
+SolutionMethod          diagon      # diagon is more robust; orderN is efficient for larger system
+ElectronicTemperature   5 K         # Temp. for Fermi smearing, default is 300 K
+
+
+# Output options
+WriteKpoints            .false.
+WriteEigenvalues        .false.
+WriteKbands             .false.
+WriteBands              .false.
+WriteMDhistory          .true.
+WriteCoorXmol           .true.      # save final structure in xyz format
+WriteCoorCerius         .true.      # save in .xtl format for importing in material studio
+WriteMDXmol             .true.      # check .ani file for trajectory
+
+# Options for saving/reading information
+DM.UseSaveDM            .true       # Use DM Continuation files
+MD.UseSaveXV            .true.      # Use stored positions and velocities
+MD.UseSaveCG            .false.     # Use stored positions and velocities
+
+# Molecular dynamics and relaxations
+MD.TypeOfRun            cg          # Type of dynamics:
+MD.VariableCell         .false.
+MD.Steps                0           # single point or opt
+MD.MaxForceTol          0.04 ev/Ang # default value: 0.04 eV/Ang
+MD.MaxCGDispl           0.2 Bohr    # Default value: 0.2 Bohr

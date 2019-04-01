@@ -3,7 +3,7 @@
 // :header-args: :comments org :tangle src/adaptors/mod.rs
 // :END:
 
-use std::io::{Read, BufRead, BufReader};
+use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
 
 use crate::core_utils::*;
@@ -30,9 +30,11 @@ pub trait ModelAdaptor {
 }
 
 // the type for the parsed part
-type Part<'a> =  ModelProperties;
+type Part<'a> = ModelProperties;
 
 mod mopac;
+mod siesta;
 mod vasp;
 pub use self::mopac::MOPAC;
+pub use self::siesta::Siesta;
 pub use self::vasp::Vasp;
