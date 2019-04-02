@@ -49,5 +49,5 @@ MD.UseSaveCG            .false.     # Use stored positions and velocities
 MD.TypeOfRun            cg          # Type of dynamics:
 MD.VariableCell         .false.
 MD.Steps                0           # single point or opt
-MD.MaxForceTol          0.04 ev/Ang # default value: 0.04 eV/Ang
+MD.MaxForceTol          0.0 ev/Ang  # set ftol to 0 to make sure SIESTA always output final force.
 MD.MaxCGDispl           0.2 Bohr    # Default value: 0.2 Bohr
