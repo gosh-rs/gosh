@@ -74,7 +74,7 @@ fn main() -> CliResult {
                     println!("optimization with LBFGS");
                     let mut mol = mol.clone();
                     mol.recenter();
-                    let mp = lbfgs_opt(&mol, &bbm, 0.005)?;
+                    let mp = lbfgs_opt(&mol, &bbm, 0.1)?;
                     println!("{:}", mp);
                     // collect molecules
                     if let Some(mut mol) = mp.molecule {
