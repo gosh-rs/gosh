@@ -1,27 +1,27 @@
 // base
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*base][base:1]]
 #![feature(test)]
-#[macro_use] extern crate nom;
-#[macro_use] extern crate duct;
+#[macro_use]
+extern crate nom;
 
 #[cfg(test)]
-#[macro_use] extern crate approx;
+#[macro_use]
+extern crate approx;
 
-pub mod models;
 pub mod adaptors;
 pub mod apps;
+pub use gchemol;
+pub use gosh_models as models;
 
 pub mod core_utils {
     pub use quicli::prelude::*;
     pub type Result<T> = ::std::result::Result<T, Error>;
 }
 
-pub use gchemol;
-
 pub mod cmd_utils {
     pub use crate::core_utils::*;
-    pub use ::structopt::StructOpt;
+    pub use structopt::StructOpt;
 }
 
 pub mod optim {
