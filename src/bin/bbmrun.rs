@@ -1,7 +1,4 @@
-// bbmrun.rs
-// :PROPERTIES:
-// :header-args: :comments org :tangle src/bin/bbmrun.rs
-// :END:
+// docs
 // command line tool for running a blackbox model
 
 // features:
@@ -10,12 +7,17 @@
 // - output optimized structure
 
 
+
+
+// imports
+
 use gosh::cmd_utils::*;
 use std::path::PathBuf;
 
 use gchemol::io;
-
 use gosh::models::*;
+
+// cmdline
 
 /// An universal runner for Blackbox Model
 #[derive(Debug, StructOpt)]
@@ -24,20 +26,21 @@ struct Cli {
     #[structopt(parse(from_os_str))]
     molfile: PathBuf,
 
-    /// Join multiple molecules into a single input
-    #[structopt(short = "j", long = "join")]
-    join: bool,
+    /// Compute many molecules in bundle.
+    #[structopt(short = "b", long = "bundle")]
+    bundle: bool,
 
     /// Dry-run mode: generate input file, but no real calculation.
     #[structopt(long = "dry-run")]
     dry: bool,
 
-    /// Optimize molecule using builtin optimizer
+    /// Optimize molecule using builtin optimizer.
     #[structopt(long = "opt")]
     opt: bool,
 
-    /// Template directory with all related files. The default is current directory.
-    #[structopt(short = "t", long = "template-dir", parse(from_os_str))]
+    /// Template directory with all related files. The default is current
+    /// directory.
+    #[structopt(short = "t", long = "bbm-dir", parse(from_os_str))]
     tpldir: Option<PathBuf>,
 
     /// Output the caputured structure. e.g.: -o foo.xyz
@@ -58,13 +61,13 @@ fn main() -> CliResult {
     info!("loaded {} molecules.", mols.len());
 
     let bbm = if let Some(d) = args.tpldir {
-        BlackBox::from_dotenv(&d)
+        BlackBox::from_dir(&d)
     } else {
-        BlackBox::default()
+        BlackBox::from_env()
     };
 
     let mut final_mols = vec![];
-    if !args.join {
+    if !args.bundle {
         info!("run in normal mode ...");
         for mol in mols.iter() {
             // 3. call external engine
@@ -99,9 +102,9 @@ fn main() -> CliResult {
             }
         }
     } else {
-        info!("run in batch mode ...");
+        info!("run in bundle mode ...");
         if !args.dry {
-            let all = bbm.compute_many(&mols)?;
+            let all = bbm.compute_bundle(&mols)?;
             for p in all {
                 println!("{:}", p);
                 // collect molecules
@@ -114,14 +117,11 @@ fn main() -> CliResult {
                 }
             }
         } else {
-            for mol in mols.iter() {
-                println!("{:}", bbm.render_input(mol)?);
-            }
+            println!("{:}", bbm.render_input_bundle(&mols)?);
         }
     }
 
     info!("found {} molecules.", final_mols.len());
-
     // output molecules
     if let Some(path) = args.output {
         if final_mols.len() == 0 {
