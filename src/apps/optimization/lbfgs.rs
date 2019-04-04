@@ -1,6 +1,6 @@
 // base
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*base][base:1]]
 //! Implementation of the limited memory BFGS algorithm.
 //! # References
 //! - https://github.com/siesta-project/flos/blob/master/flos/optima/lbfgs.lua
@@ -10,7 +10,7 @@ use super::*;
 
 // core
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*core][core:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*core][core:1]]
 use ::lbfgs::lbfgs;
 
 /// Optimize molecule using blackbox model
@@ -20,7 +20,7 @@ use ::lbfgs::lbfgs;
 /// - fmax: the max force for convergence
 pub fn lbfgs_opt<T: ChemicalModel>(
     mol: &Molecule,
-    model: &T,
+    model: &mut T,
     fmax: f64,
 ) -> Result<ModelProperties> {
     let mp = model.compute(&mol)?;

@@ -14,7 +14,6 @@
 use gosh::cmd_utils::*;
 use std::path::PathBuf;
 
-use gchemol::io;
 use gosh::models::*;
 
 // cmdline
@@ -34,14 +33,18 @@ struct Cli {
     #[structopt(long = "dry-run")]
     dry: bool,
 
-    /// Optimize molecule using builtin optimizer.
+    /// Don't remove scratch files if calculation completed.
+    #[structopt(long = "keep")]
+    keep: bool,
+
+    /// Optimize molecule using the builtin LBFGS optimizer.
     #[structopt(long = "opt")]
     opt: bool,
 
     /// Template directory with all related files. The default is current
     /// directory.
     #[structopt(short = "t", long = "bbm-dir", parse(from_os_str))]
-    tpldir: Option<PathBuf>,
+    bbmdir: Option<PathBuf>,
 
     /// Output the caputured structure. e.g.: -o foo.xyz
     #[structopt(short = "o", long = "output", parse(from_os_str))]
@@ -57,15 +60,17 @@ fn main() -> CliResult {
 
     // 1. load molecules
     info!("input molecule file: {}", &args.molfile.display());
-    let mols = io::read(args.molfile)?;
+    let mols = gchemol::io::read(args.molfile)?;
     info!("loaded {} molecules.", mols.len());
 
-    let bbm = if let Some(d) = args.tpldir {
+    // 2. construct the model
+    let mut bbm = if let Some(ref d) = args.bbmdir {
         BlackBox::from_dir(&d)
     } else {
-        BlackBox::from_env()
+        BlackBox::from_dir(std::env::current_dir()?)
     };
 
+    // 3. process molecules using the model
     let mut final_mols = vec![];
     if !args.bundle {
         info!("run in normal mode ...");
@@ -77,7 +82,7 @@ fn main() -> CliResult {
                     println!("optimization with LBFGS");
                     let mut mol = mol.clone();
                     mol.recenter();
-                    let mp = lbfgs_opt(&mol, &bbm, 0.1)?;
+                    let mp = lbfgs_opt(&mol, &mut bbm, 0.1)?;
                     println!("{:}", mp);
                     // collect molecules
                     if let Some(mut mol) = mp.molecule {
@@ -104,16 +109,20 @@ fn main() -> CliResult {
     } else {
         info!("run in bundle mode ...");
         if !args.dry {
-            let all = bbm.compute_bundle(&mols)?;
-            for p in all {
-                println!("{:}", p);
-                // collect molecules
-                if let Some(mut mol) = p.molecule {
-                    // save energy as comment
-                    if let Some(energy) = p.energy {
-                        mol.name = format!("energy = {:-10.4}", energy);
+            if args.opt {
+                unimplemented!()
+            } else {
+                let all = bbm.compute_bundle(&mols)?;
+                for p in all {
+                    println!("{:}", p);
+                    // collect molecules
+                    if let Some(mut mol) = p.molecule {
+                        // save energy as comment
+                        if let Some(energy) = p.energy {
+                            mol.name = format!("energy = {:-10.4}", energy);
+                        }
+                        final_mols.push(mol);
                     }
-                    final_mols.push(mol);
                 }
             }
         } else {
@@ -128,8 +137,12 @@ fn main() -> CliResult {
             error!("no molecules was collected!");
         } else {
             println!("file saved to: {:}", path.display());
-            io::write(path, &final_mols)?;
+            gchemol::io::write(path, &final_mols)?;
         }
+    }
+
+    if args.keep {
+        bbm.keep_scratch_files();
     }
 
     Ok(())

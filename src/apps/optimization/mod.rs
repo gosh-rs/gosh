@@ -3,7 +3,7 @@
 // :header-args: :tangle src/apps/optimization/mod.rs
 // :END:
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*mod.rs][mod.rs:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*mod.rs][mod.rs:1]]
 use super::*;
 use gchemol::prelude::*;
 use crate::cmd_utils::*;
@@ -67,7 +67,7 @@ pub trait Optimizer: ChemicalApp {
     /// - maxcycle: The max allowed iterations
     /// # Panics
     /// if fmax is not positive number.
-    fn run<T: ChemicalModel>(&mut self, mol: &mut Molecule, model: &T, maxcycle: usize) -> Result<()> {
+    fn run<T: ChemicalModel>(&mut self, mol: &mut Molecule, model: &mut T, maxcycle: usize) -> Result<()> {
         let mut icycle = 0;
         loop {
             // calculate energy, forces, ... by applying a chemical model

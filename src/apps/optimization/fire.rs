@@ -1,6 +1,6 @@
 // base
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*base][base:1]]
 //! Implementation of the Fast-Inertial-Relaxation-Engine (FIRE) algorithm
 //!
 //! References
@@ -63,7 +63,7 @@ impl Default for FIRE {
 
 // optimizer trait
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*optimizer%20trait][optimizer trait:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*optimizer%20trait][optimizer trait:1]]
 impl ChemicalApp for FIRE {}
 
 impl Optimizer for FIRE {
@@ -98,7 +98,7 @@ impl FIRE {
 
 // core
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*core][core:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*core][core:1]]
 impl FIRE {
     /// Propagate the system for one simulation step using FIRE algorithm.
     fn propagate(&mut self, forces: &[Point3D], velocities: &mut [Point3D]) -> Result<Vec<Point3D>> {
@@ -233,7 +233,7 @@ fn scale_disp_vectors(disp_vectors: &mut [Point3D], maxdisp: f64) {
 
 // utils
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*utils][utils:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*utils][utils:1]]
 #[inline]
 fn vector_dot(vector1: &[[f64; 3]], vector2: &[[f64; 3]]) -> f64 {
     let n = vector1.len();
@@ -270,7 +270,7 @@ fn test_vector_dot() {
 
 // test
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*test][test:1]]
 #[test]
 fn test_fire_opt() -> Result<()> {
     use gchemol::Molecule;
@@ -284,7 +284,7 @@ fn test_fire_opt() -> Result<()> {
     let mut lj = LennardJones::default();
     lj.derivative_order = 1;
 
-    fire.run(&mut mol, &lj, 100)?;
+    fire.run(&mut mol, &mut lj, 1000)?;
 
     Ok(())
 }
