@@ -21,12 +21,11 @@ linefeed = "0.5"
 structopt = "0.2"
 vecfx = {git = "https://github.com/gchemol/vecfx.git", tag="v0.0.3", features=["nalgebra"]}
 #gchemol = {git = "https://github.com/ybyygu/gchemol.git", tag="v0.0.27"}
-gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol"}
-#gosh_models = {git = "https://github.com/gosh-rs/models.git", tag="v0.0.2"}
-gosh_models = {path = "/home/ybyygu/Workspace/Programming/gosh-rs/models", tag="v0.0.2"}
+gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol/gchemol"}
+gosh-models = {path = "/home/ybyygu/Workspace/Programming/gosh-rs/models", tag="v0.0.3"}
 #lbfgs = {path = "/home/ybyygu/Workspace/Programming/rust-libs/lbfgs"}
 lbfgs = {git = "https://github.com/ybyygu/rust-lbfgs.git", tag="v0.0.14" }
-textparser = {git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.2" }
+text-parser = {git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.3" }
 cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
 
 [dev-dependencies]

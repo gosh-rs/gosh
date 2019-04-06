@@ -38,7 +38,7 @@ impl ModelAdaptor for MOPAC {
 
 // nom
 
-use textparser::*;
+use text_parser::*;
 
 //           TOTAL ENERGY            =       -720.18428 EV
 named!(get_total_energy<&str, f64>, do_parse!(

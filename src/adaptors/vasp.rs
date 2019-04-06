@@ -38,7 +38,7 @@ impl ModelAdaptor for Vasp {
 
 // nom
 
-use textparser::*;
+use text_parser::*;
 
 // force consistent energy
 // free  energy   TOTEN  =      -536.930012 eV

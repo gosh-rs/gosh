@@ -38,7 +38,7 @@ impl ModelAdaptor for Siesta {
 
 // nom
 
-use textparser::*;
+use text_parser::*;
 
 // force consistent energy
 // siesta:         Total =  -37729.793337
