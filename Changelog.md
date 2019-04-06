@@ -1,7 +1,7 @@
 
-# v0.0.18 - <span class="timestamp-wrapper"><span class="timestamp">[2019-04-03 Wed]</span></span>
+# v0.0.18 - <span class="timestamp-wrapper"><span class="timestamp">[2019-04-06 Sat]</span></span>
 
--   add bbm templates for SIESTA/VASP
+-   improved bbm templates for SIESTA/VASP
 
 
 # v0.0.17 - <span class="timestamp-wrapper"><span class="timestamp">[2019-02-08 Fri]</span></span>
