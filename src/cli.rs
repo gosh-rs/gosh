@@ -105,7 +105,7 @@ impl Commander {
     }
 
     pub fn avail(&mut self) -> Result<()> {
-        // formats::describe_backends();
+        gchemol::io::describe_backends();
         Ok(())
     }
 
