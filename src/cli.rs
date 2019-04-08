@@ -111,7 +111,9 @@ impl Commander {
 
     pub fn rebond(&mut self) -> Result<()> {
         if !self.molecules.is_empty() {
-            self.molecules[0].rebond();
+            for mol in self.molecules.iter_mut() {
+                mol.rebond();
+            }
         } else {
             bail!("No molecule available.");
         }
