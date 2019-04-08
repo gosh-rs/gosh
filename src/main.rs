@@ -194,7 +194,7 @@ static GOSH_COMMANDS: &'static [(&'static str, &'static str)] = &[
     ),
     ("clean", "Clean up bad molecular geometry."),
     ("avail", "Show supported file formats."),
-    ("supercell", "Create supercell for all molecules."),
+    ("supercell", "Create supercell for loaded molecules."),
     (
         "fragment",
         "Break molecule into smaller fragments based on connectivity.",
