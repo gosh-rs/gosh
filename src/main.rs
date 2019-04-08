@@ -1,6 +1,6 @@
 // cmd loop
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*cmd%20loop][cmd loop:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*cmd%20loop][cmd loop:1]]
 use gosh::cmd_utils::*;
 
 use linefeed::{Interface, ReadResult};
@@ -8,15 +8,15 @@ use linefeed::{Interface, ReadResult};
 mod cli;
 use crate::cli::Commander;
 
-use std::path::{PathBuf};
 use dirs;
+use std::path::PathBuf;
 
 fn get_history_file() -> Result<PathBuf> {
     match dirs::home_dir() {
         Some(path) => {
             let filename = path.join(".gosh.history");
             Ok(filename)
-        },
+        }
         None => bail!("Impossible to get your home dir!"),
     }
 }
@@ -36,9 +36,16 @@ fn main() -> CliResult {
     let history_file = get_history_file().unwrap();
     if let Err(e) = reader.load_history(&history_file) {
         if e.kind() == std::io::ErrorKind::NotFound {
-            println!("History file {} doesn't exist, not loading history.", history_file.display());
+            println!(
+                "History file {} doesn't exist, not loading history.",
+                history_file.display()
+            );
         } else {
-            eprintln!("Could not load history file {}: {}", history_file.display(), e);
+            eprintln!(
+                "Could not load history file {}: {}",
+                history_file.display(),
+                e
+            );
         }
     }
 
@@ -57,7 +64,7 @@ fn main() -> CliResult {
                     println!("  {:16} - {}", cmd, help);
                 }
                 println!();
-            },
+            }
             "load" => {
                 if args.is_empty() {
                     println!("Please input path to a file containing molecule.");
@@ -66,22 +73,26 @@ fn main() -> CliResult {
                     if let Err(ref e) = &mut commander.load(filename) {
                         eprintln!("{:?}", e);
                     } else {
-                        println!("{} molecules loaded from: {:?}.", commander.molecules.len(), filename);
+                        println!(
+                            "{} molecules loaded from: {:?}.",
+                            commander.molecules.len(),
+                            filename
+                        );
                     }
                 }
-            },
+            }
 
             "rebond" => {
                 if let Err(ref e) = &mut commander.rebond() {
                     eprintln!("{:?}", e);
                 }
-            },
+            }
 
             "clean" => {
                 if let Err(ref e) = &mut commander.clean() {
                     eprintln!("{:?}", e);
                 }
-            },
+            }
 
             "write" => {
                 if args.is_empty() {
@@ -92,7 +103,7 @@ fn main() -> CliResult {
                         eprintln!("{:?}", e);
                     }
                 }
-            },
+            }
 
             "format" => {
                 if args.is_empty() {
@@ -103,7 +114,7 @@ fn main() -> CliResult {
                         eprintln!("{:?}", e);
                     }
                 }
-            },
+            }
 
             "fragment" => {
                 if let Err(ref e) = &mut commander.fragment() {
@@ -113,11 +124,24 @@ fn main() -> CliResult {
                 }
             }
 
+            "supercell" => {
+                if args.is_empty() {
+                    println!("Please input the range, e.g. supercell 2 2 1");
+                } else {
+                    let range_txt = args.trim();
+                    if let Err(ref e) = commander.supercell(range_txt) {
+                        eprintln!("{:?}", e);
+                    } else {
+                        println!("supercell created.");
+                    }
+                }
+            }
+
             "avail" => {
                 if let Err(ref e) = &mut commander.avail() {
                     eprintln!("{:?}", e);
                 }
-            },
+            }
 
             "save" => {
                 if let Err(ref e) = &commander.save() {
@@ -125,26 +149,30 @@ fn main() -> CliResult {
                 } else {
                     println!("saved.");
                 }
-            },
+            }
 
             "ls" => {
                 if let Err(ref e) = &commander.extern_cmdline("ls") {
                     eprintln!("{:?}", e);
                 }
-            },
+            }
 
             "pwd" => {
                 if let Err(ref e) = &commander.extern_cmdline("pwd") {
                     eprintln!("{:?}", e);
                 }
-            },
+            }
 
             "quit" | "q" => {
                 if let Err(e) = reader.save_history(&history_file) {
-                    eprintln!("Could not save history file {}: {}", history_file.display(), e);
+                    eprintln!(
+                        "Could not save history file {}: {}",
+                        history_file.display(),
+                        e
+                    );
                 }
                 break;
-            },
+            }
 
             "" => (),
             _ => println!("{:?}: not a command", line),
@@ -155,15 +183,22 @@ fn main() -> CliResult {
 }
 
 static GOSH_COMMANDS: &'static [(&'static str, &'static str)] = &[
-    ("help",             "You're looking at it"),
-    ("quit",             "Quit gosh"),
-    ("load",             "Load molecule from disk"),
-    ("write",            "Write molecules into file"),
-    ("rebond",           "Rebuild bonds based on atom distances."),
-    ("format",           "Format molecule using user defined template file."),
-    ("clean",            "Clean up bad molecular geometry."),
-    ("avail",            "Show supported file formats."),
-    ("fragment",         "Break molecule into smaller fragments based on connectivity."),
+    ("help", "You're looking at it"),
+    ("quit", "Quit gosh"),
+    ("load", "Load molecule from disk"),
+    ("write", "Write molecules into file"),
+    ("rebond", "Rebuild bonds based on atom distances."),
+    (
+        "format",
+        "Format molecule using user defined template file.",
+    ),
+    ("clean", "Clean up bad molecular geometry."),
+    ("avail", "Show supported file formats."),
+    ("supercell", "Create supercell for all molecules."),
+    (
+        "fragment",
+        "Break molecule into smaller fragments based on connectivity.",
+    ),
 ];
 
 fn split_first_word(s: &str) -> (&str, &str) {
@@ -171,7 +206,7 @@ fn split_first_word(s: &str) -> (&str, &str) {
 
     match s.find(|ch: char| ch.is_whitespace()) {
         Some(pos) => (&s[..pos], s[pos..].trim_left()),
-        None => (s, "")
+        None => (s, ""),
     }
 }
 // cmd loop:1 ends here
