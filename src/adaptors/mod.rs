@@ -35,6 +35,8 @@ type Part<'a> = ModelProperties;
 mod mopac;
 mod siesta;
 mod vasp;
+mod gaussian_fchk;
 pub use self::mopac::MOPAC;
 pub use self::siesta::Siesta;
 pub use self::vasp::Vasp;
+pub use self::gaussian_fchk::GaussianFchk;

@@ -1,0 +1,10 @@
+%nproc=4
+%mem=2GB
+#p force fchk=all PM6 nosym test
+
+single point calculation
+
+0 1
+{{#each molecule.atoms as |a| ~}}
+{{format a.symbol width=3}} {{format a.x}} {{format a.y}} {{format a.z}}
+{{/each~}}
