@@ -64,7 +64,7 @@ Total Energy                               R     -4.019490631335482E+01
 RMS Density                                R      6.140789652789450E-05
 ";
     let (_, en) = get_total_energy(line).unwrap();
-    assert_relative_eq!(-40.194906*HARTREE, en, epsilon = 1e-4);
+    assert_relative_eq!(-40.194906 * HARTREE, en, epsilon = 1e-4);
 }
 
 named!(force_record<&str, [f64; 3]>, do_parse!(
@@ -115,14 +115,82 @@ Cartesian Force Constants                  R   N=         561
     assert_eq!(11, forces.len());
 }
 
+// elements
+named!(get_elements<&str, Vec<usize>>, do_parse!(
+              take_until!("Atomic numbers                             I") >>
+              read_until_eol                                              >>
+    elements: many1!(ws!(unsigned_digit))                                 >>
+    (elements)
+));
+
+#[test]
+fn test_elements() {
+    let line = "Atomic numbers                             I   N=           5
+           1           1           1           6           7
+Nuclear charges                            R   N=           5
+";
+    let (_, elements) = get_elements(line).unwrap();
+    assert_eq!(5, elements.len());
+}
+
+named!(coord_record<&str, [f64; 3]>, do_parse!(
+    x: ws!(double)         >>
+    y: ws!(double)         >>
+    z: ws!(double)         >>
+    (
+        [
+            x * BOHR,
+            y * BOHR,
+            z * BOHR
+        ]
+    )
+));
+
+
+// coordinates
+named!(get_positions<&str, Vec<[f64; 3]>>, do_parse!(
+               take_until!("Current cartesian coordinates              R") >>
+               read_until_eol                                              >>
+    positions: many1!(coord_record)                                        >>
+    (positions)
+));
+
+#[test]
+fn test_positions() {
+    let line = "Nuclear charges                            R   N=           5
+  1.00000000E+00  1.00000000E+00  1.00000000E+00  6.00000000E+00  7.00000000E+00
+Current cartesian coordinates              R   N=          15
+  5.95220081E+00  9.29060794E+00  1.00926399E+01  8.38886579E+00  6.01117836E+00
+  1.12794952E+01  1.06575470E+01  6.74608628E+00  9.12051039E+00  7.73724760E+00
+  9.18929733E+00  8.97958942E+00  8.95192060E+00  7.20986572E+00  9.86811379E+00
+Number of symbols in /Mol/                 I                0
+";
+    let (_, positions) = get_positions(line).unwrap();
+    assert_eq!(5, positions.len());
+}
+
 named!(gaussian_fchk<&str, ModelProperties>, do_parse!(
-    energy: get_total_energy                      >>
-    forces: get_forces                            >>
+    elements  : get_elements     >>
+    positions : get_positions    >>
+    energy    : get_total_energy >>
+    forces    : get_forces       >>
     (
         {
             let mut p = ModelProperties::default();
+
+            // construct molecule
+            let n = elements.len();
+            assert_eq!(n, positions.len());
+            let mut mol = Molecule::new("mol from chk");
+            for i in 0..n {
+                let (x, y, z) = (positions[i][0], positions[i][1], positions[i][2]);
+                let a = Atom::build().position(x, y, z).element(elements[i]).finish();
+                mol.add_atom(a);
+            }
+
             p.energy = Some(energy);
             p.forces = Some(forces);
+            p.molecule = Some(mol);
 
             p
         }

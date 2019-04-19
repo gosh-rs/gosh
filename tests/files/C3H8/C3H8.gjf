@@ -1,4 +1,4 @@
-#p freq=noraman B3LYP/STO-3G nosymm geom=connectivity fchk=all test
+#p force B3LYP/STO-3G nosymm geom=connectivity fchk=all test
 
 Title Card Required
 
