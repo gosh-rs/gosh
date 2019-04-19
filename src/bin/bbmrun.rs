@@ -14,6 +14,8 @@
 use gosh::cmd_utils::*;
 use std::path::PathBuf;
 
+use gchemol::Molecule;
+use gosh::apps::optimization::lbfgs::lbfgs_opt;
 use gosh::models::*;
 
 // cmdline
@@ -60,7 +62,7 @@ fn main() -> CliResult {
 
     // 1. load molecules
     info!("input molecule file: {}", &args.molfile.display());
-    let mols = gchemol::io::read(args.molfile)?;
+    let mols = gchemol::io::read(&args.molfile)?;
     info!("loaded {} molecules.", mols.len());
 
     // 2. construct the model
@@ -71,18 +73,34 @@ fn main() -> CliResult {
     };
 
     // 3. process molecules using the model
+    let mut keep = args.keep;
+    if let Err(e) = process_molecules(args, &mut bbm, mols) {
+        error!("Job failed:\n {:?}", e);
+        keep = true;
+    }
+
+    if keep {
+        bbm.keep_scratch_files();
+    }
+
+    Ok(())
+}
+
+// process
+
+fn process_molecules(args: Cli, mut bbm: &mut BlackBox, mols: Vec<Molecule>) -> Result<()> {
     let mut final_mols = vec![];
+    let mut keep = args.keep;
     if !args.bundle {
         info!("run in normal mode ...");
         for mol in mols.iter() {
             // 3. call external engine
             if !args.dry {
                 if args.opt {
-                    use gosh::apps::optimization::lbfgs::lbfgs_opt;
                     println!("optimization with LBFGS");
                     let mut mol = mol.clone();
                     mol.recenter();
-                    let mp = lbfgs_opt(&mol, &mut bbm, 0.1)?;
+                    let mp = lbfgs_opt(&mol, bbm, 0.1)?;
                     println!("{:}", mp);
                     // collect molecules
                     if let Some(mut mol) = mp.molecule {
@@ -139,10 +157,6 @@ fn main() -> CliResult {
             println!("file saved to: {:}", path.display());
             gchemol::io::write(path, &final_mols)?;
         }
-    }
-
-    if args.keep {
-        bbm.keep_scratch_files();
     }
 
     Ok(())

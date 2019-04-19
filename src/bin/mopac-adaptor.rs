@@ -43,14 +43,14 @@ fn main() -> Result<()> {
     if args.all {
         for d in mopac.parse_all(&outfile)? {
             if d.is_empty() {
-                bail!("ee");
+                bail!("No data extracted from: {:?}", outfile.display());
             }
             println!("{:}", d);
         }
     } else {
         let d = mopac.parse_last(&outfile)?;
         if d.is_empty() {
-            bail!("ee");
+            bail!("No data extracted from: {:?}", outfile.display());
         }
         println!("{:}", d);
     }
