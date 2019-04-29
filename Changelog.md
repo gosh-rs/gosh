@@ -1,7 +1,16 @@
 
+# v0.0.19 - <span class="timestamp-wrapper"><span class="timestamp">[2019-04-29 Mon]</span></span>
+
+-   add \`supercell\` cmd for making supercell
+-   fixed \`avail\` cmd
+-   add Gaussian BBM template
+-   update dependencies
+
+
 # v0.0.18 - <span class="timestamp-wrapper"><span class="timestamp">[2019-04-06 Sat]</span></span>
 
 -   improved bbm templates for SIESTA/VASP
+-   bbmrun: use a persistent scratch directory when optimization
 
 
 # v0.0.17 - <span class="timestamp-wrapper"><span class="timestamp">[2019-02-08 Fri]</span></span>

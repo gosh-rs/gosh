@@ -15,14 +15,14 @@ dirs = "1.0"
 serde_json = "1.0"
 quicli = "0.4"
 duct = "0.10"
-nalgebra = "0.18"
+nalgebra = {version="0.18", features=["serde-serialize"]}
 nom = "4.0"
 linefeed = "0.5"
 structopt = "0.2"
-vecfx = {git = "https://github.com/gchemol/vecfx.git", tag="v0.0.3", features=["nalgebra"]}
-gchemol = {git = "https://github.com/ybyygu/gchemol.git", tag="v0.0.30"}
+vecfx = {git = "https://github.com/gchemol/vecfx.git", tag="v0.0.4", features=["nalgebra"]}
+gchemol = {git = "https://github.com/ybyygu/gchemol.git", tag="v0.0.31"}
 #gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol/gchemol"}
-gosh-models = {git = "https://github.com/gosh-rs/models.git", tag="v0.0.4"}
+gosh-models = {git = "https://github.com/gosh-rs/models.git", tag="v0.0.5"}
 #gosh-models = {path = "/home/ybyygu/Workspace/Programming/gosh-rs/models"}
 #lbfgs = {path = "/home/ybyygu/Workspace/Programming/rust-libs/lbfgs"}
 lbfgs = {git = "https://github.com/ybyygu/rust-lbfgs.git", tag="v0.0.14" }
