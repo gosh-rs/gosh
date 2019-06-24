@@ -11,6 +11,8 @@ extern crate approx;
 
 pub mod adaptors;
 pub mod apps;
+pub mod cli;
+
 pub use gchemol;
 pub use gosh_models as models;
 
