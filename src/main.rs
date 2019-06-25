@@ -42,6 +42,7 @@ fn start_gosh_cmd_loop() -> CliResult {
     println!("");
 
     interface.set_prompt("gosh> ")?;
+    interface.set_completer(std::sync::Arc::new(linefeed::complete::PathCompleter));
 
     let mut commander = Commander::new();
 
