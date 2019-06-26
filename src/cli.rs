@@ -22,7 +22,7 @@ pub struct Commander {
 }
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "gosh", about = "the stupid content tracker")]
+#[structopt(raw(setting = "structopt::clap::AppSettings::VersionlessSubcommands"))]
 pub enum GoshCmd {
     /// Quit go shell.
     #[structopt(name = "quit", alias = "q", alias = "exit")]
@@ -33,7 +33,7 @@ pub enum GoshCmd {
     Help {},
 
     /// Write molecule(s) into file.
-    #[structopt(name = "write", alias="save")]
+    #[structopt(name = "write", alias = "save")]
     Write {
         /// The filename to write.
         #[structopt(name = "FILE_NAME", parse(from_os_str))]
@@ -56,6 +56,15 @@ pub enum GoshCmd {
     #[structopt(name = "clean")]
     Clean {},
 
+    /// Convert molecule formats in batch. e.g.: convert *.xyz .mol2
+    #[structopt(name = "convert")]
+    Convert {
+        /// input files: e.g.: *
+        files: Vec<PathBuf>,
+        /// target format: e.g.: .mol2
+        format_to: String,
+    },
+
     /// Format molecule using user defined template file.
     #[structopt(name = "format")]
     Format {
@@ -77,6 +86,15 @@ pub enum GoshCmd {
         range_b: isize,
         /// range c
         range_c: isize,
+    },
+
+    /// Superimpose current molecule onto reference molecule by translating and
+    /// rotating target molecule
+    #[structopt(name = "superimpose")]
+    Superimpose {
+        /// Path to reference molecule file.
+        #[structopt(name = "REFERENCE_MOLECULE", parse(from_os_str))]
+        filename: PathBuf,
     },
 
     /// Show supported file formats.
@@ -127,11 +145,8 @@ impl Commander {
             }
 
             GoshCmd::Clean {} => {
-                if !self.molecules.is_empty() {
-                    self.molecules[0].clean()?;
-                } else {
-                    eprintln!("No molecule available.");
-                }
+                self.check()?;
+                self.molecules[0].clean()?;
             }
 
             GoshCmd::Avail {} => {
@@ -139,38 +154,30 @@ impl Commander {
             }
 
             GoshCmd::Write { filename } => {
-                if !self.molecules.is_empty() {
-                    if let Some(filename) = filename.as_ref().or(self.filename.as_ref()) {
-                        io::write(&filename, &self.molecules)?;
-                        println!(
-                            "Wrote {} molecules in {}",
-                            self.molecules.len(),
-                            filename.display()
-                        );
-                    } else {
-                        eprintln!("No filename.");
-                    }
+                self.check()?;
+
+                if let Some(filename) = filename.as_ref().or(self.filename.as_ref()) {
+                    io::write(&filename, &self.molecules)?;
+                    println!(
+                        "Wrote {} molecules in {}",
+                        self.molecules.len(),
+                        filename.display()
+                    );
                 } else {
-                    eprintln!("No molecule Loaded.");
+                    eprintln!("No filename.");
                 }
             }
 
             GoshCmd::Fragment {} => {
-                if !self.molecules.is_empty() {
-                    let mols = self.molecules[0].fragment();
-                    self.molecules.clear();
-                    self.molecules.extend(mols);
-                } else {
-                    eprintln!("No molecule available.");
-                }
+                self.check()?;
+                let mols = self.molecules[0].fragment();
+                self.molecules.clear();
+                self.molecules.extend(mols);
             }
             GoshCmd::Rebond {} => {
-                if !self.molecules.is_empty() {
-                    for mol in self.molecules.iter_mut() {
-                        mol.rebond();
-                    }
-                } else {
-                    eprintln!("No molecule available.");
+                self.check()?;
+                for mol in self.molecules.iter_mut() {
+                    mol.rebond();
                 }
             }
             GoshCmd::Supercell {
@@ -180,45 +187,53 @@ impl Commander {
             } => {
                 use gchemol::Supercell;
 
-                if !self.molecules.is_empty() {
-                    let mut mols = vec![];
-                    for mol in self.molecules.iter() {
-                        if mol.lattice.is_some() {
-                            let mol = Supercell::new()
-                                .with_range_a(0, *range_a)
-                                .with_range_b(0, *range_b)
-                                .with_range_c(0, *range_c)
-                                .build(&mol);
-                            mols.push(mol);
-                        } else {
-                            eprintln!("No lattice data.");
-                        }
+                self.check()?;
+
+                let mut mols = vec![];
+                for mol in self.molecules.iter() {
+                    if mol.lattice.is_some() {
+                        let mol = Supercell::new()
+                            .with_range_a(0, *range_a)
+                            .with_range_b(0, *range_b)
+                            .with_range_c(0, *range_c)
+                            .build(&mol);
+                        mols.push(mol);
+                    } else {
+                        eprintln!("No lattice data.");
                     }
-                    self.molecules = mols;
-                } else {
-                    eprintln!("No molecule available.");
                 }
+                self.molecules = mols;
+            }
+            GoshCmd::Superimpose { filename } => {
+                self.check()?;
             }
             GoshCmd::Format { filename } => {
-                if !self.molecules.is_empty() {
-                    for mol in &self.molecules {
-                        let template = io::read_file(&filename).map_err(|e| {
-                            error!("failed to load template");
-                            e
-                        })?;
-                        let s = mol.render_with(&template).map_err(|e| {
-                            error!("failed to render molecule");
-                            e
-                        })?;
-                        println!("{:}", s);
-                    }
-                } else {
-                    eprintln!("No active molecule available.");
+                self.check()?;
+
+                for mol in &self.molecules {
+                    let template = io::read_file(&filename).map_err(|e| {
+                        error!("failed to load template");
+                        e
+                    })?;
+                    let s = mol.render_with(&template).map_err(|e| {
+                        error!("failed to render molecule");
+                        e
+                    })?;
+                    println!("{:}", s);
                 }
             }
             o => {
                 eprintln!("{:?}: not implemented yet!", o);
             }
+        }
+
+        Ok(())
+    }
+
+    /// basic sanity check
+    fn check(&self) -> Result<()> {
+        if self.molecules.is_empty() {
+            bail!("No active molecule available.")
         }
 
         Ok(())
