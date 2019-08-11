@@ -3,7 +3,7 @@
 # [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*cargo][cargo:1]]
 [package]
 name = "gosh"
-version = "0.0.21"
+version = "0.0.22"
 edition = "2018"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 
@@ -20,10 +20,11 @@ nom = "4.0"
 linefeed = "0.6"
 structopt = "0.2"
 vecfx = {git = "https://github.com/gchemol/vecfx.git", tag="v0.0.4", features=["nalgebra"]}
-gchemol = {git = "https://github.com/ybyygu/gchemol.git", tag="v0.0.33"}
-#gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol/gchemol"}
-gosh-models = {git = "https://github.com/gosh-rs/models.git", tag="v0.0.7"}
-#gosh-models = {version = "*", path = "../models"}
+#gchemol = {git = "https://github.com/ybyygu/gchemol.git", tag="v0.0.33"}
+gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol/gchemol"}
+#gosh-models = {git = "https://github.com/gosh-rs/models.git", tag="v0.0.7"}
+gosh-models = {version = "*", path = "../models"}
+gosh-db = {version = "*", path = "../database"}
 #lbfgs = {path = "/home/ybyygu/Workspace/Programming/rust-libs/lbfgs"}
 lbfgs = {git = "https://github.com/ybyygu/rust-lbfgs.git", tag="v0.0.14" }
 text-parser = {git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.3" }

@@ -75,7 +75,7 @@ fn main() -> CliResult {
     // 3. process molecules using the model
     let mut keep = args.keep;
     if let Err(e) = process_molecules(args, &mut bbm, mols) {
-        error!("Job failed:\n {:?}", e);
+        error!("bbm failed:\n {:?}", e);
         keep = true;
     }
 
@@ -91,6 +91,7 @@ fn main() -> CliResult {
 fn process_molecules(args: Cli, mut bbm: &mut BlackBox, mols: Vec<Molecule>) -> Result<()> {
     let mut final_mols = vec![];
     let mut keep = args.keep;
+
     if !args.bundle {
         info!("run in normal mode ...");
         for mol in mols.iter() {

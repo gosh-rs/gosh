@@ -13,6 +13,8 @@ use super::*;
 // [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*core][core:1]]
 use ::lbfgs::lbfgs;
 
+use gosh_db::prelude::*;
+
 /// Optimize molecule using blackbox model
 /// # Parameters
 /// - mol: target molecule
@@ -29,6 +31,9 @@ pub fn lbfgs_opt<T: ChemicalModel>(
     } else {
         bail!("no energy")
     }
+
+    // use db for checkpointing opt data
+    let ckpt_conn = gosh_db::DbConnection::establish();
 
     let mut mol = mol.clone();
     let mut positions = mol.positions();
@@ -48,7 +53,7 @@ pub fn lbfgs_opt<T: ChemicalModel>(
                 let mp = model.compute(&mol)?;
 
                 // set gradients
-                if let Some(forces) = mp.forces {
+                if let Some(forces) = &mp.forces {
                     let forces = forces.as_flat();
                     assert_eq!(gx.len(), forces.len());
                     for i in 0..forces.len() {
@@ -71,6 +76,11 @@ pub fn lbfgs_opt<T: ChemicalModel>(
                     icall, fx, fm
                 );
                 icall += 1;
+
+                // checkpointing
+                if let Ok(conn) = &ckpt_conn {
+                    mp.checkpoint(&conn)?;
+                }
 
                 Ok(fx)
             },

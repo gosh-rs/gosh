@@ -29,4 +29,3 @@ pub mod cmd_utils {
 pub mod optim {
     pub use crate::apps::optimization::line::golden_section_search;
 }
-// base:1 ends here
