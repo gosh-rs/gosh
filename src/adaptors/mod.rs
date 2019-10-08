@@ -32,6 +32,7 @@ pub trait ModelAdaptor {
 // the type for the parsed part
 type Part<'a> = ModelProperties;
 
+mod gulp;
 mod mopac;
 mod siesta;
 mod vasp;
@@ -40,3 +41,4 @@ pub use self::mopac::MOPAC;
 pub use self::siesta::Siesta;
 pub use self::vasp::Vasp;
 pub use self::gaussian_fchk::GaussianFchk;
+pub use self::gulp::Gulp;
