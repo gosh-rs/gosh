@@ -27,9 +27,9 @@ struct Cli {
     #[structopt(parse(from_os_str))]
     molfile: PathBuf,
 
-    /// Compute many molecules in bundle.
-    #[structopt(short = "b", long = "bundle")]
-    bundle: bool,
+    /// Compute many molecules in bunch.
+    #[structopt(short = "b", long = "bunch")]
+    bunch: bool,
 
     /// Dry-run mode: generate input file, but no real calculation.
     #[structopt(long = "dry-run")]
@@ -92,7 +92,7 @@ fn process_molecules(args: Cli, mut bbm: &mut BlackBox, mols: Vec<Molecule>) -> 
     let mut final_mols = vec![];
     let mut keep = args.keep;
 
-    if !args.bundle {
+    if !args.bunch {
         info!("run in normal mode ...");
         for mol in mols.iter() {
             // 3. call external engine
@@ -126,12 +126,12 @@ fn process_molecules(args: Cli, mut bbm: &mut BlackBox, mols: Vec<Molecule>) -> 
             }
         }
     } else {
-        info!("run in bundle mode ...");
+        info!("run in bunch mode ...");
         if !args.dry {
             if args.opt {
                 unimplemented!()
             } else {
-                let all = bbm.compute_bundle(&mols)?;
+                let all = bbm.compute_bunch(&mols)?;
                 for p in all {
                     println!("{:}", p);
                     // collect molecules
@@ -145,7 +145,7 @@ fn process_molecules(args: Cli, mut bbm: &mut BlackBox, mols: Vec<Molecule>) -> 
                 }
             }
         } else {
-            println!("{:}", bbm.render_input_bundle(&mols)?);
+            println!("{:}", bbm.render_input_bunch(&mols)?);
         }
     }
 
