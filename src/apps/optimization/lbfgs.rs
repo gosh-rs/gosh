@@ -79,7 +79,7 @@ pub fn lbfgs_opt<T: ChemicalModel>(
 
                 // checkpointing
                 if let Ok(conn) = &ckpt_conn {
-                    mp.checkpoint(&conn)?;
+                    mp.commit_checkpoint(&conn)?;
                 }
 
                 Ok(fx)
