@@ -19,7 +19,7 @@ nom = "4.0"
 linefeed = "0.6"
 structopt = "0.2"
 vecfx = { git = "https://github.com/gchemol/vecfx.git", features = ["nalgebra"] }
-gchemol = {git = "https://github.com/ybyygu/gchemol.git"}
+gchemol = {git = "https://github.com/ybyygu/gchemol.git", branch="dev"}
 #gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol/gchemol"}
 #gosh-models = {git = "https://github.com/gosh-rs/models.git", tag="v0.0.7"}
 gosh-models = {version = "*", path = "../models"}

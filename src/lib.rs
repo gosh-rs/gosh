@@ -9,7 +9,6 @@ extern crate nom;
 #[macro_use]
 extern crate approx;
 
-pub mod adaptors;
 pub mod apps;
 pub mod cli;
 
@@ -29,3 +28,4 @@ pub mod cmd_utils {
 pub mod optim {
     pub use crate::apps::optimization::line::golden_section_search;
 }
+// base:1 ends here

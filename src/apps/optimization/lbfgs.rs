@@ -26,7 +26,7 @@ pub fn lbfgs_opt<T: ChemicalModel>(
     fmax: f64,
 ) -> Result<ModelProperties> {
     let mp = model.compute(&mol)?;
-    if let Some(energy) = mp.energy {
+    if let Some(energy) = mp.get_energy() {
         println!("current energy = {:-10.4}", energy);
     } else {
         bail!("no energy")
@@ -53,7 +53,7 @@ pub fn lbfgs_opt<T: ChemicalModel>(
                 let mp = model.compute(&mol)?;
 
                 // set gradients
-                if let Some(forces) = &mp.forces {
+                if let Some(forces) = &mp.get_forces() {
                     let forces = forces.as_flat();
                     assert_eq!(gx.len(), forces.len());
                     for i in 0..forces.len() {
@@ -63,7 +63,7 @@ pub fn lbfgs_opt<T: ChemicalModel>(
                     bail!("no forces!");
                 }
 
-                let fx = if let Some(energy) = mp.energy {
+                let fx = if let Some(energy) = mp.get_energy() {
                     energy
                 } else {
                     bail!("no energy!");

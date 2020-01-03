@@ -3,7 +3,7 @@
 // :header-args: :tangle src/apps/optimization/cg_descent.rs
 // :END:
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*cgdescent.rs][cgdescent.rs:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*cgdescent.rs][cgdescent.rs:1]]
 use cg_descent::CGDescent;
 
 /// Optimize molecule using blackbox model
@@ -12,7 +12,7 @@ pub fn cgdescent_opt<T: ChemicalModel>(mol: &Molecule, model: &T) -> Result<Mode
     cgd.param.PrintLevel = 1;
 
     let mp = model.compute(&mol)?;
-    if let Some(energy) = mp.energy {
+    if let Some(energy) = mp.get_energy() {
         println!("current energy = {:-10.4}", energy);
     } else {
         bail!("no energy")
@@ -23,7 +23,7 @@ pub fn cgdescent_opt<T: ChemicalModel>(mol: &Molecule, model: &T) -> Result<Mode
         let mp = model.compute(&mol)?;
 
         // set gradients
-        if let Some(forces) = mp.forces {
+        if let Some(forces) = mp.get_forces() {
             let forces = forces.as_flat();
             assert_eq!(gx.len(), forces.len());
             for i in 0..forces.len() {
@@ -33,7 +33,7 @@ pub fn cgdescent_opt<T: ChemicalModel>(mol: &Molecule, model: &T) -> Result<Mode
             bail!("no forces!");
         }
 
-        let fx = if let Some(energy) = mp.energy {
+        let fx = if let Some(energy) = mp.get_energy() {
             energy
         } else {
             bail!("no energy!");

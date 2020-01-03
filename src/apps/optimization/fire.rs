@@ -63,13 +63,13 @@ impl Default for FIRE {
 
 // optimizer trait
 
-// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*optimizer%20trait][optimizer trait:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*optimizer trait][optimizer trait:1]]
 impl ChemicalApp for FIRE {}
 
 impl Optimizer for FIRE {
     /// Return cartesian displacements predicted by the optimizer
     fn displacements(&mut self, mp: &ModelProperties) -> Result<Vec<Point3D>> {
-        if let Some(forces) = &mp.forces {
+        if let Some(forces) = &mp.get_forces() {
             self.displacement_vectors(&forces)
         } else {
             bail!("No forces available!");

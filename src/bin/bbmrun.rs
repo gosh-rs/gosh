@@ -104,8 +104,9 @@ fn process_molecules(args: Cli, mut bbm: &mut BlackBox, mols: Vec<Molecule>) -> 
                     let mp = lbfgs_opt(&mol, bbm, 0.1)?;
                     println!("{:}", mp);
                     // collect molecules
-                    if let Some(mut mol) = mp.molecule {
-                        if let Some(energy) = mp.energy {
+                    if let Some(mol) = mp.get_molecule() {
+                        let mut mol = mol.clone();
+                        if let Some(energy) = mp.get_energy() {
                             mol.name = format!("energy = {:-10.4}", energy);
                         }
                         final_mols.push(mol);
@@ -114,8 +115,9 @@ fn process_molecules(args: Cli, mut bbm: &mut BlackBox, mols: Vec<Molecule>) -> 
                     let p = bbm.compute(&mol)?;
                     println!("{:}", p);
                     // collect molecules
-                    if let Some(mut mol) = p.molecule {
-                        if let Some(energy) = p.energy {
+                    if let Some(mol) = p.get_molecule() {
+                        let mut mol = mol.clone();
+                        if let Some(energy) = p.get_energy() {
                             mol.name = format!("energy = {:-10.4}", energy);
                         }
                         final_mols.push(mol);
@@ -135,9 +137,10 @@ fn process_molecules(args: Cli, mut bbm: &mut BlackBox, mols: Vec<Molecule>) -> 
                 for p in all {
                     println!("{:}", p);
                     // collect molecules
-                    if let Some(mut mol) = p.molecule {
+                    if let Some(mol) = p.get_molecule() {
+                        let mut mol = mol.clone();
                         // save energy as comment
-                        if let Some(energy) = p.energy {
+                        if let Some(energy) = p.get_energy() {
                             mol.name = format!("energy = {:-10.4}", energy);
                         }
                         final_mols.push(mol);
