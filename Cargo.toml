@@ -19,8 +19,8 @@ nom = "4.0"
 linefeed = "0.6"
 structopt = "0.2"
 gosh-core = { git = "https://github.com/gosh-rs/gosh-core.git" }
-gosh-models = {git = "https://github.com/gosh-rs/models.git", branch="dev"}
-gosh-db = {git = "https://github.com/gosh-rs/database.git", branch="dev"}
+gosh-models = {git = "https://github.com/gosh-rs/gosh-models.git", branch="dev"}
+gosh-db = {git = "https://github.com/gosh-rs/gosh-database.git", branch="dev"}
 lbfgs = {git = "https://github.com/ybyygu/rust-lbfgs.git", tag="v0.0.14" }
 text-parser = {git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.3" }
 cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
