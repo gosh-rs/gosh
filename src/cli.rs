@@ -1,13 +1,14 @@
 // imports
 
 // [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*imports][imports:1]]
-use crate::core_utils::*;
 use crate::cmd_utils::*;
+use crate::core::*;
 
 use gchemol::prelude::*;
 use gchemol::{io, Molecule};
-use std::process::Command;
+
 use std::path::PathBuf;
+use std::process::Command;
 // imports:1 ends here
 
 // base
@@ -65,7 +66,7 @@ pub enum GoshCmd {
         format_to: String,
     },
 
-    /// Format molecule using user defined template file.
+    /// Format molecule using template file.
     #[structopt(name = "format")]
     Format {
         /// Path to template file.

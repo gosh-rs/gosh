@@ -3,11 +3,9 @@
 // :header-args: :tangle src/apps/mod.rs
 // :END:
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*mod.rs][mod.rs:1]]
-use crate::models::{
-    ChemicalModel,
-    ModelProperties,
-};
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*mod.rs][mod.rs:1]]
+use crate::core::*;
+use crate::models::{ChemicalModel, ModelProperties};
 
 use gchemol::Molecule;
 

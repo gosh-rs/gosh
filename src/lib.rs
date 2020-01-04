@@ -1,31 +1,31 @@
-// base
+// mods
 
-// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*base][base:1]]
-#![feature(test)]
-#[macro_use]
-extern crate nom;
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*mods][mods:1]]
+pub mod apps;
+pub mod cli;
 
 #[cfg(test)]
 #[macro_use]
 extern crate approx;
 
-pub mod apps;
-pub mod cli;
-
-pub use gchemol;
 pub use gosh_models as models;
 
-pub mod core_utils {
-    pub use quicli::prelude::*;
-    pub type Result<T> = ::std::result::Result<T, Error>;
-}
-
 pub mod cmd_utils {
-    pub use crate::core_utils::*;
+    pub use crate::core::*;
+
+    // pub use guts::cli::*;
+    pub use quicli::prelude::*;
+
     pub use structopt::StructOpt;
 }
 
 pub mod optim {
     pub use crate::apps::optimization::line::golden_section_search;
 }
-// base:1 ends here
+
+pub mod core {
+    pub use gosh_core::*;
+
+    pub use guts::prelude::*;
+}
+// mods:1 ends here

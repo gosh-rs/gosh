@@ -18,12 +18,13 @@ duct = "0.10"
 nom = "4.0"
 linefeed = "0.6"
 structopt = "0.2"
-vecfx = { git = "https://github.com/gchemol/vecfx.git", features = ["nalgebra"] }
-gchemol = {git = "https://github.com/ybyygu/gchemol.git", branch="dev"}
-#gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol/gchemol"}
-#gosh-models = {git = "https://github.com/gosh-rs/models.git", tag="v0.0.7"}
+gosh-core = { git = "https://github.com/gosh-rs/gosh-core.git" }
+# gosh-core = {version = "*", path = "../core"}
+# gosh-models = {git = "https://github.com/gosh-rs/models.git", tag="v0.0.7"}
 gosh-models = {version = "*", path = "../models"}
+gosh-adaptors = {version = "*", path = "../adaptors"}
 gosh-db = {version = "*", path = "../database", features = ["adhoc"] }
+
 #lbfgs = {path = "/home/ybyygu/Workspace/Programming/rust-libs/lbfgs"}
 lbfgs = {git = "https://github.com/ybyygu/rust-lbfgs.git", tag="v0.0.14" }
 text-parser = {git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.3" }
