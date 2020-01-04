@@ -51,14 +51,11 @@ struct Cli {
     /// Output the caputured structure. e.g.: -o foo.xyz
     #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: Option<PathBuf>,
-
-    #[structopt(flatten)]
-    verbosity: Verbosity,
 }
 
 fn main() -> CliResult {
     let args = Cli::from_args();
-    args.verbosity.setup_env_logger(&env!("CARGO_PKG_NAME"))?;
+    setup_logger();
 
     // 1. load molecules
     info!("input molecule file: {}", &args.molfile.display());

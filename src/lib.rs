@@ -13,9 +13,7 @@ pub use gosh_models as models;
 pub mod cmd_utils {
     pub use crate::core::*;
 
-    // pub use guts::cli::*;
-    pub use quicli::prelude::*;
-
+    pub use guts::cli::*;
     pub use structopt::StructOpt;
 }
 

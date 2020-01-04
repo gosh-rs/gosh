@@ -14,9 +14,6 @@ use gosh::cli::*;
 #[structopt(name = "gosh", about = "gosh")]
 struct Gosh {
     #[structopt(flatten)]
-    verbosity: Verbosity,
-
-    #[structopt(flatten)]
     cmd: GoshCmd,
 }
 
@@ -116,7 +113,7 @@ fn main() -> CliResult {
     // entry shell mode or subcommands mode
     if args.len() > 1 {
         let args = Gosh::from_args();
-        args.verbosity.setup_env_logger(&env!("CARGO_PKG_NAME"))?;
+        setup_logger();
 
         let mut commander = Commander::new();
         commander.action(&args.cmd);
