@@ -23,7 +23,7 @@ pub struct Commander {
 }
 
 #[derive(StructOpt, Debug)]
-#[structopt(raw(setting = "structopt::clap::AppSettings::VersionlessSubcommands"))]
+#[structopt(setting = structopt::clap::AppSettings::VersionlessSubcommands)]
 pub enum GoshCmd {
     /// Quit go shell.
     #[structopt(name = "quit", alias = "q", alias = "exit")]
