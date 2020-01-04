@@ -19,16 +19,19 @@ nom = "4.0"
 linefeed = "0.6"
 structopt = "0.2"
 gosh-core = { git = "https://github.com/gosh-rs/gosh-core.git" }
-# gosh-core = {version = "*", path = "../core"}
-# gosh-models = {git = "https://github.com/gosh-rs/models.git", tag="v0.0.7"}
-gosh-models = {version = "*", path = "../models"}
-gosh-adaptors = {version = "*", path = "../adaptors"}
-gosh-db = {version = "*", path = "../database", features = ["adhoc"] }
-
-#lbfgs = {path = "/home/ybyygu/Workspace/Programming/rust-libs/lbfgs"}
+gosh-models = {git = "https://github.com/gosh-rs/models.git", branch="dev"}
+gosh-db = {git = "https://github.com/gosh-rs/database.git", branch="dev"}
 lbfgs = {git = "https://github.com/ybyygu/rust-lbfgs.git", tag="v0.0.14" }
 text-parser = {git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.3" }
 cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
+#gosh-core = {path = "../core"}
+#gosh-models = {path = "../models"}
+#gosh-adaptors = {path = "../adaptors"}
+#gosh-db = {path = "../database", features = ["adhoc"] }
+#
+#lbfgs = {path = "/home/ybyygu/Workspace/Programming/rust-libs/lbfgs"}
+#text-parser = {git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.3" }
+#cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
 
 [dev-dependencies]
 approx = "0.3"
