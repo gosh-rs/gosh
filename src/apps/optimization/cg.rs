@@ -1,10 +1,10 @@
 // base
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*base][base:1]]
 //! Implementation of the Conjugate Gradient (CG) optimization algorithm
 //!
-//! References
-//! ----------
+//! # References
+//! - https://en.wikipedia.org/wiki/Nonlinear_conjugate_gradient_method
 //! - https://github.com/siesta-project/flos/blob/master/flos/optima/cg.lua
 
 use super::*;
@@ -83,7 +83,7 @@ pub type CG = ConjugateGradient;
 
 // core
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*core][core:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*core][core:1]]
 impl ConjugateGradient {
     /// Return the new conjugate direction
     fn get_displacement_vectors(&mut self, forces: &Vector3fVec) -> Result<Vector3fVec> {
@@ -178,13 +178,13 @@ impl BetaKind {
 
 // opt trait
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*opt%20trait][opt trait:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*opt trait][opt trait:1]]
 impl ChemicalApp for ConjugateGradient {}
 
 impl Optimizer for ConjugateGradient {
     /// Return cartesian displacements predicted by the optimizer
     fn displacements(&mut self, mp: &ModelProperties) -> Result<Vec<Point3D>> {
-        if let Some(forces) = &mp.forces {
+        if let Some(forces) = &mp.get_forces() {
             let forces = forces.to_dmatrix();
             let d = self.get_displacement_vectors(&forces)?;
             let d = forces_mat_to_vec(&d);

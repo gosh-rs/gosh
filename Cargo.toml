@@ -3,7 +3,7 @@
 # [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*cargo][cargo:1]]
 [package]
 name = "gosh"
-version = "0.0.22"
+version = "0.0.23"
 edition = "2018"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 
@@ -13,22 +13,24 @@ dirs = "2"
 tempfile = "3.0"
 serde = "1.0"
 serde_json = "1.0"
-quicli = "0.4"
 duct = "0.10"
-nalgebra = {version="0.18", features=["serde-serialize"]}
 nom = "4.0"
 linefeed = "0.6"
-structopt = "0.2"
-vecfx = {git = "https://github.com/gchemol/vecfx.git", tag="v0.0.4", features=["nalgebra"]}
-gchemol = {git = "https://github.com/ybyygu/gchemol.git", tag="v0.0.35"}
-#gchemol = {path = "/home/ybyygu/Workspace/Programming/gchemol-rs/gchemol/gchemol"}
-#gosh-models = {git = "https://github.com/gosh-rs/models.git", tag="v0.0.7"}
-gosh-models = {version = "*", path = "../models"}
-gosh-db = {version = "*", path = "../database"}
+structopt = "0.3"
+gosh-core = { git = "https://github.com/gosh-rs/gosh-core.git" }
+gosh-models = {git = "https://github.com/gosh-rs/gosh-models.git"}
+gosh-db = { git = "https://github.com/gosh-rs/gosh-database.git" }
+lbfgs = { git = "https://github.com/ybyygu/rust-lbfgs.git", tag="v0.0.14" }
+text-parser = { git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.3" }
+cg_descent = { git = "https://github.com/ybyygu/cg_descent.rs" }
+#gosh-core = {path = "../core"}
+#gosh-models = {path = "../models"}
+#gosh-adaptors = {path = "../adaptors"}
+#gosh-db = {path = "../database", features = ["adhoc"] }
+#
 #lbfgs = {path = "/home/ybyygu/Workspace/Programming/rust-libs/lbfgs"}
-lbfgs = {git = "https://github.com/ybyygu/rust-lbfgs.git", tag="v0.0.14" }
-text-parser = {git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.3" }
-cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
+#text-parser = {git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.3" }
+#cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
 
 [dev-dependencies]
 approx = "0.3"

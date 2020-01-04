@@ -35,7 +35,7 @@ pub trait Optimizer: ChemicalApp {
 
     /// Determine whether we have optimized the structure
     fn converged(&self, displacements: &[Point3D], mp: &ModelProperties, icycle: usize) -> Result<bool> {
-        if let Some(forces) = &mp.forces {
+        if let Some(forces) = &mp.get_forces() {
             debug_assert!(forces.len() == displacements.len(), "vectors in different size");
             let fnorms = forces.norms();
             let dnorms = displacements.norms();
@@ -45,7 +45,7 @@ pub trait Optimizer: ChemicalApp {
             let dmax = 0.05;
             let fcur = fnorms.max();
             let dcur = dnorms.max();
-            if let Some(e) = &mp.energy {
+            if let Some(e) = &mp.get_energy() {
                 println!("{:4}\tCur Energy: {:-12.5}; Max force: {:-12.5}; Max Disp: {:-12.5}", icycle, e, fcur, dcur);
             } else {
                 println!("{:4}\tMax force: {:-12.5}; Max Disp: {:-12.5}", icycle, fcur, dcur);
