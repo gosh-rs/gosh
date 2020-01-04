@@ -18,11 +18,11 @@ nom = "4.0"
 linefeed = "0.6"
 structopt = "0.3"
 gosh-core = { git = "https://github.com/gosh-rs/gosh-core.git" }
-gosh-models = {git = "https://github.com/gosh-rs/gosh-models.git", branch="dev"}
-gosh-db = {git = "https://github.com/gosh-rs/gosh-database.git", branch="dev"}
-lbfgs = {git = "https://github.com/ybyygu/rust-lbfgs.git", tag="v0.0.14" }
-text-parser = {git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.3" }
-cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
+gosh-models = {git = "https://github.com/gosh-rs/gosh-models.git"}
+gosh-db = { git = "https://github.com/gosh-rs/gosh-database.git" }
+lbfgs = { git = "https://github.com/ybyygu/rust-lbfgs.git", tag="v0.0.14" }
+text-parser = { git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.3" }
+cg_descent = { git = "https://github.com/ybyygu/cg_descent.rs" }
 #gosh-core = {path = "../core"}
 #gosh-models = {path = "../models"}
 #gosh-adaptors = {path = "../adaptors"}
