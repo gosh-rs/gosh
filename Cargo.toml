@@ -3,7 +3,7 @@
 # [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*cargo][cargo:1]]
 [package]
 name = "gosh"
-version = "0.0.23"
+version = "0.0.24"
 edition = "2018"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 
@@ -21,7 +21,6 @@ gosh-core = { git = "https://github.com/gosh-rs/gosh-core.git" }
 gosh-models = {git = "https://github.com/gosh-rs/gosh-models.git"}
 gosh-db = { git = "https://github.com/gosh-rs/gosh-database.git" }
 lbfgs = { git = "https://github.com/ybyygu/rust-lbfgs.git", tag="v0.0.14" }
-text-parser = { git = "https://github.com/ybyygu/text-parser.git", tag="v0.0.3" }
 cg_descent = { git = "https://github.com/ybyygu/cg_descent.rs" }
 #gosh-core = {path = "../core"}
 #gosh-models = {path = "../models"}
