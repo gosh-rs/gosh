@@ -12,7 +12,7 @@ pub mod cli;
 #[macro_use]
 extern crate approx;
 
-pub use gosh_models as models;
+pub use gosh_model as models;
 
 // pub mod optim {
 //     // pub use crate::apps::optimization::line::golden_section_search;
