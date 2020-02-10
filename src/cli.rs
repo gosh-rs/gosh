@@ -1,14 +1,19 @@
 // imports
 
 // [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*imports][imports:1]]
-use crate::cmd_utils::*;
 use crate::core::*;
 
 use gchemol::prelude::*;
 use gchemol::{io, Molecule};
 
+use gut::cli::*;
+use gut::prelude::*;
+
 use std::path::PathBuf;
 use std::process::Command;
+use structopt::*;
+
+type CliResult = Result<()>;
 // imports:1 ends here
 
 // base
@@ -139,7 +144,7 @@ impl Commander {
                 }
             }
             GoshCmd::Load { filename } => {
-                self.molecules = io::read(filename)?;
+                self.molecules = gchemol::io::read_all(filename)?;
                 self.filename = Some(filename.to_owned());
 
                 println!("Loaded {} molecule(s).", self.molecules.len());
@@ -147,7 +152,8 @@ impl Commander {
 
             GoshCmd::Clean {} => {
                 self.check()?;
-                self.molecules[0].clean()?;
+                // self.molecules[0].clean()?;
+                todo!()
             }
 
             GoshCmd::Avail {} => {
@@ -171,42 +177,46 @@ impl Commander {
 
             GoshCmd::Fragment {} => {
                 self.check()?;
-                let mols = self.molecules[0].fragment();
-                self.molecules.clear();
-                self.molecules.extend(mols);
+                // let mols = self.molecules[0].fragment();
+                // self.molecules.clear();
+                // self.molecules.extend(mols);
+                todo!()
             }
             GoshCmd::Rebond {} => {
                 self.check()?;
-                for mol in self.molecules.iter_mut() {
-                    mol.rebond();
-                }
+                // for mol in self.molecules.iter_mut() {
+                //     mol.rebond();
+                // }
+                todo!()
             }
             GoshCmd::Supercell {
                 range_a,
                 range_b,
                 range_c,
             } => {
-                use gchemol::Supercell;
+                // use gchemol::Supercell;
 
-                self.check()?;
+                // self.check()?;
 
-                let mut mols = vec![];
-                for mol in self.molecules.iter() {
-                    if mol.lattice.is_some() {
-                        let mol = Supercell::new()
-                            .with_range_a(0, *range_a)
-                            .with_range_b(0, *range_b)
-                            .with_range_c(0, *range_c)
-                            .build(&mol);
-                        mols.push(mol);
-                    } else {
-                        eprintln!("No lattice data.");
-                    }
-                }
-                self.molecules = mols;
+                // let mut mols = vec![];
+                // for mol in self.molecules.iter() {
+                //     if mol.lattice.is_some() {
+                //         let mol = Supercell::new()
+                //             .with_range_a(0, *range_a)
+                //             .with_range_b(0, *range_b)
+                //             .with_range_c(0, *range_c)
+                //             .build(&mol);
+                //         mols.push(mol);
+                //     } else {
+                //         eprintln!("No lattice data.");
+                //     }
+                // }
+                // self.molecules = mols;
+                todo!()
             }
             GoshCmd::Superimpose { filename } => {
                 self.check()?;
+                todo!()
             }
             GoshCmd::Format { filename } => {
                 self.check()?;

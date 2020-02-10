@@ -1,12 +1,14 @@
 // imports
 
-use gosh::cmd_utils::*;
+use gut::cli::*;
+use gut::prelude::*;
 
 use linefeed::{Interface, ReadResult};
-
 use std::path::PathBuf;
+use structopt::*;
 
 use gosh::cli::*;
+use gosh_core::*;
 
 // gosh
 
@@ -107,7 +109,9 @@ fn start_gosh_cmd_loop() -> CliResult {
     Ok(())
 }
 
-fn main() -> CliResult {
+// main
+
+fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
 
     // entry shell mode or subcommands mode
@@ -116,7 +120,7 @@ fn main() -> CliResult {
         setup_logger();
 
         let mut commander = Commander::new();
-        commander.action(&args.cmd);
+        commander.action(&args.cmd)?;
     } else {
         start_gosh_cmd_loop();
     }
