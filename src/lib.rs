@@ -12,15 +12,17 @@ pub mod cli;
 #[macro_use]
 extern crate approx;
 
-pub use gosh_model as models;
+pub use gosh_adaptor as adaptor;
+pub use gosh_core::gchemol;
+pub use gosh_database as db;
+pub use gosh_model as model;
+
+pub(crate) mod core {
+    pub use gosh_core::gut;
+    pub use gosh_core::vecfx;
+}
 
 // pub mod optim {
 //     // pub use crate::apps::optimization::line::golden_section_search;
 // }
-
-pub(crate) mod core {
-    pub use gosh_core::gchemol;
-    pub use gosh_core::gut;
-    pub use gosh_core::vecfx;
-}
 // pub:1 ends here

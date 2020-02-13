@@ -2,6 +2,7 @@
 
 // [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*imports][imports:1]]
 use crate::core::*;
+use crate::gchemol;
 
 use gchemol::prelude::*;
 use gchemol::{io, Molecule};
