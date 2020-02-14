@@ -88,11 +88,11 @@ pub enum GoshCmd {
     #[structopt(name = "supercell")]
     Supercell {
         /// range a
-        range_a: isize,
+        range_a: usize,
         /// range b
-        range_b: isize,
+        range_b: usize,
         /// range c
-        range_c: isize,
+        range_c: usize,
     },
 
     /// Superimpose current molecule onto reference molecule by translating and
@@ -195,25 +195,17 @@ impl Commander {
                 range_b,
                 range_c,
             } => {
-                // use gchemol::Supercell;
+                self.check()?;
 
-                // self.check()?;
-
-                // let mut mols = vec![];
-                // for mol in self.molecules.iter() {
-                //     if mol.lattice.is_some() {
-                //         let mol = Supercell::new()
-                //             .with_range_a(0, *range_a)
-                //             .with_range_b(0, *range_b)
-                //             .with_range_c(0, *range_c)
-                //             .build(&mol);
-                //         mols.push(mol);
-                //     } else {
-                //         eprintln!("No lattice data.");
-                //     }
-                // }
-                // self.molecules = mols;
-                todo!()
+                let mut mols = vec![];
+                for mol in self.molecules.iter() {
+                    if let Some(mol) = mol.supercell(*range_a, *range_b, *range_c) {
+                        mols.push(mol);
+                    } else {
+                        eprintln!("No lattice data.");
+                    }
+                }
+                self.molecules = mols;
             }
             GoshCmd::Superimpose { filename } => {
                 self.check()?;
