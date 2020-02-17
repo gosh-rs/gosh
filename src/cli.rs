@@ -185,10 +185,9 @@ impl Commander {
             }
             GoshCmd::Rebond {} => {
                 self.check()?;
-                // for mol in self.molecules.iter_mut() {
-                //     mol.rebond();
-                // }
-                todo!()
+                for mol in self.molecules.iter_mut() {
+                    mol.rebond();
+                }
             }
             GoshCmd::Supercell {
                 range_a,
