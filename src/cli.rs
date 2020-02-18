@@ -153,8 +153,9 @@ impl Commander {
 
             GoshCmd::Clean {} => {
                 self.check()?;
-                // self.molecules[0].clean()?;
-                todo!()
+                for i in 0..self.molecules.len() {
+                    self.molecules[i].clean()?;
+                }
             }
 
             GoshCmd::Avail {} => {
