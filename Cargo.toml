@@ -22,14 +22,19 @@ duct = "0.10"
 nom = "4.0"
 linefeed = "0.6"
 structopt = "0.3"
+#-------------------------
 gosh-core = "0.0.2"
 gosh-model = "0.0.10"
 gosh-adaptor = "0.0.5"
-gosh-database = {version="0.0.8", features = ["adhoc"] }
-
+gosh-database = "0.0.8"
 liblbfgs = { version="0.0.15" }
 #cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
+#-------------------------
 
 [dev-dependencies]
 approx = "0.3"
+
+[features]
+# for adhoc hacking
+adhoc = ["gosh-core/adhoc", "gosh-model/adhoc", "gosh-adaptor/adhoc", "gosh-database/adhoc"]
 # cargo:1 ends here
