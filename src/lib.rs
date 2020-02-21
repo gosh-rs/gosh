@@ -22,7 +22,7 @@ pub(crate) mod core {
     pub use gosh_core::vecfx;
 }
 
-// pub mod optim {
-//     // pub use crate::apps::optimization::line::golden_section_search;
-// }
+pub mod prelude {
+    pub use gosh_database::prelude::*;
+}
 // pub:1 ends here

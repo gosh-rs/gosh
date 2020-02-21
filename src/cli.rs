@@ -215,13 +215,8 @@ impl Commander {
                 self.check()?;
 
                 for mol in &self.molecules {
-                    let template = io::read_file(&filename).map_err(|e| {
-                        error!("failed to load template");
-                        e
-                    })?;
-                    let s = mol.render_with(&template).map_err(|e| {
-                        error!("failed to render molecule");
-                        e
+                    let s = mol.render_with(&filename).with_context(|| {
+                        format!("Failed to render molecule with file: {:?}", filename)
                     })?;
                     println!("{:}", s);
                 }
