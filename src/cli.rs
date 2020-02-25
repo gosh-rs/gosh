@@ -177,12 +177,15 @@ impl Commander {
                 }
             }
 
+            #[cfg(feature = "adhoc")]
             GoshCmd::Fragment {} => {
+                // FIXME: remove
+                use gchemol::compat::*;
+
                 self.check()?;
-                // let mols = self.molecules[0].fragment();
-                // self.molecules.clear();
-                // self.molecules.extend(mols);
-                todo!()
+                let mols = self.molecules[0].fragment();
+                self.molecules.clear();
+                self.molecules.extend(mols);
             }
             GoshCmd::Rebond {} => {
                 self.check()?;
