@@ -28,6 +28,9 @@ use vecfx::*;
 /// An universal runner for Blackbox Model
 #[derive(Debug, StructOpt)]
 struct Cli {
+    #[structopt(flatten)]
+    verbose: gut::cli::Verbosity,
+
     /// Input molecule file
     #[structopt(parse(from_os_str))]
     molfile: PathBuf,
@@ -60,7 +63,7 @@ struct Cli {
 
 fn main() -> Result<()> {
     let args = Cli::from_args();
-    setup_logger();
+    args.verbose.setup_logger();
 
     // 1. load molecules
     info!("input molecule file: {}", &args.molfile.display());
@@ -69,9 +72,9 @@ fn main() -> Result<()> {
 
     // 2. construct the model
     let mut bbm = if let Some(ref d) = args.bbmdir {
-        BlackBox::from_dir(&d)
+        BlackBox::from_dir(&d)?
     } else {
-        BlackBox::from_dir(std::env::current_dir()?)
+        BlackBox::from_dir(std::env::current_dir()?)?
     };
 
     // 3. process molecules using the model
