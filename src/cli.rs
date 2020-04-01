@@ -1,5 +1,3 @@
-// imports
-
 // [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*imports][imports:1]]
 use crate::core::*;
 use crate::gchemol;
@@ -16,8 +14,6 @@ use structopt::*;
 
 type CliResult = Result<()>;
 // imports:1 ends here
-
-// base
 
 // [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*base][base:1]]
 /// A commander for interactive interpreter
@@ -78,6 +74,10 @@ pub enum GoshCmd {
         /// Path to template file.
         #[structopt(name = "TEMPLATE_NAME", parse(from_os_str))]
         filename: PathBuf,
+
+        /// Path to output file.
+        #[structopt(name = "OUTPUT_FILE_NAME", short="-o")]
+        output: Option<PathBuf>,
     },
 
     /// Break molecule into smaller fragments based on connectivity.
@@ -117,8 +117,6 @@ pub enum GoshCmd {
     Pwd {},
 }
 // base:1 ends here
-
-// core
 
 // [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*core][core:1]]
 impl Commander {
@@ -167,11 +165,7 @@ impl Commander {
 
                 if let Some(filename) = filename.as_ref().or(self.filename.as_ref()) {
                     io::write(&filename, &self.molecules)?;
-                    println!(
-                        "Wrote {} molecules in {}",
-                        self.molecules.len(),
-                        filename.display()
-                    );
+                    println!("Wrote {} molecules in {}", self.molecules.len(), filename.display());
                 } else {
                     eprintln!("No filename.");
                 }
@@ -214,13 +208,21 @@ impl Commander {
                 self.check()?;
                 todo!()
             }
-            GoshCmd::Format { filename } => {
+            GoshCmd::Format { filename, output } => {
                 self.check()?;
 
+                let mut ss = vec![];
                 for mol in &self.molecules {
-                    let s = mol.render_with(&filename).with_context(|| {
-                        format!("Failed to render molecule with file: {:?}", filename)
-                    })?;
+                    let s = mol
+                        .render_with(&filename)
+                        .with_context(|| format!("Failed to render molecule with file: {:?}", filename))?;
+                    ss.push(s);
+                }
+
+                let s = ss.join("");
+                if let Some(output) = output {
+                    gut::fs::write_to_file(output, &s)?;
+                } else {
                     println!("{:}", s);
                 }
             }
