@@ -105,7 +105,6 @@ fn process_molecules(args: Cli, bbm: &mut BlackBox, mols: Vec<Molecule>) -> Resu
                 if args.opt {
                     println!("optimization with LBFGS");
                     let mut mol = mol.clone();
-                    mol.recenter();
                     let optimized = gosh_optim::Optimizer::default().optimize_geometry(&mut mol, bbm)?;
                     let mp = optimized.computed;
                     println!("{:}", mp);
