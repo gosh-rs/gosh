@@ -91,86 +91,9 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-// lbfgs
-
-use ::liblbfgs::lbfgs;
-
-/// Optimize molecule using blackbox model
-/// # Parameters
-/// - mol: target molecule
-/// - model: chemical model for properties evaluation
-/// - fmax: the max force for convergence
-pub(self) fn lbfgs_opt<T: ChemicalModel>(
-    mol: &Molecule,
-    model: &mut T,
-    fmax: f64,
-) -> Result<ModelProperties> {
-    let mp = model.compute(&mol)?;
-    if let Some(energy) = mp.get_energy() {
-        println!("current energy = {:-10.4}", energy);
-    } else {
-        bail!("no energy")
-    }
-
-    let mut mol = mol.clone();
-    let mut positions: Vec<_> = mol.positions().collect();
-    let mut arr_x = positions.as_mut_flat();
-    let mut icall = 0;
-    lbfgs()
-        .with_initial_step_size(1.0 / 75.0)
-        .with_max_step_size(0.4)
-        .with_damping(true)
-        .with_max_linesearch(5)
-        .with_linesearch_gtol(0.999)
-        .with_epsilon(0.01)
-        .minimize(
-            &mut arr_x,
-            |arr_x, gx| {
-                let positions = arr_x.as_3d().to_vec();
-                mol.set_positions(positions);
-                let mp = model.compute(&mol)?;
-
-                // set gradients
-                if let Some(forces) = &mp.get_forces() {
-                    let forces = forces.as_flat();
-                    assert_eq!(gx.len(), forces.len());
-                    for i in 0..forces.len() {
-                        gx[i] = -forces[i];
-                    }
-                } else {
-                    bail!("no forces!");
-                }
-
-                let fx = if let Some(energy) = mp.get_energy() {
-                    energy
-                } else {
-                    bail!("no energy!");
-                };
-
-                let fnorms: Vec<_> = gx.as_3d().iter().map(|v| v.vec2norm()).collect();
-                let fm = fnorms.max();
-                println!(
-                    "niter = {:5} energy = {:-10.4} fmax = {:-10.4}",
-                    icall, fx, fm
-                );
-                icall += 1;
-
-                Ok(fx)
-            },
-            |prgr| {
-                let fnorms: Vec<_> = prgr.gx.chunks(3).map(|v| v.vec2norm()).collect();
-                let fcur = fnorms.max();
-                false
-            },
-        )?;
-
-    let mp = model.compute(&mol)?;
-    Ok(mp)
-}
-
 // process
 
-fn process_molecules(args: Cli, mut bbm: &mut BlackBox, mols: Vec<Molecule>) -> Result<()> {
+fn process_molecules(args: Cli, bbm: &mut BlackBox, mols: Vec<Molecule>) -> Result<()> {
     let mut final_mols = vec![];
     let mut keep = args.keep;
 
@@ -183,7 +106,8 @@ fn process_molecules(args: Cli, mut bbm: &mut BlackBox, mols: Vec<Molecule>) -> 
                     println!("optimization with LBFGS");
                     let mut mol = mol.clone();
                     mol.recenter();
-                    let mp = lbfgs_opt(&mol, bbm, 0.1)?;
+                    let optimized = gosh_optim::Optimizer::default().optimize_geometry(&mut mol, bbm)?;
+                    let mp = optimized.computed;
                     println!("{:}", mp);
                     // collect molecules
                     if let Some(mol) = mp.get_molecule() {
