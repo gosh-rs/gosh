@@ -1,4 +1,4 @@
-# [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*cargo][cargo:1]]
+# [[file:gosh.note::*cargo][cargo:1]]
 [package]
 name = "gosh"
 version = "0.0.25"
@@ -21,9 +21,9 @@ structopt = "0.3"
 #-------------------------
 gosh-core = "0.0.2"
 gosh-model = "0.0.11"
-gosh-adaptor = "0.0.5"
+gosh-adaptor = "0.0.6"
 gosh-database = "0.0.8"
-gosh-optim = "0.0.1"
+gosh-optim = "0.0.2"
 liblbfgs = { version="0.0.15" }
 #cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
 #-------------------------
