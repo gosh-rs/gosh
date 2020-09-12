@@ -1,4 +1,4 @@
-// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*imports][imports:1]]
+// [[file:../gosh.note::*imports][imports:1]]
 use crate::core::*;
 use crate::gchemol;
 
@@ -15,7 +15,7 @@ use structopt::*;
 type CliResult = Result<()>;
 // imports:1 ends here
 
-// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*base][base:1]]
+// [[file:../gosh.note::*base][base:1]]
 /// A commander for interactive interpreter
 pub struct Commander {
     /// active molecules
@@ -62,9 +62,10 @@ pub enum GoshCmd {
     /// Convert molecule formats in batch. e.g.: convert *.xyz .mol2
     #[structopt(name = "convert")]
     Convert {
-        /// input files: e.g.: *
+        /// input files: e.g.: 1.cif 2.cif 3.cif
         files: Vec<PathBuf>,
-        /// target format: e.g.: .mol2
+        /// target format (file extension): e.g.: .mol2 or .poscar
+        #[structopt(short="-e")]
         format_to: String,
     },
 
@@ -118,7 +119,7 @@ pub enum GoshCmd {
 }
 // base:1 ends here
 
-// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*core][core:1]]
+// [[file:../gosh.note::*core][core:1]]
 impl Commander {
     pub fn new() -> Self {
         Commander {
@@ -186,6 +187,13 @@ impl Commander {
                 for mol in self.molecules.iter_mut() {
                     mol.rebond();
                 }
+            }
+            GoshCmd::Convert { files, format_to } => {
+                for f in files.iter() {
+                    let mols = gchemol::io::read_all(f)?;
+                    io::write(f.with_extension(&format_to[1..]), &mols)?;
+                }
+                println!("{} files were converted in {} format", files.len(), format_to);
             }
             GoshCmd::Supercell {
                 range_a,
