@@ -52,11 +52,11 @@ struct Cli {
     opt: bool,
 
     /// Forces convergence criterion for optimizing molecule geometry.
-    #[structopt(long, default_value="0.1")]
+    #[structopt(long, default_value = "0.1")]
     fmax: f64,
 
     /// Max allowed number of iterations during optimization.
-    #[structopt(long, default_value="50")]
+    #[structopt(long, default_value = "50")]
     nmax: usize,
 
     /// Template directory with all related files. The default is current
@@ -67,6 +67,9 @@ struct Cli {
     /// Output the caputured structure. e.g.: -o foo.xyz
     #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: Option<PathBuf>,
+
+    #[structopt(flatten)]
+    checkpoint: gosh_database::CheckpointDb,
 }
 
 fn main() -> Result<()> {
@@ -111,10 +114,12 @@ fn process_molecules(args: Cli, bbm: &mut BlackBox, mols: Vec<Molecule>) -> Resu
             // 3. call external engine
             if !args.dry {
                 if args.opt {
-                    println!("Optimizing molecule in LBFGS algorithm ...");
+                    println!("Optimizing molecule using LBFGS algorithm ...");
                     let mut mol = mol.clone();
-                    let optimized =
-                        gosh_optim::Optimizer::new(args.nmax, args.fmax).optimize_geometry(&mut mol, bbm)?;
+
+                    let optimized = gosh_optim::Optimizer::new(args.nmax, args.fmax)
+                        .optimize_geometry_checkpointed(&mut mol, bbm, args.checkpoint.create())?;
+
                     let mp = optimized.computed;
                     println!("{:}", mp);
                     // collect molecules
