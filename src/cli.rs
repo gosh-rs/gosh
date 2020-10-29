@@ -53,7 +53,12 @@ pub enum GoshCmd {
 
     /// Rebuild bonds based on atom distances.
     #[structopt(name = "rebond")]
-    Rebond {},
+    Rebond {
+        #[structopt(short = "-r")]
+        /// The bonding ratio for guessing chemical bonds. Larger value leading
+        /// to more bonds. The default value is 0.55
+        bonding_ratio: Option<f64>,
+    },
 
     /// Clean up bad molecular geometry.
     #[structopt(name = "clean")]
@@ -194,8 +199,12 @@ impl Commander {
                 self.molecules.clear();
                 self.molecules.extend(mols);
             }
-            GoshCmd::Rebond {} => {
+
+            GoshCmd::Rebond { bonding_ratio } => {
                 self.check()?;
+                if let Some(r) = bonding_ratio {
+                    std::env::set_var("GCHEMOL_BONDING_RATIO", format!("{}", r));
+                }
                 for mol in self.molecules.iter_mut() {
                     mol.rebond();
                 }
