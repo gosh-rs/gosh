@@ -1,4 +1,4 @@
-# [[file:gosh.note::*cargo][cargo:1]]
+# [[file:gosh.note::*cargo][cargo:2]]
 [package]
 name = "gosh"
 version = "0.0.26"
@@ -34,4 +34,4 @@ approx = "0.3"
 [features]
 # for adhoc hacking
 adhoc = ["gosh-core/adhoc", "gosh-model/adhoc", "gosh-adaptor/adhoc", "gosh-database/adhoc"]
-# cargo:1 ends here
+# cargo:2 ends here

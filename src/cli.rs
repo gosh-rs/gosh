@@ -59,13 +59,19 @@ pub enum GoshCmd {
     #[structopt(name = "clean")]
     Clean {},
 
-    /// Convert molecule formats in batch. e.g.: convert *.xyz .mol2
+    /// Unbuild current crystal structure leaving a non-periodic structure.
+    #[structopt(name = "unbuild_crystal")]
+    UnbuildCrystal {},
+
+    /// Convert molecule formats in batch.
+    ///
+    /// Usage: convert 1.xyz 2.xyz -e .mol2
     #[structopt(name = "convert")]
     Convert {
         /// input files: e.g.: 1.cif 2.cif 3.cif
         files: Vec<PathBuf>,
         /// target format (file extension): e.g.: .mol2 or .poscar
-        #[structopt(short="-e")]
+        #[structopt(short = "-e")]
         format_to: String,
     },
 
@@ -77,7 +83,7 @@ pub enum GoshCmd {
         filename: PathBuf,
 
         /// Path to output file.
-        #[structopt(name = "OUTPUT_FILE_NAME", short="-o")]
+        #[structopt(name = "OUTPUT_FILE_NAME", short = "-o")]
         output: Option<PathBuf>,
     },
 
@@ -159,6 +165,12 @@ impl Commander {
 
             GoshCmd::Avail {} => {
                 gchemol::io::describe_backends();
+            }
+            GoshCmd::UnbuildCrystal {} => {
+                self.check()?;
+                for i in 0..self.molecules.len() {
+                    self.molecules[i].unbuild_crystal();
+                }
             }
 
             GoshCmd::Write { filename } => {
