@@ -117,7 +117,7 @@ fn process_molecules(args: Cli, bbm: &mut BlackBox, mols: Vec<Molecule>) -> Resu
                     println!("Optimizing molecule using LBFGS algorithm ...");
                     let mut mol = mol.clone();
 
-                    let optimized = gosh_optim::Optimizer::new(args.nmax, args.fmax)
+                    let optimized = gosh_optim::Optimizer::new(args.fmax, args.nmax)
                         .optimize_geometry_checkpointed(&mut mol, bbm, args.checkpoint.create())?;
 
                     let mp = optimized.computed;
