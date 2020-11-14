@@ -51,6 +51,17 @@ pub enum GoshCmd {
         filename: PathBuf,
     },
 
+    /// Load molecule from checkpoint file.
+    #[structopt(name = "load-chk")]
+    LoadChk {
+        /// The filename containing one or more molecules.
+        #[structopt(name = "MOLECULE_NAME")]
+        filename: PathBuf,
+
+        #[structopt(long, default_value = "-1")]
+        chk_slot: i32,
+    },
+
     /// Rebuild bonds based on atom distances.
     #[structopt(name = "rebond")]
     Rebond {
@@ -159,6 +170,16 @@ impl Commander {
                 self.filename = Some(filename.to_owned());
 
                 println!("Loaded {} molecule(s).", self.molecules.len());
+            }
+
+            GoshCmd::LoadChk { filename, chk_slot } => {
+                let chk = gosh_database::CheckpointDb::new(&filename);
+                let mol: Molecule = chk.load_from_slot_n(*chk_slot)?;
+
+                self.molecules = vec![mol];
+                self.filename = Some(filename.to_owned());
+
+                println!("Loaded one molecule from checkpoint file: {}", filename.display());
             }
 
             GoshCmd::Clean {} => {
