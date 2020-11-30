@@ -118,7 +118,8 @@ fn process_molecules(args: Cli, bbm: &mut BlackBox, mols: Vec<Molecule>) -> Resu
                     let mut mol = mol.clone();
 
                     let optimized = gosh_optim::Optimizer::new(args.fmax, args.nmax)
-                        .optimize_geometry_checkpointed(&mut mol, bbm, args.checkpoint.create())?;
+                        .checkpoint(args.checkpoint.create())
+                        .optimize_geometry(&mut mol, bbm)?;
 
                     let mp = optimized.computed;
                     println!("{:}", mp);
