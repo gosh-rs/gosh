@@ -39,7 +39,7 @@ pub enum GoshCmd {
     #[structopt(name = "write", alias = "save")]
     Write {
         /// The filename to write.
-        #[structopt(name = "FILE_NAME", parse(from_os_str))]
+        #[structopt(name = "FILE-NAME")]
         filename: Option<PathBuf>,
     },
 
@@ -47,7 +47,7 @@ pub enum GoshCmd {
     #[structopt(name = "load")]
     Load {
         /// The filename containing one or more molecules.
-        #[structopt(name = "MOLECULE_NAME", parse(from_os_str))]
+        #[structopt(name = "MOLECULE-NAME")]
         filename: PathBuf,
     },
 
@@ -55,7 +55,7 @@ pub enum GoshCmd {
     #[structopt(name = "load-chk")]
     LoadChk {
         /// The filename containing one or more molecules.
-        #[structopt(name = "MOLECULE_NAME")]
+        #[structopt(name = "MOLECULE-NAME")]
         filename: PathBuf,
 
         #[structopt(long, default_value = "-1")]

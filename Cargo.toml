@@ -1,7 +1,7 @@
 # [[file:gosh.note::*cargo][cargo:2]]
 [package]
 name = "gosh"
-version = "0.0.26"
+version = "0.0.27"
 edition = "2018"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 description = "Rusty framework for multiscale/multilevel modeling"
@@ -20,7 +20,7 @@ linefeed = "0.6"
 structopt = "0.3"
 #-------------------------
 gosh-core = "0.0.2"
-gosh-model = "0.0.11"
+gosh-model = "0.0.13"
 gosh-adaptor = "0.0.6"
 gosh-database = "0.0.8"
 gosh-optim = "0.0.3"

@@ -83,9 +83,9 @@ fn main() -> Result<()> {
 
     // 2. construct the model
     let mut bbm = if let Some(ref d) = args.bbmdir {
-        BlackBox::from_dir(&d)?
+        BlackBoxModel::from_dir(&d)?
     } else {
-        BlackBox::from_dir(std::env::current_dir()?)?
+        BlackBoxModel::from_dir(std::env::current_dir()?)?
     };
 
     // 3. process molecules using the model
@@ -104,7 +104,7 @@ fn main() -> Result<()> {
 
 // process
 
-fn process_molecules(args: Cli, bbm: &mut BlackBox, mols: Vec<Molecule>) -> Result<()> {
+fn process_molecules(args: Cli, bbm: &mut BlackBoxModel, mols: Vec<Molecule>) -> Result<()> {
     let mut final_mols = vec![];
     let mut keep = args.keep;
 
