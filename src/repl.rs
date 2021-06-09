@@ -52,17 +52,23 @@ fn create_readline_editor() -> Editor<helper::MyHelper> {
 
 // [[file:../gosh.note::*repl][repl:1]]
 impl Interpreter {
-    fn read_eval_print(&mut self) -> Result<()> {
-        let line = self.editor.readline(PROMPT)?;
-        let line = line.trim();
-        if !line.is_empty() {
-            self.editor.add_history_entry(line);
-            if self.interpret_line(&line) {
-                bail!("REPL exited");
+    fn continue_read_eval_print(&mut self) -> bool {
+        match self.editor.readline(PROMPT) {
+            Err(rustyline::error::ReadlineError::Eof) => false,
+            Ok(line) => {
+                let line = line.trim();
+                if !line.is_empty() {
+                    self.editor.add_history_entry(line);
+                    self.continue_interpret_line(&line)
+                } else {
+                    true
+                }
+            }
+            Err(e) => {
+                eprintln!("{}", e);
+                false
             }
         }
-
-        Ok(())
     }
 
     fn load_history(&mut self) -> Result<()> {
@@ -85,8 +91,8 @@ impl Interpreter {
         println!("");
 
         let _ = self.load_history();
-        loop {
-            self.read_eval_print()?;
+        while self.continue_read_eval_print() {
+            trace!("excuted one loop");
         }
         self.save_history()?;
 
@@ -98,10 +104,9 @@ impl Interpreter {
 // [[file:../gosh.note::*scripting][scripting:1]]
 impl Interpreter {
     /// Interpret one line.
-    fn interpret_line(&mut self, line: &str) -> bool {
+    fn continue_interpret_line(&mut self, line: &str) -> bool {
         use clap::IntoApp;
 
-        let mut break_loop = false;
         let mut args: Vec<_> = line.split_whitespace().collect();
         assert!(args.len() >= 1);
         args.insert(0, "gosh");
@@ -113,9 +118,7 @@ impl Interpreter {
                 println!("");
             }
             // handle quit command first
-            Ok(GoshCmd::Quit {}) => {
-                break_loop = true;
-            }
+            Ok(GoshCmd::Quit {}) => return false,
             // apply subcommand
             Ok(x) => {
                 if let Err(e) = self.commander.action(&x) {
@@ -125,14 +128,14 @@ impl Interpreter {
             // show subcommand usage
             Err(e) => println!("{:}", e),
         }
-        break_loop
+        true
     }
 
     fn interpret_script(&mut self, script: &str) -> Result<()> {
-        let lines = script.lines().filter(|s| s.trim().is_empty());
+        let lines = script.lines().filter(|s| !s.trim().is_empty());
         for line in lines {
-            debug!("interpret line: {:?}", line);
-            if self.interpret_line(&line) {
+            debug!("Execute: {:?}", line);
+            if !self.continue_interpret_line(&line) {
                 break;
             }
         }
@@ -224,7 +227,7 @@ mod helper {
 #[derive(Clap, Debug)]
 struct Gosh {
     /// Execute gosh script
-    #[clap(short = 'e')]
+    #[clap(short = 'x')]
     script_file: PathBuf,
 
     #[clap(flatten)]
@@ -238,6 +241,8 @@ pub fn repl_enter_main() -> Result<()> {
     if args.len() > 1 {
         let args = Gosh::parse();
         args.verbose.setup_logger();
+
+        info!("script file: {:?}", args.script_file);
         Interpreter::new().interpret_script_file(&args.script_file)?;
     } else {
         Interpreter::new().start_repl()?;
