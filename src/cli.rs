@@ -3,11 +3,11 @@ use crate::common::*;
 
 use gchemol::prelude::*;
 use gchemol::{io, Molecule};
-use gut::cli::*;
+
+use clap::{AppSettings, Clap};
 
 use std::path::PathBuf;
 use std::process::Command;
-use structopt::*;
 // imports:1 ends here
 
 // [[file:../gosh.note::*base][base:1]]
@@ -19,91 +19,92 @@ pub struct Commander {
     pub filename: Option<PathBuf>,
 }
 
-#[derive(StructOpt, Debug)]
-#[structopt(setting = structopt::clap::AppSettings::VersionlessSubcommands)]
+#[derive(Clap, Debug)]
+#[clap(setting = AppSettings::ColoredHelp)]
+#[clap(setting = AppSettings::VersionlessSubcommands)]
 pub enum GoshCmd {
     /// Quit go shell.
-    #[structopt(name = "quit", alias = "q", alias = "exit")]
+    #[clap(name = "quit", alias = "q", alias = "exit")]
     Quit {},
 
     /// Show available commands.
-    #[structopt(name = "help", alias = "h", alias = "?")]
+    #[clap(name = "help", alias = "h", alias = "?")]
     Help {},
 
     /// Write molecule(s) into file.
-    #[structopt(name = "write", alias = "save")]
+    #[clap(name = "write", alias = "save")]
     Write {
         /// The filename to write.
-        #[structopt(name = "FILE-NAME")]
+        #[clap(name = "FILE-NAME")]
         filename: Option<PathBuf>,
     },
 
     /// Load molecule(s) from file.
-    #[structopt(name = "load")]
+    #[clap(name = "load")]
     Load {
         /// The filename containing one or more molecules.
-        #[structopt(name = "MOLECULE-NAME")]
+        #[clap(name = "MOLECULE-NAME")]
         filename: PathBuf,
     },
 
     /// Load molecule from checkpoint file.
-    #[structopt(name = "load-chk")]
+    #[clap(name = "load-chk")]
     LoadChk {
         /// The filename containing one or more molecules.
-        #[structopt(name = "MOLECULE-NAME")]
+        #[clap(name = "MOLECULE-NAME")]
         filename: PathBuf,
 
-        #[structopt(long, default_value = "-1")]
+        #[clap(long, default_value = "-1")]
         chk_slot: i32,
     },
 
     /// Rebuild bonds based on atom distances.
-    #[structopt(name = "rebond")]
+    #[clap(name = "rebond")]
     Rebond {
-        #[structopt(short = "-r")]
+        #[clap(short = 'r')]
         /// The bonding ratio for guessing chemical bonds. Larger value leading
         /// to more bonds. The default value is 0.55
         bonding_ratio: Option<f64>,
     },
 
     /// Clean up bad molecular geometry.
-    #[structopt(name = "clean")]
+    #[clap(name = "clean")]
     Clean {},
 
     /// Unbuild current crystal structure leaving a non-periodic structure.
-    #[structopt(name = "unbuild_crystal")]
+    #[clap(name = "unbuild_crystal")]
     UnbuildCrystal {},
 
     /// Convert molecule formats in batch.
     ///
     /// Usage: convert 1.xyz 2.xyz -e .mol2
-    #[structopt(name = "convert")]
+    #[clap(name = "convert")]
     Convert {
         /// input files: e.g.: 1.cif 2.cif 3.cif
         files: Vec<PathBuf>,
         /// target format (file extension): e.g.: .mol2 or .poscar
-        #[structopt(short = "-e")]
+        #[clap(short = 'e')]
         format_to: String,
     },
 
     /// Format molecule using template file.
-    #[structopt(name = "format")]
+    #[clap(name = "format")]
     Format {
         /// Path to template file.
-        #[structopt(name = "TEMPLATE_NAME", parse(from_os_str))]
+        #[clap(name = "TEMPLATE_NAME", parse(from_os_str))]
         filename: PathBuf,
 
         /// Path to output file.
-        #[structopt(name = "OUTPUT_FILE_NAME", short = "-o")]
+        #[clap(name = "OUTPUT_FILE_NAME", short = 'o')]
         output: Option<PathBuf>,
     },
 
     /// Break molecule into smaller fragments based on connectivity.
-    #[structopt(name = "fragment")]
+    #[clap(name = "fragment")]
     Fragment {},
 
     /// Create supercell for all loaded molecules.
-    #[structopt(name = "supercell")]
+    #[clap(name = "supercell")]
     Supercell {
         /// range a
         range_a: usize,
@@ -115,23 +116,23 @@ pub enum GoshCmd {
 
     /// Superimpose current molecule onto reference molecule by translating and
     /// rotating target molecule
-    #[structopt(name = "superimpose")]
+    #[clap(name = "superimpose")]
     Superimpose {
         /// Path to reference molecule file.
-        #[structopt(name = "REFERENCE_MOLECULE", parse(from_os_str))]
+        #[clap(name = "REFERENCE_MOLECULE", parse(from_os_str))]
         filename: PathBuf,
     },
 
     /// Show supported file formats.
-    #[structopt(name = "avail")]
+    #[clap(name = "avail")]
     Avail {},
 
     /// List files under current directory.
-    #[structopt(name = "ls", alias = "l", alias = "ll")]
+    #[clap(name = "ls", alias = "l", alias = "ll")]
     List {},
 
     /// Print path to current directory.
-    #[structopt(name = "pwd")]
+    #[clap(name = "pwd")]
     Pwd {},
 }
 // base:1 ends here
@@ -145,7 +146,7 @@ impl Commander {
         }
     }
 
-    pub fn action(&mut self, cmd: &GoshCmd) -> CliResult {
+    pub fn action(&mut self, cmd: &GoshCmd) -> Result<()> {
         match cmd {
             GoshCmd::Quit {} | GoshCmd::Help {} => {
                 //
@@ -289,7 +290,7 @@ impl Commander {
     }
 }
 
-fn run_cmd(cmdline: &str) -> CliResult {
+fn run_cmd(cmdline: &str) -> Result<()> {
     let output = std::process::Command::new(cmdline)
         .output()
         .map_err(|_| format_err!("external cmdline failed: {}", cmdline))?;

@@ -1,10 +1,9 @@
 // [[file:../gosh.note::*imports][imports:1]]
-use crate::common::*;
-
 use crate::cli::Commander;
 use crate::cli::GoshCmd;
-use structopt::StructOpt;
+use crate::common::*;
 
+use clap::Clap;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 // imports:1 ends here
@@ -34,10 +33,10 @@ impl Interpreter {
     }
 }
 
-#[derive(StructOpt, Debug)]
-#[structopt(name = "gosh", about = "gosh")]
+#[derive(Clap, Debug)]
+#[clap(name = "gosh", about = "gosh")]
 struct Gosh {
-    #[structopt(flatten)]
+    #[clap(flatten)]
     cmd: GoshCmd,
 }
 
@@ -61,6 +60,8 @@ fn create_readline_editor() -> Editor<helper::MyHelper> {
 // [[file:../gosh.note::*repl][repl:1]]
 impl Interpreter {
     fn read_eval_print(&mut self) -> Result<()> {
+        use ::clap::IntoApp;
+
         let line = self.editor.readline(PROMPT)?;
         let line = line.trim();
         if !line.is_empty() {
@@ -70,10 +71,10 @@ impl Interpreter {
         let mut args: Vec<_> = line.split_whitespace().collect();
         args.insert(0, PROMPT);
 
-        match GoshCmd::from_iter_safe(&args) {
+        match GoshCmd::try_parse_from(&args) {
             // show subcommands
             Ok(GoshCmd::Help {}) => {
-                let mut app = GoshCmd::clap();
+                let mut app = GoshCmd::into_app();
                 app.print_help();
                 println!("");
             }
@@ -85,7 +86,7 @@ impl Interpreter {
             }
             Ok(GoshCmd::Quit {}) => bail!("Quit"),
             // show subcommand usage
-            Err(e) => println!("{}", e.message),
+            Err(e) => println!("{:}", e),
         }
 
         Ok(())
@@ -148,7 +149,12 @@ mod helper {
         type Candidate = Pair;
 
         fn complete(&self, line: &str, pos: usize, ctx: &Context<'_>) -> Result<(usize, Vec<Pair>), ReadlineError> {
-            self.completer.complete(line, pos, ctx)
+            if line.ends_with(" ") {
+                self.completer.complete(line, pos, ctx)
+            } else {
+                let pairs = vec![new_candidate("avail"), new_candidate("help"), new_candidate("write")];
+                Ok((0, pairs))
+            }
         }
     }
 
@@ -169,19 +175,24 @@ mod helper {
             None
         }
     }
+
+    fn new_candidate(x: &str) -> Pair {
+        Pair {
+            display: x.into(),
+            replacement: x.into(),
+        }
+    }
 }
 // helper:1 ends here
 
 // [[file:../gosh.note::*pub][pub:1]]
 pub fn repl_enter_main() -> Result<()> {
-    use gut::cli::*;
-
     let args: Vec<String> = std::env::args().collect();
 
     // entry shell mode or subcommands mode
     if args.len() > 1 {
-        let args = Gosh::from_args();
-        setup_logger();
+        let args = Gosh::parse();
+        gut::cli::setup_logger();
 
         let mut commander = Commander::new();
         commander.action(&args.cmd)?;
