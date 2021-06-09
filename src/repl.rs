@@ -53,33 +53,11 @@ fn create_readline_editor() -> Editor<helper::MyHelper> {
 // [[file:../gosh.note::*repl][repl:1]]
 impl Interpreter {
     fn read_eval_print(&mut self) -> Result<()> {
-        use ::clap::IntoApp;
-
         let line = self.editor.readline(PROMPT)?;
         let line = line.trim();
         if !line.is_empty() {
             self.editor.add_history_entry(line);
-        }
-
-        let mut args: Vec<_> = line.split_whitespace().collect();
-        args.insert(0, PROMPT);
-
-        match GoshCmd::try_parse_from(&args) {
-            // show subcommands
-            Ok(GoshCmd::Help {}) => {
-                let mut app = GoshCmd::into_app();
-                app.print_help();
-                println!("");
-            }
-            // apply subcommand
-            Ok(x) => {
-                if let Err(e) = self.commander.action(&x) {
-                    eprintln!("{:?}", e);
-                }
-            }
-            Ok(GoshCmd::Quit {}) => bail!("Quit"),
-            // show subcommand usage
-            Err(e) => println!("{:}", e),
+            self.interpret_line(&line)?;
         }
 
         Ok(())
@@ -117,8 +95,43 @@ impl Interpreter {
 
 // [[file:../gosh.note::*scripting][scripting:1]]
 impl Interpreter {
+    /// Interpret one line
+    fn interpret_line(&mut self, line: &str) -> Result<()> {
+        use clap::IntoApp;
+
+        let mut args: Vec<_> = line.split_whitespace().collect();
+        assert!(args.len() >= 1);
+
+        args.insert(0, "gosh");
+        match GoshCmd::try_parse_from(&args) {
+            // show subcommands
+            Ok(GoshCmd::Help {}) => {
+                let mut app = GoshCmd::into_app();
+                app.print_help();
+                println!("");
+            }
+            // apply subcommand
+            Ok(x) => {
+                if let Err(e) = self.commander.action(&x) {
+                    eprintln!("{:?}", e);
+                }
+            }
+            Ok(GoshCmd::Quit {}) => bail!("Quit"),
+            // show subcommand usage
+            Err(e) => println!("{:}", e),
+        }
+
+        Ok(())
+    }
+
     fn interpret_script(&mut self, script: &str) -> Result<()> {
-        todo!()
+        let lines = script.lines().filter(|s| s.trim().is_empty());
+        for line in lines {
+            debug!("interpret line: {:?}", line);
+            self.interpret_line(&line)?;
+        }
+
+        Ok(())
     }
 
     pub fn interpret_script_file(&mut self, script_file: &Path) -> Result<()> {
@@ -207,6 +220,9 @@ struct Gosh {
     /// Execute gosh script
     #[clap(short = 'e')]
     script_file: PathBuf,
+
+    #[clap(flatten)]
+    verbose: gut::cli_clap::Verbosity,
 }
 
 pub fn repl_enter_main() -> Result<()> {
@@ -214,9 +230,8 @@ pub fn repl_enter_main() -> Result<()> {
 
     // entry shell mode or subcommands mode
     if args.len() > 1 {
-        gut::cli::setup_logger();
-
         let args = Gosh::parse();
+        args.verbose.setup_logger();
         Interpreter::new().interpret_script_file(&args.script_file)?;
     } else {
         Interpreter::new().start_repl()?;
