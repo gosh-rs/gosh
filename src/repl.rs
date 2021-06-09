@@ -152,7 +152,17 @@ mod helper {
             if line.ends_with(" ") {
                 self.completer.complete(line, pos, ctx)
             } else {
-                let pairs = vec![new_candidate("avail"), new_candidate("help"), new_candidate("write")];
+                let commands = get_subcommands();
+                let pairs = commands
+                    .into_iter()
+                    .filter_map(|x| {
+                        if x.starts_with(line) {
+                            new_candidate(&x).into()
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
                 Ok((0, pairs))
             }
         }
@@ -181,6 +191,13 @@ mod helper {
             display: x.into(),
             replacement: x.into(),
         }
+    }
+
+    fn get_subcommands() -> Vec<String> {
+        use clap::IntoApp;
+
+        let app = GoshCmd::into_app();
+        app.get_subcommands().map(|s| s.get_name().into()).collect()
     }
 }
 // helper:1 ends here
