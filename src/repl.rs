@@ -38,6 +38,7 @@ fn create_readline_editor() -> Editor<helper::MyHelper> {
 
     let config = Config::builder()
         .color_mode(rustyline::ColorMode::Enabled)
+        .history_ignore_dups(true)
         .history_ignore_space(true)
         .completion_type(CompletionType::Fuzzy)
         .max_history_size(1000)
@@ -107,28 +108,32 @@ impl Interpreter {
     fn continue_interpret_line(&mut self, line: &str) -> bool {
         use clap::IntoApp;
 
-        let mut args: Vec<_> = line.split_whitespace().collect();
-        assert!(args.len() >= 1);
-        args.insert(0, "gosh");
-        match GoshCmd::try_parse_from(&args) {
-            // show subcommands
-            Ok(GoshCmd::Help {}) => {
-                let mut app = GoshCmd::into_app();
-                app.print_help();
-                println!("");
-            }
-            // handle quit command first
-            Ok(GoshCmd::Quit {}) => return false,
-            // apply subcommand
-            Ok(x) => {
-                if let Err(e) = self.commander.action(&x) {
-                    eprintln!("{:?}", e);
+        if let Some(mut args) = shlex::split(line) {
+            assert!(args.len() >= 1);
+            args.insert(0, "gosh".into());
+            match GoshCmd::try_parse_from(dbg!(&args)) {
+                // show subcommands
+                Ok(GoshCmd::Help {}) => {
+                    let mut app = GoshCmd::into_app();
+                    app.print_help();
+                    println!("");
                 }
+                // handle quit command first
+                Ok(GoshCmd::Quit {}) => return false,
+                // apply subcommand
+                Ok(x) => {
+                    if let Err(e) = self.commander.action(&x) {
+                        eprintln!("{:?}", e);
+                    }
+                }
+                // show subcommand usage
+                Err(e) => println!("{:}", e),
             }
-            // show subcommand usage
-            Err(e) => println!("{:}", e),
+            true
+        } else {
+            dbg!(line);
+            false
         }
-        true
     }
 
     fn interpret_script(&mut self, script: &str) -> Result<()> {

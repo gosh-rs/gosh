@@ -20,6 +20,7 @@ rustyline = {version = "8.2", features = ["with-fuzzy"]}
 rustyline-derive = "0.4"
 structopt = "0.3"
 clap = "3.0.0-beta.2"
+shlex = "1"
 #-------------------------
 gosh-core = "0.0.2"
 gosh-model = "0.0.13"
