@@ -170,7 +170,7 @@ mod helper {
         type Candidate = Pair;
 
         fn complete(&self, line: &str, pos: usize, ctx: &Context<'_>) -> Result<(usize, Vec<Pair>), ReadlineError> {
-            if line.ends_with(" ") {
+            if suitable_for_path_complete(line) {
                 self.completer.complete(line, pos, ctx)
             } else {
                 let commands = get_subcommands();
@@ -219,6 +219,11 @@ mod helper {
 
         let app = GoshCmd::into_app();
         app.get_subcommands().map(|s| s.get_name().into()).collect()
+    }
+
+    fn suitable_for_path_complete(line: &str) -> bool {
+        let line = line.trim();
+        line.starts_with("load") || line.starts_with("write") || line.starts_with("format")
     }
 }
 // helper:1 ends here
