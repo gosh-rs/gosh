@@ -18,7 +18,7 @@ fn get_history_file() -> PathBuf {
 // constants:1 ends here
 
 // [[file:../gosh.note::*core][core:1]]
-pub struct Interpreter {
+struct Interpreter {
     history_file: PathBuf,
     editor: Editor<helper::MyHelper>,
     commander: Commander,
@@ -31,13 +31,6 @@ impl Interpreter {
             commander: Commander::new(),
         }
     }
-}
-
-#[derive(Clap, Debug)]
-#[clap(name = "gosh", about = "gosh")]
-struct Gosh {
-    #[clap(flatten)]
-    cmd: GoshCmd,
 }
 
 fn create_readline_editor() -> Editor<helper::MyHelper> {
@@ -124,8 +117,14 @@ impl Interpreter {
 
 // [[file:../gosh.note::*scripting][scripting:1]]
 impl Interpreter {
-    pub fn interpret_script(&mut self, script: &str) -> Result<()> {
+    fn interpret_script(&mut self, script: &str) -> Result<()> {
         todo!()
+    }
+
+    pub fn interpret_script_file(&mut self, script_file: &Path) -> Result<()> {
+        let s = gut::fs::read_file(script_file)?;
+        self.interpret_script(&s)?;
+        Ok(())
     }
 }
 // scripting:1 ends here
@@ -203,16 +202,22 @@ mod helper {
 // helper:1 ends here
 
 // [[file:../gosh.note::*pub][pub:1]]
+#[derive(Clap, Debug)]
+struct Gosh {
+    /// Execute gosh script
+    #[clap(short = 'e')]
+    script_file: PathBuf,
+}
+
 pub fn repl_enter_main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
 
     // entry shell mode or subcommands mode
     if args.len() > 1 {
-        let args = Gosh::parse();
         gut::cli::setup_logger();
 
-        let mut commander = Commander::new();
-        commander.action(&args.cmd)?;
+        let args = Gosh::parse();
+        Interpreter::new().interpret_script_file(&args.script_file)?;
     } else {
         Interpreter::new().start_repl()?;
     }
