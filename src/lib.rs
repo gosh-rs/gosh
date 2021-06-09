@@ -1,5 +1,6 @@
 // [[file:../gosh.note::*mods][mods:1]]
-pub mod cli;
+mod cli;
+mod repl;
 // mods:1 ends here
 
 // [[file:../gosh.note::*pub][pub:1]]
@@ -13,12 +14,18 @@ pub use gosh_database as db;
 pub use gosh_model as model;
 pub use gosh_optim as optim;
 
-pub(crate) mod core {
+pub(crate) mod common {
+    pub use gosh_core::gchemol;
     pub use gosh_core::gut;
+    pub use gosh_core::gut::prelude::*;
     pub use gosh_core::vecfx;
+
+    pub use std::path::{Path, PathBuf};
 }
 
 pub mod prelude {
     pub use gosh_database::prelude::*;
 }
+
+pub use repl::repl_enter_main;
 // pub:1 ends here

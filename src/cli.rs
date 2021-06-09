@@ -1,18 +1,13 @@
 // [[file:../gosh.note::*imports][imports:1]]
-use crate::core::*;
-use crate::gchemol;
+use crate::common::*;
 
 use gchemol::prelude::*;
 use gchemol::{io, Molecule};
-
 use gut::cli::*;
-use gut::prelude::*;
 
 use std::path::PathBuf;
 use std::process::Command;
 use structopt::*;
-
-type CliResult = Result<()>;
 // imports:1 ends here
 
 // [[file:../gosh.note::*base][base:1]]

@@ -17,6 +17,7 @@ tempfile = "3.0"
 serde = "1.0"
 serde_json = "1.0"
 rustyline = {version = "8.2", features = ["with-fuzzy"]} 
+rustyline-derive = "0.4"
 structopt = "0.3"
 #-------------------------
 gosh-core = "0.0.2"
