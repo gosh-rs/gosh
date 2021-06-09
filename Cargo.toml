@@ -1,7 +1,7 @@
-# [[file:gosh.note::*cargo][cargo:2]]
+# [[file:gosh.note::*cargo][cargo:1]]
 [package]
 name = "gosh"
-version = "0.0.27"
+version = "0.0.28"
 edition = "2018"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 description = "Rusty framework for multiscale/multilevel modeling"
@@ -37,4 +37,4 @@ approx = "0.3"
 [features]
 # for adhoc hacking
 adhoc = ["gosh-core/adhoc", "gosh-model/adhoc", "gosh-adaptor/adhoc", "gosh-database/adhoc"]
-# cargo:2 ends here
+# cargo:1 ends here
