@@ -2,8 +2,6 @@
 
 use gut::cli::*;
 use gut::prelude::*;
-
-use linefeed::{Interface, ReadResult};
 use std::path::PathBuf;
 use structopt::*;
 
@@ -19,8 +17,6 @@ struct Gosh {
     cmd: GoshCmd,
 }
 
-// REPL
-
 fn get_history_file() -> Result<PathBuf> {
     match dirs::home_dir() {
         Some(path) => {
@@ -31,8 +27,11 @@ fn get_history_file() -> Result<PathBuf> {
     }
 }
 
-fn start_gosh_cmd_loop() -> CliResult {
-    let interface = Interface::new("rusty gosh")?;
+// REPL/rustyline
+
+fn start_gosh_cmd_loop() -> Result<()> {
+    use rustyline::error::ReadlineError;
+    use rustyline::Editor;
 
     let version = env!("CARGO_PKG_VERSION");
     println!("This is the rusty gosh shell version {}.", version);
@@ -40,71 +39,60 @@ fn start_gosh_cmd_loop() -> CliResult {
     println!("Press Ctrl-D or enter \"quit\" or \"q\" to exit.");
     println!("");
 
-    interface.set_prompt("gosh> ")?;
-    interface.set_completer(std::sync::Arc::new(linefeed::complete::PathCompleter));
+    // `()` can be used when no completer is required
+    let mut rl = Editor::<()>::new();
+
+    // load history
+    let history_file = get_history_file()?;
+    if rl.load_history(&history_file).is_err() {
+        println!("No previous history.");
+    }
 
     let mut commander = Commander::new();
-
-    let history_file = get_history_file().unwrap();
-    if let Err(e) = interface.load_history(&history_file) {
-        if e.kind() == std::io::ErrorKind::NotFound {
-            println!(
-                "History file {} doesn't exist, not loading history.",
-                history_file.display()
-            );
-        } else {
-            eprintln!(
-                "Could not load history file {}: {}",
-                history_file.display(),
-                e
-            );
-        }
-    }
-
-    while let ReadResult::Input(line) = interface.read_line()? {
-        let line = line.trim();
-        if !line.is_empty() {
-            interface.add_history(line.to_owned());
-
-            let mut args: Vec<_> = line.split_whitespace().collect();
-            args.insert(0, "gosh>");
-
-            match GoshCmd::from_iter_safe(&args) {
-                // show subcommands
-                Ok(GoshCmd::Help {}) => {
-                    let mut app = GoshCmd::clap();
-                    app.print_help();
-                    println!("");
+    loop {
+        let readline = rl.readline("gosh> ");
+        match readline {
+            Ok(line) => {
+                let line = line.trim();
+                if !line.is_empty() {
+                    rl.add_history_entry(line);
                 }
 
-                Ok(GoshCmd::Quit {}) => {
-                    if let Err(e) = interface.save_history(&history_file) {
-                        eprintln!(
-                            "Could not save history file {}: {}",
-                            history_file.display(),
-                            e
-                        );
+                let mut args: Vec<_> = line.split_whitespace().collect();
+                args.insert(0, "gosh>");
+                match GoshCmd::from_iter_safe(&args) {
+                    // show subcommands
+                    Ok(GoshCmd::Help {}) => {
+                        let mut app = GoshCmd::clap();
+                        app.print_help();
+                        println!("");
                     }
-
-                    break;
-                }
-
-                // apply subcommand
-                Ok(x) => {
-                    if let Err(e) = commander.action(&x) {
-                        eprintln!("{:?}", e);
+                    // apply subcommand
+                    Ok(x) => {
+                        if let Err(e) = commander.action(&x) {
+                            eprintln!("{:?}", e);
+                        }
                     }
-                }
-
-                // show subcommand usage
-                Err(e) => {
-                    println!("{}", e.message);
+                    Ok(GoshCmd::Quit {}) => break,
+                    // show subcommand usage
+                    Err(e) => println!("{}", e.message),
                 }
             }
-        } else {
-            println!("");
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break;
+            }
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break;
+            }
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break;
+            }
         }
     }
+    rl.save_history(&history_file).context("write gosh history file")?;
 
     Ok(())
 }

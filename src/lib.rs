@@ -1,9 +1,8 @@
-// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*mods][mods:1]]
+// [[file:../gosh.note::*mods][mods:1]]
 pub mod cli;
-// pub mod apps;
 // mods:1 ends here
 
-// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*pub][pub:1]]
+// [[file:../gosh.note::*pub][pub:1]]
 #[cfg(test)]
 #[macro_use]
 extern crate approx;
