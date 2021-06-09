@@ -111,7 +111,7 @@ impl Interpreter {
         if let Some(mut args) = shlex::split(line) {
             assert!(args.len() >= 1);
             args.insert(0, "gosh".into());
-            match GoshCmd::try_parse_from(dbg!(&args)) {
+            match GoshCmd::try_parse_from(&args) {
                 // show subcommands
                 Ok(GoshCmd::Help {}) => {
                     let mut app = GoshCmd::into_app();

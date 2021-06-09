@@ -162,13 +162,16 @@ impl Commander {
                 }
             }
             GoshCmd::Load { filename } => {
-                self.molecules = gchemol::io::read_all(filename)?;
-                self.filename = Some(filename.to_owned());
+                let filename = normalize_path(&filename);
+                self.molecules = gchemol::io::read_all(&filename)?;
+                self.filename = filename.into();
 
                 println!("Loaded {} molecule(s).", self.molecules.len());
             }
 
             GoshCmd::LoadChk { filename, chk_slot } => {
+                let filename = normalize_path(&filename);
+
                 let chk = gosh_database::CheckpointDb::new(&filename);
                 let mol: Molecule = chk.load_from_slot_n(*chk_slot)?;
 
@@ -199,6 +202,7 @@ impl Commander {
                 self.check()?;
 
                 if let Some(filename) = filename.as_ref().or(self.filename.as_ref()) {
+                    let filename = normalize_path(filename);
                     io::write(&filename, &self.molecules)?;
                     println!("Wrote {} molecules in {}", self.molecules.len(), filename.display());
                 } else {
@@ -256,6 +260,7 @@ impl Commander {
             }
             GoshCmd::Format { filename, output } => {
                 self.check()?;
+                let filename = normalize_path(filename);
 
                 let mut ss = vec![];
                 for mol in &self.molecules {
@@ -302,5 +307,17 @@ fn run_cmd(cmdline: &str) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn normalize_path(s: &Path) -> PathBuf {
+    // fix tilde char for HOME directory
+    if s.starts_with("~") {
+        if let Ok(h) = std::env::var("HOME") {
+            let s = s.to_string_lossy();
+            let s = s.replacen("~", &h, 1);
+            return PathBuf::from(s);
+        }
+    }
+    s.into()
 }
 // core:1 ends here
