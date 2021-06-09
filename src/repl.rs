@@ -228,7 +228,7 @@ mod helper {
 struct Gosh {
     /// Execute gosh script
     #[clap(short = 'x')]
-    script_file: PathBuf,
+    script_file: Option<PathBuf>,
 
     #[clap(flatten)]
     verbose: gut::cli_clap::Verbosity,
@@ -242,8 +242,17 @@ pub fn repl_enter_main() -> Result<()> {
         let args = Gosh::parse();
         args.verbose.setup_logger();
 
-        info!("script file: {:?}", args.script_file);
-        Interpreter::new().interpret_script_file(&args.script_file)?;
+        if let Some(script_file) = &args.script_file {
+            info!("Execute script file: {:?}", script_file);
+            Interpreter::new().interpret_script_file(script_file)?;
+        } else {
+            info!("Reading batch script from stdin ..");
+            use std::io::{self, Read};
+
+            let mut buffer = String::new();
+            std::io::stdin().read_to_string(&mut buffer)?;
+            Interpreter::new().interpret_script(&buffer)?;
+        }
     } else {
         Interpreter::new().start_repl()?;
     }
