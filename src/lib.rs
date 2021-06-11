@@ -13,6 +13,7 @@ pub use gosh_core::gchemol;
 pub use gosh_database as db;
 pub use gosh_model as model;
 pub use gosh_optim as optim;
+pub use gosh_runner as runner;
 
 pub(crate) mod common {
     pub use gosh_core::gchemol;
