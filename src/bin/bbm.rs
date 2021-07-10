@@ -72,36 +72,6 @@ struct Cli {
     checkpoint: gosh_database::CheckpointDb,
 }
 
-fn main() -> Result<()> {
-    let args = Cli::from_args();
-    args.verbose.setup_logger();
-
-    // 1. load molecules
-    info!("input molecule file: {}", &args.molfile.display());
-    let mols = gchemol::io::read_all(&args.molfile)?;
-    info!("loaded {} molecules.", mols.len());
-
-    // 2. construct the model
-    let mut bbm = if let Some(ref d) = args.bbmdir {
-        BlackBoxModel::from_dir(&d)?
-    } else {
-        BlackBoxModel::from_dir(std::env::current_dir()?)?
-    };
-
-    // 3. process molecules using the model
-    let mut keep = args.keep;
-    if let Err(e) = process_molecules(args, &mut bbm, mols) {
-        error!("bbm failed:\n {:?}", e);
-        keep = true;
-    }
-
-    if keep {
-        bbm.keep_scratch_files();
-    }
-
-    Ok(())
-}
-
 // process
 
 fn process_molecules(args: Cli, bbm: &mut BlackBoxModel, mols: Vec<Molecule>) -> Result<()> {
@@ -186,5 +156,42 @@ fn process_molecules(args: Cli, bbm: &mut BlackBoxModel, mols: Vec<Molecule>) ->
         }
     }
 
+    Ok(())
+}
+
+// main
+
+fn enter_main() -> Result<()> {
+    let args = Cli::from_args();
+    args.verbose.setup_logger();
+
+    // 1. load molecules
+    info!("input molecule file: {}", &args.molfile.display());
+    let mols = gchemol::io::read_all(&args.molfile)?;
+    info!("loaded {} molecules.", mols.len());
+
+    // 2. construct the model
+    let mut bbm = if let Some(ref d) = args.bbmdir {
+        BlackBoxModel::from_dir(&d)?
+    } else {
+        BlackBoxModel::from_dir(std::env::current_dir()?)?
+    };
+
+    // 3. process molecules using the model
+    let mut keep = args.keep;
+    if let Err(e) = process_molecules(args, &mut bbm, mols) {
+        error!("bbm failed:\n {:?}", e);
+        keep = true;
+    }
+
+    if keep {
+        bbm.keep_scratch_files();
+    }
+
+    Ok(())
+}
+
+fn main() -> Result<()> {
+    gosh::runner::ctrlc_enter_main(enter_main)?;
     Ok(())
 }
