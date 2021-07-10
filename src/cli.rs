@@ -8,6 +8,8 @@ use clap::{AppSettings, Clap};
 
 use std::path::PathBuf;
 use std::process::Command;
+
+use gut::utils::parse_numbers_human_readable;
 // imports:1 ends here
 
 // [[file:../gosh.note::*base][base:1]]
@@ -65,6 +67,21 @@ pub enum GoshCmd {
         /// The bonding ratio for guessing chemical bonds. Larger value leading
         /// to more bonds. The default value is 0.55
         bonding_ratio: Option<f64>,
+    },
+
+    /// Update current molecule from somewhere with something
+    #[clap(name = "update")]
+    Update {
+        /// The target properties to be updated: coords, freezing, ...
+        target: String,
+        
+        #[clap(short = 's')]
+        /// Select the atoms to be updated: "2,3,8" or "2-9"
+        select: Option<String>,
+
+        #[clap(short = 'f')]
+        /// The path to source molecular file
+        source: PathBuf,
     },
 
     /// Clean up bad molecular geometry.
@@ -275,6 +292,63 @@ impl Commander {
                     gut::fs::write_to_file(output, &s)?;
                 } else {
                     println!("{:}", s);
+                }
+            }
+            // FIXME: rewrite
+            GoshCmd::Update { target, select, source } => {
+                self.check()?;
+                if self.molecules.len() != 1 {
+                    bail!("only work for a single molecule");
+                }
+                let mol = Molecule::from_file(&source)?;
+                if mol.natoms() != self.molecules[0].natoms() {
+                    bail!("invalid source!");
+                }
+
+                match target.as_str() {
+                    "coords" => {
+                        let m: std::collections::HashMap<_, _> = if let Some(select) = select {
+                            let selected_atoms = parse_numbers_human_readable(&select)?;
+                            mol.atoms()
+                                .filter_map(|(i, a)| {
+                                    if selected_atoms.contains(&i) {
+                                        Some((i, a.position()))
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .collect()
+                        } else {
+                            mol.atoms().map(|(i, a)| (i, a.position())).collect()
+                        };
+                        for (i, p) in m {
+                            let a = self.molecules[0].get_atom_mut(i).unwrap();
+                            a.set_position(p);
+                        }
+                    }
+                    "freezing" => {
+                        let m: std::collections::HashMap<_, _> = if let Some(select) = select {
+                            let selected_atoms = parse_numbers_human_readable(&select)?;
+                            mol.atoms()
+                                .filter_map(|(i, a)| {
+                                    if selected_atoms.contains(&i) {
+                                        Some((i, a.freezing()))
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .collect()
+                        } else {
+                            mol.atoms().map(|(i, a)| (i, a.freezing())).collect()
+                        };
+                        for (i, f) in m {
+                            let a = self.molecules[0].get_atom_mut(i).unwrap();
+                            a.set_freezing(f);
+                        }
+                    }
+                    _ => {
+                        bail!("update: not implemented yet!")
+                    }
                 }
             }
             o => {
