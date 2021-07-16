@@ -192,6 +192,8 @@ fn enter_main() -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    gosh::runner::ctrlc_enter_main(enter_main)?;
+    // gosh::runner::ctrlc_enter_main(enter_main)?;
+    enter_main()?;
+
     Ok(())
 }
