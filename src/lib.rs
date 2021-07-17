@@ -1,4 +1,5 @@
 // [[file:../gosh.note::*mods][mods:1]]
+mod bbm;
 mod cli;
 mod repl;
 // mods:1 ends here
@@ -28,5 +29,6 @@ pub mod prelude {
     pub use gosh_database::prelude::*;
 }
 
+pub use bbm::bbm_enter_main;
 pub use repl::repl_enter_main;
 // pub:1 ends here
