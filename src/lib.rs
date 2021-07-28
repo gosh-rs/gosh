@@ -26,6 +26,7 @@ pub(crate) mod common {
 }
 
 pub mod prelude {
+    pub use gosh_model::ChemicalModel;
     pub use gosh_database::prelude::*;
 }
 
