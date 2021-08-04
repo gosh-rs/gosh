@@ -17,8 +17,12 @@ use gut::utils::parse_numbers_human_readable;
 pub struct Commander {
     /// active molecules
     pub molecules: Vec<Molecule>,
+
     /// input file containg molecules
     pub filename: Option<PathBuf>,
+
+    /// Selected atoms in serial atoms
+    selection: Option<Vec<usize>>,
 }
 
 #[derive(Clap, Debug)]
@@ -74,7 +78,7 @@ pub enum GoshCmd {
     Update {
         /// The target properties to be updated: coords, freezing, ...
         target: String,
-        
+
         #[clap(short = 's')]
         /// Select the atoms to be updated: "2,3,8" or "2-9"
         select: Option<String>,
@@ -82,6 +86,21 @@ pub enum GoshCmd {
         #[clap(short = 'f')]
         /// The path to source molecular file
         source: PathBuf,
+    },
+
+    /// Select atoms
+    #[clap(name = "select")]
+    Select {
+        /// Select atoms by serial numbers "2,3,8" or "2-9"
+        serial_numbers: String,
+    },
+
+    /// Freeze select atoms
+    #[clap(name = "freeze")]
+    Freeze {
+        #[clap(short = 'u')]
+        /// inverse the operation, that is, unfreeze selected atoms.
+        inverse: bool,
     },
 
     /// Clean up bad molecular geometry.
@@ -160,6 +179,7 @@ impl Commander {
         Commander {
             filename: None,
             molecules: vec![],
+            selection: None,
         }
     }
 
@@ -294,6 +314,34 @@ impl Commander {
                     println!("{:}", s);
                 }
             }
+            GoshCmd::Select { serial_numbers } => {
+                let selected = parse_numbers_human_readable(&serial_numbers)?;
+                println!("Selected {} atoms", selected.len());
+                self.selection = selected.into();
+            }
+            GoshCmd::Freeze { inverse } => {
+                self.check()?;
+                if self.molecules.len() != 1 {
+                    bail!("only work for a single molecule");
+                }
+                if let Some(selected) = &self.selection {
+                    for &i in selected {
+                        let a = self.molecules[0]
+                            .get_atom_mut(i)
+                            .ok_or_else(|| format_err!("no such atom: {}", i))?;
+                        if *inverse {
+                            println!("atom {} was unfreezed", i);
+                            a.set_freezing([false; 3]);
+                        } else {
+                            println!("atom {} was freezed", i);
+                            a.set_freezing([true; 3]);
+                        }
+                    }
+                } else {
+                    eprintln!("no selected atoms found!");
+                }
+            }
+
             // FIXME: rewrite
             GoshCmd::Update { target, select, source } => {
                 self.check()?;
