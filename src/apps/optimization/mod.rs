@@ -5,9 +5,9 @@
 
 // [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*mod.rs][mod.rs:1]]
 use super::*;
-use gchemol::prelude::*;
 use crate::cmd_utils::*;
-use gchemol::geometry::prelude::*;
+use gchemol::prelude::*;
+use vecfx::*;
 
 type Point3D = [f64; 3];
 
@@ -34,9 +34,17 @@ pub trait Optimizer: ChemicalApp {
     fn displacements(&mut self, p: &ModelProperties) -> Result<Vec<Point3D>>;
 
     /// Determine whether we have optimized the structure
-    fn converged(&self, displacements: &[Point3D], mp: &ModelProperties, icycle: usize) -> Result<bool> {
+    fn converged(
+        &self,
+        displacements: &[Point3D],
+        mp: &ModelProperties,
+        icycle: usize,
+    ) -> Result<bool> {
         if let Some(forces) = &mp.get_forces() {
-            debug_assert!(forces.len() == displacements.len(), "vectors in different size");
+            debug_assert!(
+                forces.len() == displacements.len(),
+                "vectors in different size"
+            );
             let fnorms = forces.norms();
             let dnorms = displacements.norms();
 
@@ -46,9 +54,15 @@ pub trait Optimizer: ChemicalApp {
             let fcur = fnorms.max();
             let dcur = dnorms.max();
             if let Some(e) = &mp.get_energy() {
-                println!("{:4}\tCur Energy: {:-12.5}; Max force: {:-12.5}; Max Disp: {:-12.5}", icycle, e, fcur, dcur);
+                println!(
+                    "{:4}\tCur Energy: {:-12.5}; Max force: {:-12.5}; Max Disp: {:-12.5}",
+                    icycle, e, fcur, dcur
+                );
             } else {
-                println!("{:4}\tMax force: {:-12.5}; Max Disp: {:-12.5}", icycle, fcur, dcur);
+                println!(
+                    "{:4}\tMax force: {:-12.5}; Max Disp: {:-12.5}",
+                    icycle, fcur, dcur
+                );
             }
             if fcur < fmax && dcur < dmax {
                 Ok(true)
@@ -67,7 +81,12 @@ pub trait Optimizer: ChemicalApp {
     /// - maxcycle: The max allowed iterations
     /// # Panics
     /// if fmax is not positive number.
-    fn run<T: ChemicalModel>(&mut self, mol: &mut Molecule, model: &mut T, maxcycle: usize) -> Result<()> {
+    fn run<T: ChemicalModel>(
+        &mut self,
+        mol: &mut Molecule,
+        model: &mut T,
+        maxcycle: usize,
+    ) -> Result<()> {
         let mut icycle = 0;
         loop {
             // calculate energy, forces, ... by applying a chemical model

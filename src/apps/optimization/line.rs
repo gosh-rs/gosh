@@ -1,6 +1,6 @@
 // header
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*header][header:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*header][header:1]]
 //! Line searching decides how far to step along a descent direction.
 //!
 //! # References:
@@ -8,19 +8,19 @@
 //! - Jorge Nocedal and Stephen J. Wright (2006). Numerical Optimization Springer. ISBN 0-387-30303-0.
 
 use super::*;
-use gchemol::geometry::prelude::*;
+use vecfx::*;
 // header:1 ends here
 
 // MoreThuente
 // ported from lbfgs.c
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*MoreThuente][MoreThuente:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*MoreThuente][MoreThuente:1]]
 
 // MoreThuente:1 ends here
 
 // backtracking
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*backtracking][backtracking:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*backtracking][backtracking:1]]
 /// the backtracking line search strategy starts with a relatively large step
 /// size, and repeatedly shrinks it by a factor until the Armijo–Goldstein
 /// condition is fulfilled.
@@ -31,7 +31,7 @@ fn backtracking_search(direction: &[f64], forces_this: &[f64], forces_prev: &[f6
 
 // base
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*base][base:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*base][base:1]]
 /// Golden section search algorithm for unimodal function.
 #[derive(Clone, Debug, Default)]
 pub struct GoldenSectionSearch {
@@ -172,7 +172,7 @@ pub fn golden_section_search(a: f64, b: f64) -> GoldenSectionSearch {
 
 // test
 
-// [[file:~/Workspace/Programming/gosh/gosh.note::*test][test:1]]
+// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*test][test:1]]
 #[test]
 fn test_golden_section_search() {
     let (a, b) = golden_section_search(0.0, 2.0)

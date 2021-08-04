@@ -1,29 +1,35 @@
-// mods
+// [[file:../gosh.note::*mods][mods:1]]
+mod bbm;
+mod cli;
+mod repl;
+// mods:1 ends here
 
-// [[file:~/Workspace/Programming/gosh-rs/gosh/gosh.note::*mods][mods:1]]
-pub mod apps;
-pub mod cli;
-
+// [[file:../gosh.note::*pub][pub:1]]
 #[cfg(test)]
 #[macro_use]
 extern crate approx;
 
-pub use gosh_models as models;
+pub use gosh_adaptor as adaptor;
+pub use gosh_core::gchemol;
+pub use gosh_database as db;
+pub use gosh_model as model;
+pub use gosh_optim as optim;
+pub use gosh_runner as runner;
 
-pub mod cmd_utils {
-    pub use crate::core::*;
+pub(crate) mod common {
+    pub use gosh_core::gchemol;
+    pub use gosh_core::gut;
+    pub use gosh_core::gut::prelude::*;
+    pub use gosh_core::vecfx;
 
-    pub use guts::cli::*;
-    pub use structopt::StructOpt;
+    pub use std::path::{Path, PathBuf};
 }
 
-pub mod optim {
-    pub use crate::apps::optimization::line::golden_section_search;
+pub mod prelude {
+    pub use gosh_model::ChemicalModel;
+    pub use gosh_database::prelude::*;
 }
 
-pub mod core {
-    pub use gosh_core::*;
-
-    pub use guts::prelude::*;
-}
-// mods:1 ends here
+pub use bbm::bbm_enter_main;
+pub use repl::repl_enter_main;
+// pub:1 ends here
