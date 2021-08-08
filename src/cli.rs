@@ -91,8 +91,21 @@ pub enum GoshCmd {
     /// Select atoms
     #[clap(name = "select")]
     Select {
-        /// Select atoms by serial numbers "2,3,8" or "2-9"
-        serial_numbers: String,
+        /// A selection-expression.
+        ///
+        /// The default is to select atoms by serial numbers. For example,
+        /// select atoms 2, 3, 6, 7, 8:
+        ///
+        /// select 2,3,6-8
+        /// 
+        selection: String,
+
+        /// Select atoms by z fractional coords. Only work for periodic system.
+        ///
+        /// For example, select atoms with z fractional coords greater than 0.5
+        /// select --by-fz >0.5
+        #[clap(long)]
+        by_fz: bool,
     },
 
     /// Freeze select atoms
@@ -314,10 +327,34 @@ impl Commander {
                     println!("{:}", s);
                 }
             }
-            GoshCmd::Select { serial_numbers } => {
-                let selected = parse_numbers_human_readable(&serial_numbers)?;
-                println!("Selected {} atoms", selected.len());
-                self.selection = selected.into();
+            GoshCmd::Select { selection, by_fz } => {
+                self.check()?;
+                if *by_fz {
+                    let mol = &self.molecules[0];
+                    if selection.starts_with(">") {
+                        self.selection = select_atoms_by_fz(mol, &selection[1..], |fz, fz_| fz > fz_)?.into();
+                    } else if selection.starts_with("<") {
+                        self.selection = select_atoms_by_fz(mol, &selection[1..], |fz, fz_| fz < fz_)?.into();
+                    } else {
+                        bail!("invalid selection expression: {:?}", selection);
+                    }
+                } else {
+                    // select all atoms
+                    if selection == "all" {
+                        self.selection = self.molecules[0].numbers().collect_vec().into();
+                    } else if selection == "none" {
+                        self.selection = None;
+                    } else {
+                        let selected = parse_numbers_human_readable(&selection)?;
+                        self.selection = selected.into();
+                    }
+                }
+                let n = self.selection.as_ref().map(|x| x.len()).unwrap_or_default();
+                println!("Selected {} atoms", n);
+                if let Some(selection) = &self.selection {
+                    let s = gut::utils::abbreviate_numbers_human_readable(selection)?;
+                    println!("Selection: {}", s);
+                }
             }
             GoshCmd::Freeze { inverse } => {
                 self.check()?;
@@ -443,3 +480,29 @@ fn normalize_path(s: &Path) -> PathBuf {
     s.into()
 }
 // core:1 ends here
+
+// [[file:../gosh.note::*utils][utils:1]]
+fn select_atoms_by_fz<F>(mol: &Molecule, selection: &str, cmp: F) -> Result<Vec<usize>>
+where
+    F: Fn(f64, f64) -> bool,
+{
+    let frac_coords: Option<Vec<_>> = mol.get_scaled_positions().map(|x| x.collect_vec());
+    if let Some(frac_coords) = frac_coords {
+        match selection.parse() {
+            Ok(fz_) => {
+                let selected = mol
+                    .numbers()
+                    .zip(frac_coords)
+                    .filter_map(|(n, [_fx, _fy, fz])| if cmp(fz, fz_) { Some(n) } else { None })
+                    .collect_vec();
+                Ok(selected)
+            }
+            Err(e) => {
+                bail!("parse fz value failure: {}", selection);
+            }
+        }
+    } else {
+        bail!("not a periodic system!");
+    }
+}
+// utils:1 ends here
