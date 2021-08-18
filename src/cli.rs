@@ -27,7 +27,7 @@ pub struct Commander {
 
 #[derive(Clap, Debug)]
 #[clap(setting = AppSettings::ColoredHelp)]
-#[clap(setting = AppSettings::VersionlessSubcommands)]
+#[clap(setting = AppSettings::DisableVersionForSubcommands)]
 pub enum GoshCmd {
     /// Quit go shell.
     #[clap(name = "quit", alias = "q", alias = "exit")]
