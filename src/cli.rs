@@ -278,6 +278,7 @@ impl Commander {
                 }
                 for mol in self.molecules.iter_mut() {
                     mol.rebond();
+                    println!("Created {} bonds", mol.nbonds());
                 }
             }
             GoshCmd::Convert { files, format_to } => {
