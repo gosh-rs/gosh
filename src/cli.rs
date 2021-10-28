@@ -1,18 +1,18 @@
-// [[file:../gosh.note::*imports][imports:1]]
+// [[file:../gosh.note::1f21ab58][1f21ab58]]
 use crate::common::*;
 
 use gchemol::prelude::*;
 use gchemol::{io, Molecule};
 
-use clap::{AppSettings, Clap};
+use clap::{AppSettings, Parser};
 
 use std::path::PathBuf;
 use std::process::Command;
 
 use gut::utils::parse_numbers_human_readable;
-// imports:1 ends here
+// 1f21ab58 ends here
 
-// [[file:../gosh.note::*base][base:1]]
+// [[file:../gosh.note::5679a62e][5679a62e]]
 /// A commander for interactive interpreter
 pub struct Commander {
     /// active molecules
@@ -25,9 +25,7 @@ pub struct Commander {
     selection: Option<Vec<usize>>,
 }
 
-#[derive(Clap, Debug)]
-#[clap(setting = AppSettings::ColoredHelp)]
-#[clap(setting = AppSettings::DisableVersionForSubcommands)]
+#[derive(Parser, Debug)]
 pub enum GoshCmd {
     /// Quit go shell.
     #[clap(name = "quit", alias = "q", alias = "exit")]
@@ -184,7 +182,7 @@ pub enum GoshCmd {
     #[clap(name = "pwd")]
     Pwd {},
 }
-// base:1 ends here
+// 5679a62e ends here
 
 // [[file:../gosh.note::*core][core:1]]
 impl Commander {

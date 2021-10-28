@@ -1,12 +1,12 @@
-// [[file:../gosh.note::*imports][imports:1]]
+// [[file:../gosh.note::bc7ccf69][bc7ccf69]]
 use crate::cli::Commander;
 use crate::cli::GoshCmd;
 use crate::common::*;
 
-use clap::Clap;
+use clap::Parser;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
-// imports:1 ends here
+// bc7ccf69 ends here
 
 // [[file:../gosh.note::*constants][constants:1]]
 const PROMPT: &str = "gosh> ";
@@ -233,8 +233,8 @@ mod helper {
 }
 // helper:1 ends here
 
-// [[file:../gosh.note::*pub][pub:1]]
-#[derive(Clap, Debug)]
+// [[file:../gosh.note::23598c97][23598c97]]
+#[derive(Parser, Debug)]
 struct Gosh {
     /// Execute gosh script
     #[clap(short = 'x')]
@@ -269,4 +269,4 @@ pub fn repl_enter_main() -> Result<()> {
 
     Ok(())
 }
-// pub:1 ends here
+// 23598c97 ends here

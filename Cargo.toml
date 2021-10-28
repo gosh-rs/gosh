@@ -1,7 +1,7 @@
-# [[file:gosh.note::*cargo][cargo:1]]
+# [[file:gosh.note::4c9b102a][4c9b102a]]
 [package]
 name = "gosh"
-version = "0.0.29"
+version = "0.0.30"
 edition = "2018"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 description = "Rusty framework for multiscale/multilevel modeling"
@@ -19,7 +19,7 @@ serde_json = "1.0"
 rustyline = {version = "8.2", features = ["with-fuzzy"]} 
 rustyline-derive = "0.4"
 structopt = "0.3"
-clap = "3.0.0-beta.4"
+clap = "3.0.0-beta.5"
 shlex = "1"
 #-------------------------
 gosh-core = "0.0.2"
@@ -38,4 +38,4 @@ approx = "0.3"
 [features]
 # for adhoc hacking
 adhoc = ["gosh-core/adhoc", "gosh-model/adhoc", "gosh-adaptor/adhoc", "gosh-database/adhoc"]
-# cargo:1 ends here
+# 4c9b102a ends here
