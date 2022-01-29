@@ -17,7 +17,7 @@ fn get_history_file() -> PathBuf {
 }
 // constants:1 ends here
 
-// [[file:../gosh.note::*core][core:1]]
+// [[file:../gosh.note::b800717b][b800717b]]
 struct Interpreter {
     history_file: PathBuf,
     editor: Editor<helper::MyHelper>,
@@ -47,9 +47,10 @@ fn create_readline_editor() -> Editor<helper::MyHelper> {
     let mut rl = Editor::with_config(config);
     let h = helper::MyHelper::new();
     rl.set_helper(Some(h));
+
     rl
 }
-// core:1 ends here
+// b800717b ends here
 
 // [[file:../gosh.note::*repl][repl:1]]
 impl Interpreter {

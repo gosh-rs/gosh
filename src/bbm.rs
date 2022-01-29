@@ -1,5 +1,8 @@
-// [[file:../gosh.note::*imports][imports:1]]
+// [[file:../gosh.note::7d1be705][7d1be705]]
 use crate::common::*;
+
+// FIXME: remove gut1
+use gut1 as gut;
 
 use crate::model::*;
 use gosh_core::*;
@@ -10,7 +13,7 @@ use gut::prelude::*;
 use gut::cli::*;
 use structopt::*;
 use vecfx::*;
-// imports:1 ends here
+// 7d1be705 ends here
 
 // [[file:../gosh.note::*cmdline][cmdline:1]]
 /// An universal runner for Blackbox Model

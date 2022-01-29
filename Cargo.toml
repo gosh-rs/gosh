@@ -2,7 +2,7 @@
 [package]
 name = "gosh"
 version = "0.0.30"
-edition = "2018"
+edition = "2021"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 description = "Rusty framework for multiscale/multilevel modeling"
 homepage = "https://github.com/gosh-rs/gosh"
@@ -19,7 +19,7 @@ serde_json = "1.0"
 rustyline = {version = "9.1", features = ["with-fuzzy"]}
 rustyline-derive = "0.6"
 structopt = "0.3"
-clap = "3.0.0-rc.7"
+clap = "3"
 shlex = "1"
 #-------------------------
 gosh-core = "0.0.2"
