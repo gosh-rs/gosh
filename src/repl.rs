@@ -1,7 +1,7 @@
 // [[file:../gosh.note::bc7ccf69][bc7ccf69]]
+use super::*;
 use crate::cli::Commander;
 use crate::cli::GoshCmd;
-use crate::common::*;
 
 use clap::Parser;
 use rustyline::error::ReadlineError;
@@ -242,7 +242,7 @@ struct Gosh {
     script_file: Option<PathBuf>,
 
     #[clap(flatten)]
-    verbose: gut::cli_clap::Verbosity,
+    verbose: gut::cli::Verbosity,
 }
 
 pub fn repl_enter_main() -> Result<()> {

@@ -1,15 +1,14 @@
 // [[file:../gosh.note::1f21ab58][1f21ab58]]
-use crate::common::*;
+use super::*;
 
 use gchemol::prelude::*;
 use gchemol::{io, Molecule};
+use gut::utils::parse_numbers_human_readable;
 
 use clap::{AppSettings, Parser};
 
 use std::path::PathBuf;
 use std::process::Command;
-
-use gut::utils::parse_numbers_human_readable;
 // 1f21ab58 ends here
 
 // [[file:../gosh.note::5679a62e][5679a62e]]
@@ -95,7 +94,7 @@ pub enum GoshCmd {
         /// select atoms 2, 3, 6, 7, 8:
         ///
         /// select 2,3,6-8
-        /// 
+        ///
         selection: String,
 
         /// Select atoms by z fractional coords. Only work for periodic system.
@@ -505,3 +504,8 @@ where
     }
 }
 // utils:1 ends here
+
+// [[file:../gosh.note::8a545214][8a545214]]
+pub use bbm::bbm_enter_main;
+pub use repl::repl_enter_main;
+// 8a545214 ends here

@@ -1,18 +1,14 @@
 // [[file:../gosh.note::7d1be705][7d1be705]]
-use crate::common::*;
+use super::*;
 use crate::model::*;
 
-// FIXME: remove gut1
 use gchemol::Molecule;
 use gosh_core::*;
-use gut1::prelude::*;
-use gut1::cli::*;
-use structopt::*;
 use vecfx::*;
 // 7d1be705 ends here
 
 // [[file:../gosh.note::9497e7ed][9497e7ed]]
-use gut1::cli::Verbosity;
+use gut::cli::*;
 
 /// An universal runner for Blackbox Model
 #[derive(Debug, StructOpt)]
@@ -25,7 +21,7 @@ struct Cli {
     molfile: PathBuf,
 
     /// Compute many molecules in bunch.
-    #[structopt(short = "b", long = "bunch")]
+    #[structopt(short = 'b', long = "bunch")]
     bunch: bool,
 
     /// Dry-run mode: generate input file, but no real calculation.
@@ -50,11 +46,11 @@ struct Cli {
 
     /// Template directory with all related files. The default is current
     /// directory.
-    #[structopt(short = "t", long = "bbm-dir", parse(from_os_str))]
+    #[structopt(short = 't', long = "bbm-dir", parse(from_os_str))]
     bbmdir: Option<PathBuf>,
 
     /// Output the caputured structure. e.g.: -o foo.xyz
-    #[structopt(short = "o", long = "output", parse(from_os_str))]
+    #[structopt(short = 'o', long = "output", parse(from_os_str))]
     output: Option<PathBuf>,
 
     #[structopt(flatten)]
