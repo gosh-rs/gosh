@@ -1,7 +1,7 @@
 # [[file:gosh.note::4c9b102a][4c9b102a]]
 [package]
 name = "gosh"
-version = "0.0.30"
+version = "0.1.0"
 edition = "2021"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 description = "Rusty framework for multiscale/multilevel modeling"
@@ -18,16 +18,15 @@ serde = "1.0"
 serde_json = "1.0"
 rustyline = {version = "9.1", features = ["with-fuzzy"]}
 rustyline-derive = "0.6"
-structopt = "0.3"
 clap = "3"
 shlex = "1"
 #-------------------------
-gosh-core = "0.0.2"
-gosh-model = "0.0.13"
-gosh-adaptor = "0.0.6"
-gosh-database = "0.0.8"
-gosh-optim = "0.0.4"
-gosh-runner = "0.0.10"
+gosh-core = "0.1.0"
+gosh-model = "0.1.0"
+gosh-adaptor = "0.1.0"
+gosh-database = "0.1.0"
+gosh-optim = "0.1.0"
+gosh-runner = "0.1.0"
 liblbfgs = { version="0.0.15" }
 #cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
 #-------------------------

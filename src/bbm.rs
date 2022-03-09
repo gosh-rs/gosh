@@ -1,26 +1,24 @@
 // [[file:../gosh.note::7d1be705][7d1be705]]
 use crate::common::*;
+use crate::model::*;
 
 // FIXME: remove gut1
-use gut1 as gut;
-
-use crate::model::*;
-use gosh_core::*;
-
 use gchemol::Molecule;
-use gut::prelude::*;
-
-use gut::cli::*;
+use gosh_core::*;
+use gut1::prelude::*;
+use gut1::cli::*;
 use structopt::*;
 use vecfx::*;
 // 7d1be705 ends here
 
-// [[file:../gosh.note::*cmdline][cmdline:1]]
+// [[file:../gosh.note::9497e7ed][9497e7ed]]
+use gut1::cli::Verbosity;
+
 /// An universal runner for Blackbox Model
 #[derive(Debug, StructOpt)]
 struct Cli {
     #[structopt(flatten)]
-    verbose: gut::cli::Verbosity,
+    verbose: Verbosity,
 
     /// Input molecule file
     #[structopt(parse(from_os_str))]
@@ -62,9 +60,9 @@ struct Cli {
     #[structopt(flatten)]
     checkpoint: gosh_database::CheckpointDb,
 }
-// cmdline:1 ends here
+// 9497e7ed ends here
 
-// [[file:../gosh.note::*core][core:1]]
+// [[file:../gosh.note::a3e4479e][a3e4479e]]
 /// Extract final molecule from calculated model properties
 fn extract_mol_from(mp: &ModelProperties) -> Option<Molecule> {
     let mut mol = mp.get_molecule()?.clone();
@@ -105,7 +103,7 @@ fn dry_run(bbm: &mut BlackBoxModel, mols: Vec<Molecule>, bunch_mode: bool) -> Re
 
     Ok(())
 }
-// core:1 ends here
+// a3e4479e ends here
 
 // [[file:../gosh.note::*process][process:1]]
 fn process_molecules(args: Cli, bbm: &mut BlackBoxModel, mols: Vec<Molecule>) -> Result<()> {
