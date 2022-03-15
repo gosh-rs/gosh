@@ -84,7 +84,7 @@ fn compute(bbm: &mut BlackBoxModel, mols: Vec<Molecule>, bunch_mode: bool) -> Re
     compute_mps(bbm, mols, bunch_mode)?
         .into_iter()
         .inspect(|mp| println!("{}", mp))
-        .map(|mp| extract_mol_from(&mp).ok_or(format_err!("xx")))
+        .map(|mp| extract_mol_from(&mp).ok_or(format_err!("no mol in model properties")))
         .collect()
 }
 
