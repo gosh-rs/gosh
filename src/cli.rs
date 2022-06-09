@@ -121,6 +121,15 @@ pub enum GoshCmd {
     #[clap(name = "unbuild_crystal")]
     UnbuildCrystal {},
 
+    /// Create periodic lattice from minimal bounding box extended by a padding
+    /// width for molecule.
+    #[clap(name = "create_bounding_box")]
+    BoundingBox {
+        /// The extra padding width along x, y, z directions.
+        #[clap(default_value = "1.0")]
+        padding: f64,
+    },
+
     /// Convert molecule formats in batch.
     ///
     /// Usage: convert 1.xyz 2.xyz -e .mol2
@@ -183,7 +192,7 @@ pub enum GoshCmd {
 }
 // 5679a62e ends here
 
-// [[file:../gosh.note::*core][core:1]]
+// [[file:../gosh.note::11042ec8][11042ec8]]
 impl Commander {
     pub fn new() -> Self {
         Commander {
@@ -238,10 +247,22 @@ impl Commander {
             GoshCmd::Avail {} => {
                 gchemol::io::describe_backends();
             }
+
             GoshCmd::UnbuildCrystal {} => {
                 self.check()?;
                 for i in 0..self.molecules.len() {
                     self.molecules[i].unbuild_crystal();
+                }
+            }
+
+            GoshCmd::BoundingBox { padding } => {
+                self.check()?;
+                if *padding > 0.01 {
+                    for i in 0..self.molecules.len() {
+                        self.molecules[i].set_lattice_from_bounding_box(*padding);
+                    }
+                } else {
+                    eprintln!("padding value for bounding box is too small.");
                 }
             }
 
@@ -477,7 +498,7 @@ fn normalize_path(s: &Path) -> PathBuf {
     }
     s.into()
 }
-// core:1 ends here
+// 11042ec8 ends here
 
 // [[file:../gosh.note::*utils][utils:1]]
 fn select_atoms_by_fz<F>(mol: &Molecule, selection: &str, cmp: F) -> Result<Vec<usize>>

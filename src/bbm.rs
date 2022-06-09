@@ -101,7 +101,7 @@ fn dry_run(bbm: &mut BlackBoxModel, mols: Vec<Molecule>, bunch_mode: bool) -> Re
 }
 // a3e4479e ends here
 
-// [[file:../gosh.note::*process][process:1]]
+// [[file:../gosh.note::497558fe][497558fe]]
 fn process_molecules(args: Cli, bbm: &mut BlackBoxModel, mols: Vec<Molecule>) -> Result<()> {
     if args.dry {
         dry_run(bbm, mols, args.bunch)?;
@@ -113,7 +113,7 @@ fn process_molecules(args: Cli, bbm: &mut BlackBoxModel, mols: Vec<Molecule>) ->
         let mut final_mols = vec![];
         if args.opt {
             for mol in mols.iter() {
-                println!("Optimizing molecule using LBFGS algorithm ...");
+                println!("Optimizing molecule using builtin algorithm ...");
                 let mut mol = mol.clone();
 
                 let optimized = gosh_optim::Optimizer::new(args.fmax, args.nmax)
@@ -150,7 +150,7 @@ fn process_molecules(args: Cli, bbm: &mut BlackBoxModel, mols: Vec<Molecule>) ->
 
     Ok(())
 }
-// process:1 ends here
+// 497558fe ends here
 
 // [[file:../gosh.note::*main][main:1]]
 pub fn bbm_enter_main() -> Result<()> {
