@@ -17,7 +17,6 @@ struct Cli {
     verbose: Verbosity,
 
     /// Input molecule file
-    #[structopt(parse(from_os_str))]
     molfile: PathBuf,
 
     /// Compute many molecules in bunch.
@@ -46,11 +45,11 @@ struct Cli {
 
     /// Template directory with all related files. The default is current
     /// directory.
-    #[structopt(short = 't', long = "bbm-dir", parse(from_os_str))]
+    #[structopt(short = 't', long = "bbm-dir")]
     bbmdir: Option<PathBuf>,
 
     /// Output the caputured structure. e.g.: -o foo.xyz
-    #[structopt(short = 'o', long = "output", parse(from_os_str))]
+    #[structopt(short = 'o', long = "output")]
     output: Option<PathBuf>,
 
     #[structopt(flatten)]
@@ -152,9 +151,9 @@ fn process_molecules(args: Cli, bbm: &mut BlackBoxModel, mols: Vec<Molecule>) ->
 }
 // 497558fe ends here
 
-// [[file:../gosh.note::*main][main:1]]
+// [[file:../gosh.note::a425d296][a425d296]]
 pub fn bbm_enter_main() -> Result<()> {
-    let args = Cli::from_args();
+    let args = Cli::parse();
     args.verbose.setup_logger();
 
     // 1. load molecules
@@ -182,4 +181,4 @@ pub fn bbm_enter_main() -> Result<()> {
 
     Ok(())
 }
-// main:1 ends here
+// a425d296 ends here

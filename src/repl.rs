@@ -3,7 +3,7 @@ use super::*;
 use crate::cli::Commander;
 use crate::cli::GoshCmd;
 
-use clap::Parser;
+use gut::cli::*;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 // bc7ccf69 ends here
@@ -103,19 +103,17 @@ impl Interpreter {
 }
 // repl:1 ends here
 
-// [[file:../gosh.note::*scripting][scripting:1]]
+// [[file:../gosh.note::2b2073b4][2b2073b4]]
 impl Interpreter {
     /// Interpret one line.
     fn continue_interpret_line(&mut self, line: &str) -> bool {
-        use clap::IntoApp;
-
         if let Some(mut args) = shlex::split(line) {
             assert!(args.len() >= 1);
             args.insert(0, "gosh".into());
             match GoshCmd::try_parse_from(&args) {
                 // show subcommands
                 Ok(GoshCmd::Help {}) => {
-                    let mut app = GoshCmd::into_app();
+                    let mut app = GoshCmd::command();
                     app.print_help();
                     println!("");
                 }
@@ -155,9 +153,9 @@ impl Interpreter {
         Ok(())
     }
 }
-// scripting:1 ends here
+// 2b2073b4 ends here
 
-// [[file:../gosh.note::*helper][helper:1]]
+// [[file:../gosh.note::7481bc3a][7481bc3a]]
 mod helper {
     use super::*;
 
@@ -221,9 +219,7 @@ mod helper {
     }
 
     fn get_subcommands() -> Vec<String> {
-        use clap::IntoApp;
-
-        let app = GoshCmd::into_app();
+        let app = GoshCmd::command();
         app.get_subcommands().map(|s| s.get_name().into()).collect()
     }
 
@@ -232,7 +228,7 @@ mod helper {
         line.starts_with("load") || line.starts_with("write") || line.starts_with("format")
     }
 }
-// helper:1 ends here
+// 7481bc3a ends here
 
 // [[file:../gosh.note::23598c97][23598c97]]
 #[derive(Parser, Debug)]

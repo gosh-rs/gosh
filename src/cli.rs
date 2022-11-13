@@ -3,9 +3,8 @@ use super::*;
 
 use gchemol::prelude::*;
 use gchemol::{io, Molecule};
+use gut::cli::*;
 use gut::utils::parse_numbers_human_readable;
-
-use clap::{AppSettings, Parser};
 
 use std::path::PathBuf;
 use std::process::Command;
@@ -146,7 +145,7 @@ pub enum GoshCmd {
     #[clap(name = "format")]
     Format {
         /// Path to template file.
-        #[clap(name = "TEMPLATE_NAME", parse(from_os_str))]
+        #[clap(name = "TEMPLATE_NAME")]
         filename: PathBuf,
 
         /// Path to output file.
@@ -174,7 +173,7 @@ pub enum GoshCmd {
     #[clap(name = "superimpose")]
     Superimpose {
         /// Path to reference molecule file.
-        #[clap(name = "REFERENCE_MOLECULE", parse(from_os_str))]
+        #[clap(name = "REFERENCE_MOLECULE")]
         filename: PathBuf,
     },
 
