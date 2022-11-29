@@ -39,6 +39,10 @@ pub enum GoshCmd {
         /// The filename to write.
         #[clap(name = "FILE-NAME")]
         filename: Option<PathBuf>,
+
+        /// Write in raw JSON format
+        #[arg(long)]
+        json: bool,
     },
 
     /// Load molecule(s) from file.
@@ -117,12 +121,12 @@ pub enum GoshCmd {
     Clean {},
 
     /// Unbuild current crystal structure leaving a non-periodic structure.
-    #[clap(name = "unbuild_crystal")]
+    #[clap(name = "unbuild-crystal")]
     UnbuildCrystal {},
 
     /// Create periodic lattice from minimal bounding box extended by a padding
     /// width for molecule.
-    #[clap(name = "create_bounding_box")]
+    #[clap(name = "create-bounding-box")]
     BoundingBox {
         /// The extra padding width along x, y, z directions.
         #[clap(default_value = "1.0")]
@@ -265,12 +269,18 @@ impl Commander {
                 }
             }
 
-            GoshCmd::Write { filename } => {
+            GoshCmd::Write { filename, json } => {
                 self.check()?;
 
                 if let Some(filename) = filename.as_ref().or(self.filename.as_ref()) {
                     let filename = normalize_path(filename);
-                    io::write(&filename, &self.molecules)?;
+                    if *json {
+                        let s: Result<String> = self.molecules.iter().map(|m| io::to_json(m)).collect();
+                        println!("writing in raw json format ...");
+                        gut::fs::write_to_file(&filename, &s?);
+                    } else {
+                        io::write(&filename, &self.molecules)?;
+                    }
                     println!("Wrote {} molecules in {}", self.molecules.len(), filename.display());
                 } else {
                     eprintln!("No filename.");
