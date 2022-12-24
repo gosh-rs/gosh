@@ -157,9 +157,9 @@ pub enum GoshCmd {
         output: Option<PathBuf>,
     },
 
-    /// Break molecule into smaller fragments based on connectivity.
-    #[clap(name = "fragment")]
-    Fragment {},
+    // /// Break molecule into smaller fragments based on connectivity.
+    // #[clap(name = "fragment")]
+    // Fragment {},
 
     /// Create supercell for all loaded molecules.
     #[clap(name = "supercell")]
@@ -287,17 +287,16 @@ impl Commander {
                 }
             }
 
-            #[cfg(feature = "adhoc")]
-            GoshCmd::Fragment {} => {
-                // FIXME: remove
-                use gchemol::compat::*;
+            // #[cfg(feature = "adhoc")]
+            // GoshCmd::Fragment {} => {
+            //     // FIXME: remove
+            //     use gchemol::compat::*;
 
-                self.check()?;
-                let mols = self.molecules[0].fragment();
-                self.molecules.clear();
-                self.molecules.extend(mols);
-            }
-
+            //     self.check()?;
+            //     let mols = self.molecules[0].fragment();
+            //     self.molecules.clear();
+            //     self.molecules.extend(mols);
+            // }
             GoshCmd::Rebond { bonding_ratio } => {
                 self.check()?;
                 if let Some(r) = bonding_ratio {
