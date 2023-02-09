@@ -23,6 +23,7 @@ pub use gosh_database as db;
 pub use gosh_model as model;
 pub use gosh_optim as optim;
 pub use gosh_runner as runner;
+pub use gosh_remote as remote;
 
 pub mod prelude {
     pub use gosh_database::prelude::*;
