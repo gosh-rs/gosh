@@ -27,7 +27,7 @@ gosh-adaptor = "0.2.0"
 gosh-database = "0.2.0"
 gosh-optim = "0.1.0"
 gosh-runner = "0.2.0"
-gosh-remote = "0.2.0"
+gosh-remote = "0.3.2"
 liblbfgs = { version="0.0.15" }
 #cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
 #-------------------------
@@ -37,5 +37,5 @@ approx = "0.3"
 
 [features]
 # for adhoc hacking
-adhoc = ["gosh-core/adhoc", "gosh-model/adhoc", "gosh-adaptor/adhoc", "gosh-database/adhoc"]
+adhoc = ["gosh-core/adhoc", "gosh-model/adhoc", "gosh-adaptor/adhoc", "gosh-database/adhoc", "gosh-remote/adhoc"]
 # 4c9b102a ends here
