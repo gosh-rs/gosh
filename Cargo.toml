@@ -27,7 +27,7 @@ gosh-adaptor = "0.2.0"
 gosh-database = "0.2.0"
 gosh-optim = "0.1.0"
 gosh-runner = "0.2.0"
-gosh-remote = "0.3.2"
+gosh-remote = "0.4.0"
 liblbfgs = { version="0.0.15" }
 #cg_descent = {git = "https://github.com/ybyygu/cg_descent.rs" }
 #-------------------------
