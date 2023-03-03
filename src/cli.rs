@@ -68,9 +68,10 @@ pub enum GoshCmd {
     #[clap(name = "rebond")]
     Rebond {
         #[clap(short = 'r')]
-        /// The bonding ratio for guessing chemical bonds. Larger value leading
-        /// to more bonds. The default value is 0.55
-        bonding_ratio: Option<f64>,
+        /// The bond tolerance for guessing chemical bonds. Larger
+        /// value leading to more bonds. The default value is 0.45
+        /// (which is also the default for JMol)
+        bond_tolerance: Option<f64>,
     },
 
     /// Update current molecule from somewhere with something
@@ -160,7 +161,6 @@ pub enum GoshCmd {
     // /// Break molecule into smaller fragments based on connectivity.
     // #[clap(name = "fragment")]
     // Fragment {},
-
     /// Create supercell for all loaded molecules.
     #[clap(name = "supercell")]
     Supercell {
@@ -297,10 +297,10 @@ impl Commander {
             //     self.molecules.clear();
             //     self.molecules.extend(mols);
             // }
-            GoshCmd::Rebond { bonding_ratio } => {
+            GoshCmd::Rebond { bond_tolerance } => {
                 self.check()?;
-                if let Some(r) = bonding_ratio {
-                    std::env::set_var("GCHEMOL_BONDING_RATIO", format!("{}", r));
+                if let Some(r) = bond_tolerance {
+                    std::env::set_var("GCHEMOL_REBOND_BOND_TOLERANCE", format!("{}", r));
                 }
                 for mol in self.molecules.iter_mut() {
                     mol.rebond();
