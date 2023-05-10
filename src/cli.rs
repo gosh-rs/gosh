@@ -24,6 +24,7 @@ pub struct Commander {
 }
 
 #[derive(Parser, Debug)]
+#[clap(disable_help_subcommand = true)]
 pub enum GoshCmd {
     /// Quit go shell.
     #[clap(name = "quit", alias = "q", alias = "exit")]
