@@ -300,11 +300,10 @@ impl Commander {
             // }
             GoshCmd::Rebond { bond_tolerance } => {
                 self.check()?;
-                if let Some(r) = bond_tolerance {
-                    std::env::set_var("GCHEMOL_REBOND_BOND_TOLERANCE", format!("{}", r));
-                }
+                let mut options = Molecule::rebond_options();
+                options.bond_tolerance = *bond_tolerance;
                 for mol in self.molecules.iter_mut() {
-                    mol.rebond();
+                    mol.rebond_with_options(&options);
                     println!("Created {} bonds", mol.nbonds());
                 }
             }
