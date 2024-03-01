@@ -11,7 +11,6 @@ license = "MIT OR Apache-2.0"
 exclude = ["bin/*", "docs/*"]
 
 [dependencies]
-dotenv = "0.13"
 dirs = "2"
 tempfile = "3.0"
 serde = "1.0"
