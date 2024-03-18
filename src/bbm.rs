@@ -11,7 +11,8 @@ use vecfx::*;
 use gut::cli::*;
 
 /// An universal runner for Blackbox Model
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
+#[clap(author, version, about)]
 struct Cli {
     #[structopt(flatten)]
     verbose: Verbosity,

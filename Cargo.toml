@@ -1,7 +1,7 @@
 # [[file:gosh.note::4c9b102a][4c9b102a]]
 [package]
 name = "gosh"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 description = "Rusty framework for multiscale/multilevel modeling"
