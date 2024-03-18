@@ -4,6 +4,7 @@ use crate::model::*;
 
 use gchemol::Molecule;
 use gosh_core::*;
+use gosh_database::CheckpointDb;
 use vecfx::*;
 // 7d1be705 ends here
 
@@ -54,7 +55,7 @@ struct Cli {
     output: Option<PathBuf>,
 
     #[structopt(flatten)]
-    checkpoint: gosh_database::CheckpointDb,
+    checkpoint: CheckpointDb,
 }
 // 9497e7ed ends here
 
@@ -72,18 +73,35 @@ fn extract_mol_from(mp: &ModelProperties) -> Option<Molecule> {
 }
 
 /// Compute a list of molecules
-fn compute_mps(bbm: &mut BlackBoxModel, mols: Vec<Molecule>, bunch_mode: bool) -> Result<Vec<ModelProperties>> {
+fn compute_mps(
+    bbm: &mut BlackBoxModel,
+    mols: Vec<Molecule>,
+    bunch_mode: bool,
+    ckpt: CheckpointDb,
+) -> Result<Vec<ModelProperties>> {
     if bunch_mode {
         bbm.compute_bunch(&mols)
     } else {
-        mols.iter().map(|mol| bbm.compute(mol)).collect()
+        mols.iter()
+            .map(|mol| bbm.compute(mol))
+            .inspect(|mp| {
+                if let Ok(mp) = mp {
+                    println!("{}", mp);
+                    let _ = ckpt.commit(mp);
+                }
+            })
+            .collect()
     }
 }
 
-fn compute(bbm: &mut BlackBoxModel, mols: Vec<Molecule>, bunch_mode: bool) -> Result<Vec<Molecule>> {
-    compute_mps(bbm, mols, bunch_mode)?
+fn compute(
+    bbm: &mut BlackBoxModel,
+    mols: Vec<Molecule>,
+    bunch_mode: bool,
+    ckpt: CheckpointDb,
+) -> Result<Vec<Molecule>> {
+    compute_mps(bbm, mols, bunch_mode, ckpt)?
         .into_iter()
-        .inspect(|mp| println!("{}", mp))
         .map(|mp| extract_mol_from(&mp).ok_or(format_err!("no mol in model properties")))
         .collect()
 }
@@ -108,6 +126,7 @@ fn process_molecules(args: Cli, bbm: &mut BlackBoxModel, mols: Vec<Molecule>) ->
         return Ok(());
     }
 
+    let ckpt = args.checkpoint.create();
     let final_mols = if !args.bunch {
         info!("run in normal mode ...");
         let mut final_mols = vec![];
@@ -130,11 +149,11 @@ fn process_molecules(args: Cli, bbm: &mut BlackBoxModel, mols: Vec<Molecule>) ->
             }
             final_mols
         } else {
-            compute(bbm, mols, false)?
+            compute(bbm, mols, false, ckpt)?
         }
     } else {
         info!("run in bunch mode ...");
-        compute(bbm, mols, true)?
+        compute(bbm, mols, true, ckpt)?
     };
 
     info!("found {} molecules.", final_mols.len());

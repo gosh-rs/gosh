@@ -21,7 +21,7 @@ clap = "4"
 #-------------------------
 gosh-core = "0.2.0"
 gosh-repl = "0.1.3"
-gosh-model = "0.2.0"
+gosh-model = "0.2.1"
 gosh-adaptor = "0.2.0"
 gosh-database = "0.2.0"
 gosh-optim = "0.1.1"
