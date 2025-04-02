@@ -1,0 +1,166 @@
+#+TITLE: 用户指南: gosh Shell (交互式环境与脚本)
+#+AUTHOR: Roo (AI 助手)
+#+LANGUAGE: zh-CN
+#+OPTIONS: toc:nil num:nil ^:{} indent:t
+
+* 启动 gosh
+`gosh` 提供了两种主要的运行模式: 交互式 REPL 和脚本执行模式.
+
+**1. 交互式 REPL (Read-Eval-Print Loop):**
+
+在终端中直接运行 `gosh` 命令即可进入交互式环境:
+#+BEGIN_SRC bash
+gosh
+#+END_SRC
+您会看到类似以下的提示符, 表示 `gosh` 正在等待您的命令:
+#+BEGIN_SRC text
+gosh>
+#+END_SRC
+在此模式下, 您可以逐条输入命令并立即看到结果. 输入 `quit` 或 `q` 或 `exit` 来退出 REPL.
+
+**2. 脚本执行模式:**
+
+您可以将一系列 `gosh` 命令保存在一个文本文件(例如 `myscript.gosh`)中, 然后使用 `-x` 参数来执行它:
+#+BEGIN_SRC bash
+gosh -x myscript.gosh
+#+END_SRC
+`gosh` 会按顺序执行文件中的所有命令. 这对于自动化重复性任务非常有用.
+
+* 基本概念
+**当前分子列表:**
+`gosh` 在内存中维护一个当前活动的分子列表. 许多命令(如 `write`, `rebond`, `supercell`)默认作用于这个列表中的所有分子. `load` 命令会覆盖当前的分子列表.
+
+**原子选择 (`select` 命令):**
+一些命令(如 `freeze`, `update` 的部分功能)需要先选择特定的原子. `select` 命令用于定义当前的选择.
+- 选择可以通过原子序号(从 1 开始)指定, 支持逗号分隔和连字符范围.
+  #+BEGIN_SRC gosh
+  gosh> select 1,3,5-8   # 选择原子 1, 3, 5, 6, 7, 8
+  #+END_SRC
+- 对于周期性体系, 可以使用 `-by-fz` 按 Z 方向分数坐标选择.
+  #+BEGIN_SRC gosh
+  gosh> select --by-fz >0.5 # 选择 Z 分数坐标大于 0.5 的原子
+  #+END_SRC
+- 特殊选择:
+  #+BEGIN_SRC gosh
+  gosh> select all      # 选择所有原子
+  gosh> select none     # 取消当前选择
+  #+END_SRC
+选中的原子会被 `gosh` 记住, 供后续命令使用.
+
+* 命令详解
+下面是 `gosh` REPL 中常用的命令及其说明:
+
+**文件输入/输出:**
+
+- =load <文件名>= :: 加载指定文件中的分子, 覆盖当前分子列表. 支持多种格式.
+  #+BEGIN_SRC gosh
+  gosh> load input.cif
+  # 输出: Loaded 1 molecule(s).
+  #+END_SRC
+
+- =load-chk <检查点文件名> [--chk_slot <槽位号>]=- :: 从 `gosh_database` 检查点文件中加载分子. 默认加载最新的(槽位 -1).
+  #+BEGIN_SRC gosh
+  gosh> load-chk calculation.chk --chk_slot 5
+  #+END_SRC
+
+- =write [<文件名>] [--json]= :: 将当前分子列表写入文件.
+  - 如果省略 `<文件名>`, 则尝试写入最后加载或保存的文件.
+  - 支持多种格式, 根据文件扩展名自动判断.
+  - 使用 `--json` 将以原始 JSON 格式写入.
+  #+BEGIN_SRC gosh
+  gosh> write output.mol2
+  # 输出: Wrote 1 molecules in output.mol2
+  #+END_SRC
+
+- =avail= :: 显示 `gchemol` 支持的所有文件格式后端.
+
+**结构查看与编辑:**
+
+- =rebond [-r <容差>]= :: 根据原子间距离重新构建化学键. 可以指定键容差(默认为 0.45).
+  #+BEGIN_SRC gosh
+  gosh> rebond -r 0.5
+  #+END_SRC
+
+- =clean= :: 清理当前分子的几何结构(可能去除重叠原子等).
+
+- =select <选择表达式> [--by-fz]= :: 选择原子, 详见上方"原子选择"部分.
+
+- =freeze [-u]= :: 冻结当前选中的原子(用于几何优化等). 使用 `-u` (inverse) 解冻选中的原子. 需要先使用 `select` 命令.
+  #+BEGIN_SRC gosh
+  gosh> select 1-10
+  gosh> freeze
+  # 输出: atom 1 was freezed ... atom 10 was freezed
+  gosh> freeze -u
+  # 输出: atom 1 was unfreezed ... atom 10 was unfreezed
+  #+END_SRC
+
+- =update <目标> -f <源文件> [-s <选择>]=- :: 用源文件中的信息更新当前分子(目前仅支持单个分子).
+  - `<目标>`: 要更新的属性, 例如 `coords` (坐标) 或 `freezing` (冻结状态).
+  - `<源文件>`: 提供更新数据的分子文件.
+  - `[-s <选择>]`: 可选, 只更新选定原子的信息 (使用原子序号表达式).
+  #+BEGIN_SRC gosh
+  gosh> update coords -f optimized.xyz -s 1,5-10
+  #+END_SRC
+
+**晶体操作:**
+
+- =unbuild-crystal= :: 对于周期性体系, 移除晶格信息, 变成非周期性结构.
+
+- =create-bounding-box [<填充宽度>]=- :: 根据分子边界创建一个周期性晶格, 可以指定额外的填充宽度(默认为 1.0 埃).
+  #+BEGIN_SRC gosh
+  gosh> create-bounding-box 1.5
+  #+END_SRC
+
+- =supercell <a> <b> <c>= :: 为当前分子(必须是周期性体系)构建超胞. <a>,<b>,<c> 为沿三个晶格方向的扩展倍数.
+  #+BEGIN_SRC gosh
+  gosh> supercell 2 2 1
+  #+END_SRC
+
+**其他命令:**
+
+- =convert <输入文件...> -e <目标扩展名>= :: 批量转换文件格式.
+  #+BEGIN_SRC gosh
+  gosh> convert *.xyz -e .mol2
+  # 输出: 5 files were converted in .mol2 format
+  #+END_SRC
+
+- =format <模板文件> [-o <输出文件>]=- :: 使用指定的模板文件格式化当前分子信息. 如果指定 `-o`, 则输出到文件, 否则打印到屏幕. 详见 [[file:file-formats.org][文件格式与格式化]].
+  #+BEGIN_SRC gosh
+  gosh> format my_template.tmpl -o formatted_output.txt
+  #+END_SRC
+
+- =superimpose <参考分子文件>= :: 将当前分子(通常是第一个)叠合到参考分子上. (注意: 此功能可能尚未完全实现, 代码中有 `todo!()` 标记).
+
+- =ls= :: 列出当前工作目录的文件 (类似 Linux `ls`).
+
+- =pwd= :: 打印当前工作目录的路径 (类似 Linux `pwd`).
+
+- =help= 或 =h= 或 =?= :: 显示所有可用命令的帮助信息.
+
+- =quit= 或 =q= 或 =exit= :: 退出 `gosh` REPL.
+
+* 脚本示例
+下面是一个简单的 `gosh` 脚本示例 (`process.gosh`):
+
+#+BEGIN_SRC gosh
+# 加载分子
+load initial.xyz
+
+# 清理结构并重建键
+clean
+rebond
+
+# 创建一个 2x2x2 的超胞
+supercell 2 2 2
+
+# 将结果保存为 VASP POSCAR 格式
+write final.poscar
+
+# 退出
+quit
+#+END_SRC
+
+执行此脚本:
+#+BEGIN_SRC bash
+gosh -x process.gosh
+#+END_SRC

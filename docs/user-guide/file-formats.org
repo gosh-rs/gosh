@@ -1,0 +1,92 @@
+#+TITLE: 用户指南: 文件格式与格式化输出
+#+AUTHOR: Roo (AI 助手)
+#+LANGUAGE: zh-CN
+#+OPTIONS: toc:nil num:nil ^:{} indent:t
+
+* 支持的文件格式
+`gosh` 通过其核心库 `gchemol` 支持多种常见的分子和晶体结构文件格式. 具体支持的格式取决于编译时包含的后端库.
+
+您可以使用 `gosh avail` 命令来查看当前版本支持的所有文件格式读写后端:
+#+BEGIN_SRC gosh
+gosh> avail
+#+END_SRC
+
+常见的支持格式可能包括(但不限于):
+#+begin_src text
+filetype: "text/xyz", possible extensions: [".xyz"]
+filetype: "text/pxyz", possible extensions: [".coord", ".pxyz", ".coords"]
+filetype: "text/mol2", possible extensions: [".mol2"]
+filetype: "text/cif", possible extensions: [".cif"]
+filetype: "vasp/input", possible extensions: ["poscar", "vasp"]
+filetype: "gaussian/input", possible extensions: [".gjf", ".com", ".gau"]
+filetype: "text/sdf", possible extensions: [".sd", ".sdf", ".mol"]
+filetype: "text/pdb", possible extensions: [".pdb", ".ent"]
+filetype: "xml/xsd", possible extensions: [".xsd"]
+filetype: "text/car", possible extensions: [".car", ".arc"]
+filetype: "xml/cml", possible extensions: [".cml"]
+filetype: "text/cjson", possible extensions: [".cjson"]
+#+end_src
+... 以及其他 `gchemol` 支持的格式
+
+`gosh` 在执行 `load` 和 `write` 命令时, 通常会根据文件的扩展名自动推断文件格式.
+
+* 使用 `format` 命令进行自定义输出
+`gosh format` 命令是一个强大的功能, 允许您根据当前加载的分子数据和一个自定义的模板文件, 生成任意格式的文本输出. 这对于提取特定信息、生成特定软件的输入片段或创建自定义报告非常有用.
+
+**命令语法:**
+#+BEGIN_SRC bash
+gosh format <模板文件路径> [-o <输出文件路径>]
+#+END_SRC
+
+- `<模板文件路径>`: 指向您的模板文件(通常以 `.tmpl` 或类似扩展名结尾).
+- `[-o <输出文件路径>]`: 可选参数. 如果指定, 格式化的输出将被写入该文件. 如果省略, 输出将直接打印到终端屏幕.
+
+**模板文件 (`*.tmpl`):**
+模板文件是一个包含占位符和逻辑控制语句的文本文件. `gosh` 会使用一个模板引擎(例如 Tera、Handlebars 或类似的引擎)来解析这个文件, 并将占位符替换为当前活动分子的实际数据.
+
+模板引擎允许您:
+- 访问分子的属性(如原子数、标题、晶格参数).
+- 遍历分子中的原子、键等.
+- 在循环中访问原子/键的属性(如元素符号、坐标、键类型).
+- 使用条件语句(if/else).
+- 执行基本的格式化操作.
+
+**模板示例 (`info.tmpl`):**
+
+假设我们想创建一个模板, 输出分子的标题、原子总数以及每个原子的元素符号和 XYZ 坐标:
+#+BEGIN_SRC jinja2
+Molecule Title: {{ molecule.title | default(value="N/A") }}
+Number of Atoms: {{ molecule.natoms }}
+
+Atom Coordinates:
+{% for atom in molecule.atoms %}
+  {{ atom.element | pad_left(width=2) }}  {{ "%.8f" | format(atom.position[0]) | pad_left(width=15) }} {{ "%.8f" | format(atom.position[1]) | pad_left(width=15) }} {{ "%.8f" | format(atom.position[2]) | pad_left(width=15) }}
+{% endfor %}
+#+END_SRC
+
+*注意:* 上述模板语法是基于常见模板引擎(如 Tera/Jinja2)的示例. 实际可用的变量名 (`molecule.title`, `molecule.natoms`, `molecule.atoms`, `atom.element`, `atom.position`) 和过滤器 (`format`, `pad_left`, `default`) 可能因 `gosh` 使用的具体模板引擎而异. 您可能需要通过实验或查阅 `gchemol` 相关文档来确定确切可用的数据和语法.
+
+**使用示例:**
+
+假设当前 `gosh` 中加载了一个分子, 并且我们有上面的 `info.tmpl` 文件:
+#+BEGIN_SRC gosh
+gosh> load my_molecule.xyz
+# Loaded 1 molecule(s).
+
+gosh> format info.tmpl -o molecule_info.txt
+# (无屏幕输出, 结果写入文件)
+#+END_SRC
+
+或者直接打印到屏幕:
+#+BEGIN_SRC gosh
+gosh> format info.tmpl
+# Molecule Title: My Molecule Example
+# Number of Atoms: 25
+#
+# Atom Coordinates:
+#  C      1.23456789      0.98765432     -0.11111111
+#  H      2.00000000      0.50000000     -0.55555555
+# ... (其他原子)
+#+END_SRC
+
+通过编辑模板文件, 您可以轻松地调整输出格式以满足各种需求.

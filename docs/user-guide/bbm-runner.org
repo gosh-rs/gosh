@@ -1,0 +1,77 @@
+#+TITLE: 用户指南: bbm 黑箱模型运行器
+#+AUTHOR: Wenping Guo
+#+OPTIONS: toc:nil num:nil ^:{} indent:t
+
+* 基本用法
+`bbm` 命令的基本语法如下：
+
+#+BEGIN_SRC bash
+bbm <输入分子文件> --bbm-dir <模板目录> [选项...]
+#+END_SRC
+
+- `<输入分子文件>`: 包含一个或多个分子结构的输入文件, 例如 `molecule.xyz` (xyz 可包含多个文件).
+- `--bbm-dir <模板目录>`: 指向包含特定计算任务模板文件的目录. 这是必需的参数.
+- `[选项...]`: 其他可选参数, 用于控制计算模式、优化、输出等.
+
+* 核心概念：BBM Templates (黑箱模型模板)
+`bbm` 的核心思想是使用 **模板** 来与各种外部计算化学程序进行交互。这些模板定义了如何：
+1.  根据输入的分子结构生成特定程序的输入文件.
+2.  执行该计算程序.
+3.  从程序的输出文件中解析所需的结果(如能量、力、优化后的结构).
+
+这些预定义的模板集合被称为 **BBM Templates**，它们通常组织在特定的目录结构中。您可以从以下官方代码库获取预制的模板：
+- [[https://github.com/ybyygu/bbm-templates][https://github.com/ybyygu/bbm-templates]]
+
+**如何使用模板:**
+1. 下载或克隆 `bbm-templates` 代码库到您的本地计算机.
+2. 在使用 `bbm` 命令时, 通过 `--bbm-dir` 参数指定您想使用的具体模板所在的目录. 例如, 如果 VASP 的静态计算模板位于 `~/apps/vasp/sp`, 则使用 `--bbm-dir ~/apps/vasp/sp`.
+
+`bbm` 会在该目录下查找所需的文件(如输入模板、运行脚本、解析脚本)来执行计算任务. 关于模板的具体结构和如何自定义, 请参考 [[file:../technical-guide/bbm-templates.org][技术指南: BBM 模板详解]].
+
+* 命令行选项详解
+以下是 `bbm` 的常用命令行选项：
+
+- =<molfile>= (必需): 输入的分子文件名.
+- =--bbm-dir <目录>= (必需): 指定包含 BBM 模板文件的目录路径.
+- =-b, --bunch=: 批处理模式. 如果输入文件包含多个分子结构, 此选项会让 `bbm` 尝试为所有结构一次性生成输入并执行计算(需要计算模板支持), 以简化 IO, 加速小任务的批量计算. 如果模板不支持批处理或未指定此选项, `bbm` 会逐个处理文件中的每个分子.
+
+- =--dry-run=: 空跑模式. `bbm` 只会根据模板生成外部程序的输入文件(并打印到标准输出), 但不会实际执行计算. 这对于调试模板或检查生成的输入文件非常有用.
+  #+BEGIN_SRC bash
+  bbm molecule.xyz --bbm-dir path/to/template --dry-run
+  #+END_SRC
+
+- =--keep=: 保留临时文件. 默认情况下, `bbm` 在计算成功完成后会清理运行过程中产生的临时文件(位于特定的 scratch 目录). 使用此选项可以阻止清理, 方便后续检查. 如果计算失败, 临时文件通常也会被保留.
+
+- =--opt=: 进行几何优化. 使用 `gosh_optim` crate 中内置的 LBFGS 算法对输入分子进行几何优化. **注意: ** 此选项不能与 `--bunch` 同时使用. 需要模板能够提供力和能量信息.
+  #+BEGIN_SRC bash
+  bbm initial_geom.poscar --bbm-dir path/to/vasp/opt --opt --output optimized.poscar
+  #+END_SRC
+
+- =--fmax <值>= (与 =--opt= 配合使用): 设置几何优化的收敛判据(最大力分量), 单位通常是 eV/Å. 默认值为 `0.1`.
+
+- =--nmax <值>= (与 =--opt= 配合使用): 设置几何优化的最大迭代步数. 默认值为 `50`.
+
+- =-o, --output <文件名>=: 将计算得到的最终分子结构(如果是优化任务, 则是优化后的结构)保存到指定的文件. 文件名后缀决定了输出格式.
+  #+BEGIN_SRC bash
+  bbm input.xyz --bbm-dir path/to/orca/sp --output output.xyz
+  #+END_SRC
+
+- **检查点选项 (由 `CheckpointDb` 提供):** `bbm` 集成了 `gosh_database` 的检查点功能.
+  : bbm -t single-point-bbm-dir list-mols.cif -vv --chk-file bbm.db
+
+- =-v, --verbose= / =-q, --quiet=: 控制日志输出的详细程度. 多次使用 `-v` 会增加详细程度.
+
+* 检查点 (Checkpoint) 机制
+`bbm` 可以利用检查点来保存计算过程中的重要信息, 特别是对于耗时较长的几何优化任务.
+- 当进行优化 (`--opt`) 时, 如果指定了检查点文件 (例如 `--chk-file bbm.db`), `bbm` (通过 `gosh_optim`) 会在每次优化步骤后将当前的能量、力、结构等信息记录到检查点文件中.
+- 如果优化中断, 下次使用相同的命令和检查点文件运行时, 优化可以从上次中断的地方继续, 而不是从头开始.
+- 对于非优化任务(单点计算), 检查点主要用于记录最终的计算结果(能量、结构等). 后续可以使用 `gosh load-chk` 命令从检查点文件中加载特定步骤或最终的分子结构.
+
+示例:
+#+BEGIN_SRC bash
+# 运行优化, 并将每一步记录到 opt.chk
+bbm structure.xyz --bbm-dir path/to/gaussian/opt --opt --chk-file opt.chk --output final.xyz
+
+# 如果中断, 可以再次运行相同命令以恢复优化
+bbm structure.xyz --bbm-dir path/to/gaussian/opt --opt --chk-file opt.chk --output final.xyz
+#+END_SRC

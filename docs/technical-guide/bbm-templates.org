@@ -1,0 +1,82 @@
+#+TITLE: 技术指南: BBM 模板详解
+#+AUTHOR: Wenping Guo
+#+OPTIONS: toc:nil num:nil ^:{} indent:t
+
+* 什么是 BBM Template?
+BBM (BlackBox Model) Template 是 `bbm` 命令用来与外部计算化学程序(如 VASP, Gaussian, ORCA 等)进行交互的一套规则和文件. 每个 Template 对应一种特定的计算任务(例如: VASP 的结构优化、Gaussian 的单点能计算).
+
+Template 的核心作用是充当 `bbm` 和外部程序之间的"翻译器"和"协调者":
+1. 输入生成: 读取 `bbm` 提供的分子结构信息, 并将其转换为外部程序所需的输入文件格式.
+2. 任务执行: 调用外部程序来执行计算.
+3. 结果解析: 读取外部程序的输出文件, 提取关键结果(如能量、力、最终结构), 并将其返回给 `bbm`.
+
+通过使用不同的 Template, `bbm` 可以驱动各种不同的计算程序和任务类型, 而无需修改 `bbm` 自身的核心代码.
+
+* Template 目录结构与核心文件
+一个典型的 BBM Template 通常是一个包含特定文件的目录. 当您使用 `bbm --bbm-dir <模板目录>` 时, `bbm` 会在该目录下查找并使用这些文件. 虽然具体实现可能略有不同, 但常见的核心文件及其作用如下:
+
+1. 输入模板文件 (例如 `input.tera`):
+   - 这是一个文本文件, 包含了外部程序输入文件的骨架, 其中嵌入了特殊的占位符或模板语言标记.
+   - `bbm` 会根据扩展名来使用合适的模板引擎(如 .tera 将使用 Tera)读取这个文件, 并将占位符替换为当前分子的实际数据(原子坐标、晶格参数、元素类型等), 从而生成最终的输入文件(例如 `INCAR`, `POSCAR`, `input.gjf`).
+   - 用户关注点: 理解模板中使用了哪些分子变量(如 `molecule.atoms`, `molecule.lattice_vectors`), 以及模板如何控制计算参数(如 K 点、泛函设置).
+
+2. 运行及解析脚本 (例如 `submit.sh`):
+   - 这是一个可执行脚本, 负责启动外部计算程序及解析输出结果文件.
+   - 它可能包含设置环境变量、调用 `mpirun`、执行计算程序二进制文件等命令.
+   - `bbm` 会在生成输入文件后执行这个脚本.
+   - 用户关注点: 脚本是否正确配置了外部程序的路径、并行设置(MPI 核心数等)以及执行命令.
+   - 等计算程序完成后, 负责读取外部程序运行产生的输出文件(如 `OUTCAR`, `output.log`).
+   - 它需要从中提取计算结果, 例如总能量、原子受力、最终几何结构等.
+   - 解析结果需要以 `bbm` 能理解的格式 (ModelProperties) 返回.
+   - `bbm` 会在运行脚本执行完毕后从 stdout 提取输出结果.
+   - 用户关注点: 解析脚本是否能正确找到并解析所需的结果, 特别是当外部程序版本更新或输出格式变化时.
+
+3. 配置文件 (可选, 例如 `config.toml`, `template.yaml`):
+   - Template 可能包含一个配置文件, 用于设置该模板特定的参数, 例如输入/输出文件名、模板引擎变量、运行脚本或解析脚本的名称等.
+
+* BBM 运行流程 (数据流)
+当您运行 `bbm` 命令时, 后台大致发生以下流程:
+
+#+BEGIN_SRC mermaid :file bbm-dataflow.png :cmdline -w 1000
+graph LR
+    A[bbm Runner Start] -- molfile, --bbm-dir --> B{Load Molecule & Template};
+    B --> C{Render Input File(s)<br>using input.tmpl};
+    C --> D{Execute run.sh};
+    subgraph External Calculation
+        direction LR
+        D --> E[run.sh executes<br>external program (e.g., VASP)];
+        E --> F[External program writes<br>output files (e.g., OUTCAR)];
+    end
+    F --> G{Execute parse.py};
+    G --> H{parse.py reads output files<br>& extracts results};
+    H --> I{parse.py prints results<br>(e.g., JSON) to stdout};
+    I --> J{bbm receives results};
+    J -- If --opt --> K{Update geometry &<br>Check convergence (gosh_optim)};
+    K -- Not converged --> C;
+    K -- Converged --> L{Final Processing};
+    J -- If not --opt --> L;
+    L --> M{Save Output (--output) &<br>Update Checkpoint (--chk-file)};
+    M --> N[bbm Runner End];
+#+END_SRC
+
+* 使用与自定义 Template
+1. 查找和使用:
+   - 获取官方预制模板的最佳途径是访问 [[https://github.com/ybyygu/bbm-templates][bbm-templates]] 代码库.
+   - 下载或克隆该库, 并在 `bbm` 命令中通过 `--bbm-dir` 指向所需的具体模板目录.
+
+2. 理解模板:
+   - 要理解一个特定模板的工作方式, 请检查其目录下的核心文件:
+     - 查看 `input.tmpl` 了解它如何生成输入以及可用的分子变量.
+     - 查看 `run.sh` 了解它如何执行外部程序.
+     - 查看 `parse.py` 了解它从输出中提取了哪些信息.
+     - 查看可能的配置文件了解模板的特定设置.
+
+3. 自定义 (初步):
+   - 修改计算参数: 最常见的需求是修改外部程序的计算参数(如 K 点密度、泛函、截断能). 这通常通过直接编辑 `input.tmpl` 文件来实现. 找到控制相应参数的行并修改其值或逻辑.
+   - 调整运行环境: 如果您需要修改程序路径、MPI 设置或环境变量, 请编辑 `run.sh`.
+   - 注意: 对模板的修改可能会影响其正确性或与其他 `bbm` 功能(如优化)的兼容性. 建议将修改后的模板保存在您自己的位置, 而不是直接修改原始的 `bbm-templates` 库.
+
+4. 创建新模板 (高级):
+   - 创建一个全新的模板需要深入理解目标外部程序的输入/输出格式、`bbm` 的模板引擎语法以及结果解析逻辑. 这通常需要编程技能(至少是脚本语言). 您可以参考现有模板作为起点.
+
+理解 BBM Template 的基本结构和工作原理, 将使您能够更有效地利用 `bbm` 来运行和管理您的计算化学任务, 并在需要时进行基本的调整和定制.
