@@ -1,0 +1,24 @@
+# calculation type
+! B3LYP def2-SVP def2/J
+# energy and gradient
+! ENGRAD NoUseSym
+# resume from previous job
+! AUTOSTART
+# something it is important for opt convergence
+! tightscf
+
+# for nodes in queue "dft" 
+%pal nprocs 36 end
+%maxcore 5000
+
+# for resolving scf convergence problems
+! KDIIS SOSCF
+#! SlowConv
+%scf
+  maxiter 500
+  Shift Shift 0.1 ErrOff 0.1 end
+end
+
+# charge and multiplicity
+* xyzfile 0 1 orca-input.xyz
+
