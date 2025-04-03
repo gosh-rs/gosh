@@ -1,4 +1,4 @@
-#+TITLE: gosh & bbm: 计算化学工具箱
+#+TITLE: gosh: 计算化学工具箱
 #+AUTHOR: Wenping Guo
 #+OPTIONS: toc:nil num:nil ^:{} indent:t
 
@@ -10,14 +10,14 @@
 `gosh` 和 `bbm` 共同提供了一个灵活的平台, 用于准备、运行和分析计算化学任务.
 
 * 核心特性
-**gosh (交互式 Shell &amp; 脚本):**
+gosh (交互式 Shell &amp; 脚本):
 - 加载、保存和转换多种分子文件格式 (xyz, mol2, cif, poscar, checkpoint-db 等).
 - 交互式结构编辑: 重建化学键、清理几何构型、原子选择、冻结原子.
 - 晶体结构操作: 创建超胞、根据边界盒构建晶格、解除晶体周期性.
 - 使用模板进行自定义输出格式化.
 - 可编写脚本以自动化重复性任务.
 
-**bbm (黑箱模型运行器):**
+bbm (黑箱模型运行器):
 - 使用预定义模板运行外部计算化学软件.
 - 支持单分子和批处理模式计算 (=--bunch=).
 - 内置使用 LBFGS 的几何优化功能 (=--opt=).
@@ -36,7 +36,7 @@ bbm --version
 #+END_SRC
 
 * 快速入门
-**1. 使用 gosh REPL:**
+** 使用 gosh REPL:
 
 启动交互式 shell:
 #+BEGIN_SRC bash
@@ -48,10 +48,10 @@ gosh
 gosh> load molecule.xyz  # 加载一个分子
 gosh> # ... 执行选择、冻结、清理等操作 ...
 gosh> write molecule_modified.cif # 保存为另一种格式
-gosh> quit
+gosh> quit # 或 Ctrl-D
 #+END_SRC
 
-**2. 使用 bbm 运行器:**
+** 使用 bbm 运行器:
 
 假设您已经下载或克隆了 =bbm-templates= 代码库, 并且在 =~/bbm-templates/vasp/static= 中有一个 VASP 单点计算模板:
 
