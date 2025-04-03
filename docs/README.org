@@ -1,69 +1,91 @@
-#+TITLE: gosh & bbm: 计算化学工具箱
-#+AUTHOR: Wenping Guo
+#+TITLE: gosh 工具集: 计算化学瑞士军刀
+#+AUTHOR: Wenping Guo &amp; Roo (AI 助手)
+#+LANGUAGE: zh-CN
 #+OPTIONS: toc:nil num:nil ^:{} indent:t
 
-* 简介
-`gosh` 是一个命令行工具和交互式 REPL (读取-求值-打印循环) 环境, 专为计算化学工作流程中的分子结构操作和处理而设计. 它利用 =gchemol= Rust 库进行核心的分子操作.
+* 目标与理念: 多等级多尺度计算自动化流程化
 
-`bbm` (黑箱模型运行器) 是一个配套的命令行工具, 作为外部计算化学程序(如 VASP, Gaussian, ORCA 等)的通用运行器. 它使用预定义的模板 (=bbm-templates=) 来生成输入文件、执行计算并解析结果, 从而简化运行各种模拟任务的过程.
+高通量计算的核心是高效计算和自动计算。`gosh` 工具集旨在为多尺度计算方法提供程序基本框架，用于实现不同等级计算程序的无缝接口，从而实现对复杂体系的高效精确计算。
 
-`gosh` 和 `bbm` 共同提供了一个灵活的平台, 用于准备、运行和分析计算化学任务.
+** 释名: gosh = GhOst in the SHell
+"ghost in the shell" 是日本著名的动漫《攻壳机动队》。对于分子体系而言，电子的运动如同难以捉摸的 "ghost" (灵魂)，而分子骨架的运动则相对易于分辨，如同 "shell" (外壳)。`gosh` 项目的目标是方便发展多尺度算法，以更智能的方式将 "ghost" 放进 "shell" 里，连接不同层级的计算方法。
+
+* 工具集简介
+
+`gosh` 工具集包含一系列用于实现上述目标的命令行工具：
+
+- =gosh=: 一个交互式 REPL 环境和脚本解释器, 用于分子结构操作、处理和测试 BBM 模板。
+- =bbm=: 一个通用的结构优化程序和外部计算任务运行器, 通过可定制的 BBM 模板(如 `sp`)驱动外部程序。
+- =gosh-parser=: 一个 REPL 解析辅助工具, 可脚本化, 用于辅助解析计算输出文本(例如提取能量/力)。
+
+这些工具共同提供了一个灵活的平台。
 
 * 核心特性
-**gosh (交互式 Shell &amp; 脚本):**
-- 加载、保存和转换多种分子文件格式 (xyz, mol2, cif, poscar, checkpoint-db 等).
-- 交互式结构编辑: 重建化学键、清理几何构型、原子选择、冻结原子.
-- 晶体结构操作: 创建超胞、根据边界盒构建晶格、解除晶体周期性.
-- 使用模板进行自定义输出格式化.
-- 可编写脚本以自动化重复性任务.
+** gosh (交互式 Shell &amp; Scripting):
+- 文件 I/O (xyz, cif, poscar, chk 等)。
+- 结构编辑 (键、清理、选择、冻结)。
+- 晶体操作 (超胞、晶格)。
+- 自定义格式化 (`format` 命令)。
+- 自动化脚本和 BBM 模板测试。
 
-**bbm (黑箱模型运行器):**
-- 使用预定义模板运行外部计算化学软件.
-- 支持单分子和批处理模式计算 (=--bunch=).
-- 内置使用 LBFGS 的几何优化功能 (=--opt=).
-- 检查点机制用于保存/重启计算.
-- 空跑模式 (=--dry-run=) 用于测试输入文件生成.
-- 灵活的模板系统 (参见 [[https://github.com/ybyygu/bbm-templates][bbm-templates]] 代码库).
+** bbm (结构优化器 &amp; 任务运行器):
+- 通过 BBM 模板运行外部计算。
+- 内置 LBFGS 几何优化 (=--opt=)。
+- 支持批处理 (=--bunch=)。
+- 检查点机制 (=--chk-*=)。
+- 空跑模式 (=--dry-run=)。
+- 模板库: [[https://github.com/ybyygu/bbm-templates][bbm-templates]]
+
+** gosh-parser (解析辅助工具):
+- REPL 环境和脚本执行。
+- 专注于文本解析，提取数据。
+- 可在 `submit.sh` 等脚本中调用。
 
 * 安装
-我们提供了 gosh & bbm Linux 下 二进行可执行程序. 请从[[https://github.com/ybyygu/bbm-templates/tree/master/bin][这里]]下载后, 置于可执行程序路径, 如 ~/.local/bin 中.
+提供了 Linux x86_64 二进制程序。请从 [[https://github.com/gosh-rs/gosh/releases][项目 Releases 页面]] 下载，解压后放入系统路径 (如 `~/.local/bin`)。
 
-验证安装:
-
+验证：
 #+BEGIN_SRC bash
-gosh --version
-bbm --version
+gosh --version && bbm --version && gosh-parser --version
 #+END_SRC
 
 * 快速入门
-**1. 使用 gosh REPL:**
-
-启动交互式 shell:
+** gosh REPL:
 #+BEGIN_SRC bash
 gosh
+# gosh> load molecule.xyz
+# gosh> clean
+# gosh> write cleaned.cif
+# gosh> quit
 #+END_SRC
 
-在 REPL 中:
-#+BEGIN_SRC gosh
-gosh> load molecule.xyz  # 加载一个分子
-gosh> # ... 执行选择、冻结、清理等操作 ...
-gosh> write molecule_modified.cif # 保存为另一种格式
-gosh> quit
-#+END_SRC
-
-**2. 使用 bbm 运行器:**
-
-假设您已经下载或克隆了 =bbm-templates= 代码库, 并且在 =~/bbm-templates/vasp/static= 中有一个 VASP 单点计算模板:
-
+** bbm 结构优化:
+使用 `sp` 模板 (`~/bbm-templates/orca/sp`) 优化：
 #+BEGIN_SRC bash
-# 为 structure.poscar 运行 VASP 单点计算
-bbm structure.poscar --bbm-dir ~/bbm-templates/vasp/static --output result.vaspout
+bbm input.xyz -t ~/bbm-templates/orca/sp --opt --fmax=0.05 --nmax=500 -o optimized.xyz --chk-file opt.db
 #+END_SRC
+*(这里的 `-t` 是 `--bbm-dir` 的简写, `--chk-file` 用于检查点)*
+
+** gosh-parser (概念示例):
+从文件提取能量 (假设 `extract_energy` 是内置或脚本函数):
+#+BEGIN_SRC bash
+# 命令行方式:
+# gosh-parser -e 'extract_energy("orca.out")'
+# 或通过管道:
+cat orca.out | gosh-parser -s script_to_extract.gps
+#+END_SRC
+*(具体用法见 [[file:user-guide/gosh-parser.org][gosh-parser 用户指南]] 或模板中的 `submit.sh`)*
 
 * 文档结构
-- [[file:user-guide/gosh-shell.org][用户指南: gosh Shell]]
-- [[file:user-guide/bbm-runner.org][用户指南: bbm 运行器]]
-- [[file:user-guide/file-formats.org][用户指南: 文件格式与格式化]]
-- [[file:user-guide/workflows.org][用户指南: 工作流程示例]]
-- [[file:technical-guide/architecture.org][技术指南: 架构概览]]
-- [[file:technical-guide/bbm-templates.org][技术指南: BBM 模板详解]]
+- 本文件 (`docs/README.org`): 项目概述、理念、快速入门。
+- 用户指南 (`docs/user-guide/`):
+  - [[file:user-guide/gosh-shell.org][gosh Shell 用法]]
+  - [[file:user-guide/bbm-runner.org][bbm 运行器与优化]]
+  - [[file:user-guide/gosh-parser.org][gosh-parser 解析工具]]
+  - [[file:user-guide/file-formats.org][文件格式与格式化]]
+  - [[file:user-guide/workflows.org][工作流程示例]]
+- 技术指南 (`docs/technical-guide/`):
+  - [[file:technical-guide/architecture.org][架构概览]]
+  - [[file:technical-guide/bbm-templates.org][BBM 模板详解]]
+  - [[file:technical-guide/si5.json][Molecule 数据模型示例]]
+  - [[file:technical-guide/sp/][sp 模板示例目录]]

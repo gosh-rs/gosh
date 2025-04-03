@@ -1,93 +1,134 @@
 #+TITLE: 技术指南: 架构概览 (用户视角)
-#+AUTHOR: Wenping Guo
+#+AUTHOR: Wenping Guo &amp; Roo (AI 助手)
 #+LANGUAGE: zh-CN
 #+OPTIONS: toc:nil num:nil ^:{} indent:t
 
 * 概述
-`gosh` 项目由一系列 Rust crates (库和可执行程序) 组成, 旨在提供一个模块化且可扩展的计算化学工具平台. 从用户的角度来看, 主要的交互入口是 `gosh` 命令行程序 (提供 REPL 和脚本执行) 和 `bbm` 命令行程序 (黑箱模型运行器).
+`gosh` 工具集由一系列 Rust crates (库和可执行程序) 组成, 旨在提供一个模块化且可扩展的计算化学工具平台. 从用户的角度来看, 主要的交互入口是 `gosh` 命令行程序 (提供 REPL 和脚本执行), `bbm` 命令行程序 (结构优化器和黑箱模型运行器), 以及 `gosh-parser` 命令行程序 (解析辅助工具).
 
 下图展示了项目主要组件之间的关系:
+
 #+begin_src mermaid :file data/42cdf85f-bd36-4b6b-980b-396292fbce10/framework.png
-flowchart TD
-    subgraph User Interface
+graph TD
+    subgraph User Interface / Executables
         direction LR
-        UI_Gosh[gosh - REPL/Scripting]
-        UI_BBM[bbm - Runner]
+        UI_Gosh[gosh<br>(REPL/Scripting)]
+        UI_BBM[bbm<br>(Optimizer/Runner)]
+        UI_Parser[gosh-parser<br>(Parser REPL/Scripting)]
     end
 
     subgraph Core Logic & Libraries
-        Lib_Cli[gosh::cli - Command Parsing & Commander]
-        Lib_Repl[gosh::repl - REPL Implementation]
-        Lib_BBM_Impl[gosh::bbm - BBM Runner Logic]
-        Lib_Core[gosh_core - Includes gchemol - Molecular Ops]
-        Lib_Model[gosh_model - ChemicalModel Trait, BlackBoxModel]
-        Lib_Optim[gosh_optim - LBFGS Geometry Optimizer]
-        Lib_DB[gosh_database - CheckpointDb]
-        Lib_Runner[gosh_runner - Task Execution?]
-        Lib_Adaptor[gosh_adaptor - External Interfaces?]
-        Lib_Remote[gosh_remote - Remote Execution?]
+        Lib_Cli[gosh::cli<br>(Command Parsing & Commander)]
+        Lib_Repl[gosh::repl<br>(REPL Implementation)]
+        Lib_BBM_Impl[gosh::bbm<br>(BBM Runner Logic)]
+        Lib_Parser_Core[gosh_parser::core<br>(Parsing Logic?)]
+        Lib_Core[gosh_core<br>(Includes gchemol - Molecular Ops)]
+        Lib_Model[gosh_model<br>(ChemicalModel Trait, BlackBoxModel)]
+        Lib_Optim[gosh_optim<br>(Geometry Optimizers)]
+        Lib_DB[gosh_database<br>(DB & Checkpointing)]
+        Lib_Runner[gosh_runner<br>(Process/Task Mgmt)]
+        Lib_Adaptor[gosh_adaptor<br>(External Interfaces?)]
+        Lib_Remote[gosh_remote<br>(Remote Execution?)]
     end
 
-    UI_Gosh --> Lib_Repl
-    UI_Gosh --> Lib_Cli
-    Lib_Repl --> Lib_Cli
-    Lib_Cli --> Lib_Core
-    Lib_Cli --> Lib_DB
+    %% Main dependencies
+    UI_Gosh --> Lib_Repl;
+    UI_Gosh --> Lib_Cli;
+    Lib_Repl --> Lib_Cli;
+    Lib_Cli --> Lib_Core;
+    Lib_Cli --> Lib_DB;
 
-    UI_BBM --> Lib_BBM_Impl
-    Lib_BBM_Impl --> Lib_Model
-    Lib_BBM_Impl --> Lib_Optim
-    Lib_BBM_Impl --> Lib_DB
-    Lib_BBM_Impl --> Lib_Core
+    UI_BBM --> Lib_BBM_Impl;
+    Lib_BBM_Impl --> Lib_Model;
+    Lib_BBM_Impl --> Lib_Optim;
+    Lib_BBM_Impl --> Lib_DB;
+    Lib_BBM_Impl --> Lib_Core;
+    Lib_BBM_Impl --> Lib_Runner; # BBM uses runner for process mgmt
 
-    Lib_Model --> Lib_Core
-    Lib_Optim --> Lib_Model
-    Lib_Optim --> Lib_Core
-    Lib_Optim --> Lib_DB
+    UI_Parser --> Lib_Parser_Core;
 
-    %% Dashed lines for potential/less direct dependencies
-    Lib_BBM_Impl -.-> Lib_Runner
-    Lib_Model -.-> Lib_Adaptor
-    Lib_Runner -.-> Lib_Remote
+    Lib_Model --> Lib_Core;
+    Lib_Optim --> Lib_Model;
+    Lib_Optim --> Lib_Core;
+    Lib_Optim --> Lib_DB;
+
+    %% Potential/less direct dependencies or usage
+    Lib_Model -.-> Lib_Adaptor;
+    Lib_Runner -.-> Lib_Remote; # Runner might use remote capabilities
+
+    %% Usage of gosh-parser within BBM templates (submit.sh)
+    Lib_BBM_Impl -.-> |submit.sh calls| UI_Parser; # submit.sh is part of BBM template logic run by bbm
+    Lib_Parser_Core -.-> Lib_Core; # Parser might need basic types
+
 #+end_src
 
 
 * 主要组件说明 (用户视角)
 - `gosh` (可执行程序):
-  - 您的主要交互式入口.
-  - 通过 `gosh::repl` 实现 REPL 功能.
-  - 通过 `gosh::cli` 解析用户命令 (`GoshCmd`).
-  - 使用 `gosh::cli::Commander` 来管理当前分子状态并执行具体操作.
-  - 大部分操作直接或间接调用 `gosh_core` (特别是 `gchemol`) 来处理分子数据.
+  - 主要的交互式分子处理入口和脚本环境.
+  - 用于结构准备、转换、分析和测试 BBM 模板.
+  - 通过 `gosh::repl` 实现 REPL 功能 (改进了命令补全和帮助系统).
+  - 通过 `gosh::cli` (基于 structopt/clap) 解析用户命令 (`GoshCmd`), 支持子命令以方便批处理.
+  - 使用 `gosh::cli::Commander` 管理分子状态.
+  - 依赖 `gosh_core` (`gchemol`) 进行分子操作.
 
 - `bbm` (可执行程序):
-  - 用于运行外部计算程序的专用入口.
-  - 主要逻辑在 `gosh::bbm` 模块中实现.
-  - 核心是 `gosh_model::BlackBoxModel`, 它负责与 BBM Template 交互(生成输入、运行脚本、解析输出).
-  - 如果使用 `--opt`, 则调用 `gosh_optim` 中的优化器.
-  - 优化器 (`gosh_optim`) 需要一个实现了 `gosh_model::ChemicalModel` trait 的对象来提供能量和力, `BlackBoxModel` 正是这样一个实现.
-  - 使用 `gosh_database::CheckpointDb` 来保存和恢复计算状态.
+  - 结构优化器和外部计算任务运行器.
+  - 通过调用 BBM Template (`--bbm-dir`) 中的 `submit.sh` 脚本来驱动外部程序.
+  - 核心是 `gosh_model::BlackBoxModel`, 负责与模板交互和解析返回的 `ModelProperties`.
+  - 使用 `--opt` 时，调用 `gosh_optim` 中的优化器 (LBFGS, Damped-LBFGS), 该优化器需要模板提供能量和力.
+  - 使用 `gosh_database` 进行检查点 (`--chk-file`) 状态保存与恢复.
+  - 支持 `Interactive Mode` (特别是对 VASP) 以提高多步计算效率.
 
-- `gosh_core` (核心库):
-  - 包含了项目的基础功能, 最重要的是集成了 `gchemol` 库.
-  - `gchemol` 负责所有底层的分子表示、文件 I/O、结构操作(键合、几何清理、超胞等). 几乎所有其他组件都依赖它.
+- `gosh-parser` (可执行程序):
+  - 提供 REPL 和脚本执行能力的文本解析辅助工具.
+  - 专注于从计算化学输出文件中提取数据 (能量、力等).
+  - 主要设计为在 BBM 模板的 `submit.sh` 脚本中被调用，以标准化和简化解析过程.
 
-- `gosh_model` (模型库):
-  - 定义了计算模型的基本接口 (`ChemicalModel` trait), 规定了如何从一个模型获取能量、力等信息.
-  - 提供了 `BlackBoxModel` 实现, 用于封装与外部程序通过模板交互的逻辑.
+- =gosh_core= (核心库):
+  - 基础功能库，包含核心的 `gchemol` 库.
+  - `gchemol` 提供分子表示、文件 I/O、结构操作等底层功能.
 
-- `gosh_optim` (优化库):
-  - 提供了几何优化算法(目前主要是 LBFGS).
-  - 优化器需要一个 `ChemicalModel` 来驱动优化过程.
+- =gosh_model= (模型库):
+  - 定义 `ChemicalModel` trait 接口 (规定 `compute` 和 `compute_bunch` 方法, 返回 `ModelProperties`).
+  - 提供 `BlackBoxModel` 实现, 封装与 BBM Template 的交互逻辑 (主要是解析 `ModelProperties`).
+  - 优化了 BBM 模型接口.
+  - 完善了对 VASP, DFTB+, MOPAC, Gaussian, SIESTA, GULP 等外部程序的计算接口支持 (通过相应的 BBM 模板实现).
 
-- `gosh_database` (数据库库):
-  - 提供了 `CheckpointDb`, 用于将计算过程中的状态(分子、能量、力等)序列化到文件中, 支持恢复.
+- =gosh_optim= (优化库):
+  - 提供了多种几何优化算法:
+    - LBFGS (改进了对 NEB 优化的效率)
+    - FIRE (快速惯性松弛引擎)
+    - Damped-LBFGS
+  - 实现了 `Iterator` 接口, 提高调用灵活性.
+  - 包含线搜索 (linesearch) 相关功能.
+  - 需要 `ChemicalModel` 提供能量和力来驱动优化.
 
-- `gosh_runner`, `gosh_adaptor`, `gosh_remote` (其他库):
-  - 这些库的具体功能对最终用户来说可能不那么直接可见.
-  - `gosh_runner` 可能涉及更复杂的任务执行或调度.
-  - `gosh_adaptor` 可能包含与其他特定库或格式的接口.
+- =gosh_database= (数据库库):
+  - 用于化学分子和计算性质的持久化存储.
+  - 使用 `diesel` 和 `sqlite` 实现关系型数据库功能 (可能包含 molecules, properties, models 等表).
+  - 提供检查点 (checkpointing) 功能 (`CheckpointDb`):
+    - 用于多步计算（如优化）的中断恢复和状态回滚.
+    - 保存任意可序列化 (serde) 的 `Molecule` 性质.
+    - 提供 `checkpoint()`, `restore_from_latest()`, `restart_from_checkpoint()` 等 API.
+  - 提供键值存储 (key-value storage, kvstore):
+    - 用于存取任意类型的任意数据.
+    - 数据按 collection (类型) 和 key (标识符) 组织.
+    - 提供 `put_into_collection()`, `get_from_collection()`, `del_from_collection()`, `remove_collection()`, `list_collection()` 等 API.
+  - 提供统计数据库条目数目的 API.
+
+- =gosh_runner= (进程与任务管理库):
+  - 负责管理外部进程的调用和并发计算.
+  - 解决异常退出时残留进程的清理问题.
+  - 提高了进程会话管理 (`spawn_session`) 的可靠性.
+  - 完善了对 BBM 运行出错的处理.
+  - 包含用于跨节点并行计算任务处理的初步实现 (可能涉及 `computd` 微服务, 基于 `tokio` 和 `warp`).
+  - 包含用于客户端任务管理的初步实现 (可能涉及 `reqwest`, 用于远程提交、删除、等待任务).
+  - 可能包含 `app_runner` 程序用于测试并行计算服务.
+
+- =gosh_adaptor=, =gosh_remote= (其他库):
+  - `gosh_adaptor` 可能包含与其他特定库或格式的接口 (例如 `vasp-tools` 调用 API?).
   - `gosh_remote` 可能与在远程计算资源上执行任务相关.
 
 * 关系总结
-`gosh` 和 `bbm` 是两个面向用户的不同工具, 但它们共享了许多底层的库 (`gosh_core`, `gosh_database` 等). `gosh` 侧重于交互式结构准备和处理, 而 `bbm` 侧重于利用这些结构调用外部程序进行计算或优化, 并通过模板机制实现通用性. 理解 `gchemol` (包含在 `gosh_core` 中) 是分子操作的基础, 而 `BlackBoxModel` (在 `gosh_model` 中) 是 `bbm` 与外部程序连接的关键, 这对于深入使用这两个工具非常有帮助.
+`gosh`, `bbm`, 和 `gosh-parser` 是三个面向用户的不同命令行工具，它们共享了底层的 `gosh_core` 等库。`gosh` 用于交互式处理和模板测试；`bbm` 通过调用模板中的 `submit.sh` 来运行计算和优化；而 `gosh-parser` 则常被 `submit.sh` 调用以辅助完成输出解析任务。理解 `gchemol` 是分子操作的基础，`BlackBoxModel` 和 `ModelProperties` 是 `bbm` 与模板通信的关键，而 `gosh-parser` 是简化模板解析逻辑的工具，这有助于深入使用整个工具集。

@@ -1,0 +1,6 @@
+{{ molecule.number_of_atoms }}
+xyz format
+{% for a in molecule.atoms -%}
+{{a.symbol | format}} {{ a.x | format}} {{ a.y | format}} {{ a.z | format}}
+{% endfor %}
+

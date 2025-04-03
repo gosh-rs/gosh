@@ -1,5 +1,5 @@
 #+TITLE: 用户指南: 文件格式与格式化输出
-#+AUTHOR: Roo (AI 助手)
+#+AUTHOR: Roo (AI 助手) &amp; Wenping Guo
 #+LANGUAGE: zh-CN
 #+OPTIONS: toc:nil num:nil ^:{} indent:t
 
@@ -30,19 +30,20 @@ filetype: "text/cjson", possible extensions: [".cjson"]
 
 `gosh` 在执行 `load` 和 `write` 命令时, 通常会根据文件的扩展名自动推断文件格式.
 
-* 使用 `format` 命令进行自定义输出
+* 使用 format 命令进行自定义输出
 `gosh format` 命令是一个强大的功能, 允许您根据当前加载的分子数据和一个自定义的模板文件, 生成任意格式的文本输出. 这对于提取特定信息、生成特定软件的输入片段或创建自定义报告非常有用.
 
-**命令语法:**
+** 命令语法:
+注意以下 `gosh>` 后的命令表示进入 gosh REPL 后执行的代码. 后同.
 #+BEGIN_SRC bash
-gosh format <模板文件路径> [-o <输出文件路径>]
+gosh> format <模板文件路径> [-o <输出文件路径>]
 #+END_SRC
 
-- `<模板文件路径>`: 指向您的模板文件(通常以 `.tmpl` 或类似扩展名结尾).
-- `[-o <输出文件路径>]`: 可选参数. 如果指定, 格式化的输出将被写入该文件. 如果省略, 输出将直接打印到终端屏幕.
+- <模板文件路径>: 指向您的模板文件 (通常使用 `.hbs` 或 `.tera` 扩展名, 分别对应 Handlebars 和 Tera 模板引擎).
+- [-o <输出文件路径>]: 可选参数. 如果指定, 格式化的输出将被写入该文件. 如果省略, 输出将直接打印到终端屏幕.
 
-**模板文件 (`*.tmpl`):**
-模板文件是一个包含占位符和逻辑控制语句的文本文件. `gosh` 会使用一个模板引擎(例如 Tera、Handlebars 或类似的引擎)来解析这个文件, 并将占位符替换为当前活动分子的实际数据.
+** 模板文件 (*.hbs, *.tera):
+模板文件是一个包含占位符和逻辑控制语句的文本文件. `gosh` 会使用相应的模板引擎 (Handlebars 或 Tera) 来解析这个文件, 并将占位符替换为当前活动分子的实际数据.
 
 模板引擎允许您:
 - 访问分子的属性(如原子数、标题、晶格参数).
@@ -51,42 +52,42 @@ gosh format <模板文件路径> [-o <输出文件路径>]
 - 使用条件语句(if/else).
 - 执行基本的格式化操作.
 
-**模板示例 (`info.tmpl`):**
-
-假设我们想创建一个模板, 输出分子的标题、原子总数以及每个原子的元素符号和 XYZ 坐标:
-#+BEGIN_SRC jinja2
+** 模板示例 (info.tera):
+假设我们想创建一个 Tera 模板, 输出分子的标题、原子总数以及每个原子的元素符号和 XYZ 坐标:
+#+BEGIN_SRC tera
 Molecule Title: {{ molecule.title | default(value="N/A") }}
 Number of Atoms: {{ molecule.natoms }}
 
 Atom Coordinates:
 {% for atom in molecule.atoms %}
-  {{ atom.element | pad_left(width=2) }}  {{ "%.8f" | format(atom.position[0]) | pad_left(width=15) }} {{ "%.8f" | format(atom.position[1]) | pad_left(width=15) }} {{ "%.8f" | format(atom.position[2]) | pad_left(width=15) }}
+  {{ atom.symbol | pad_start(width=2) }}  {{ atom.x | format(spec=".8f") | pad_start(width=15) }} {{ atom.y | format(spec=".8f") | pad_start(width=15) }} {{ atom.z | format(spec=".8f") | pad_start(width=15) }}
 {% endfor %}
 #+END_SRC
+*注意:* 上述模板语法基于 Tera. Handlebars 语法有所不同. 实际可用的变量名 (`molecule.title`, `molecule.natoms`, `molecule.atoms`, `atom.symbol`, `atom.x` 等) 和过滤器 (`format`, `pad_start`, `default`) 取决于 `gosh` 集成的 `gchemol` 和模板引擎版本. 建议参考 [[file:../technical-guide/si5.json][si5.json]] 示例和相关文档.
 
-*注意:* 上述模板语法是基于常见模板引擎(如 Tera/Jinja2)的示例. 实际可用的变量名 (`molecule.title`, `molecule.natoms`, `molecule.atoms`, `atom.element`, `atom.position`) 和过滤器 (`format`, `pad_left`, `default`) 可能因 `gosh` 使用的具体模板引擎而异. 您可能需要通过实验或查阅 `gchemol` 相关文档来确定确切可用的数据和语法.
-
-**使用示例:**
-
-假设当前 `gosh` 中加载了一个分子, 并且我们有上面的 `info.tmpl` 文件:
+*** 使用示例:
+假设当前 `gosh` 中加载了一个分子, 并且我们有上面的 `info.tera` 文件:
 #+BEGIN_SRC gosh
 gosh> load my_molecule.xyz
 # Loaded 1 molecule(s).
 
-gosh> format info.tmpl -o molecule_info.txt
+gosh> format info.tera -o molecule_info.txt
 # (无屏幕输出, 结果写入文件)
 #+END_SRC
 
 或者直接打印到屏幕:
 #+BEGIN_SRC gosh
-gosh> format info.tmpl
+gosh> format info.tera
 # Molecule Title: My Molecule Example
-# Number of Atoms: 25
+# Number of Atoms: 5
 #
 # Atom Coordinates:
-#  C      1.23456789      0.98765432     -0.11111111
-#  H      2.00000000      0.50000000     -0.55555555
+# Si     -0.28549600      1.27174600     -0.32325000
+# Si      0.23765100     -0.21836000      1.48120300
 # ... (其他原子)
 #+END_SRC
 
 通过编辑模板文件, 您可以轻松地调整输出格式以满足各种需求.
+
+** 测试 BBM 输入模板:
+`gosh format` 命令也是测试 BBM 输入模板 (`input.hbs` 或 `input.tera`) 的重要工具. 详见 [[file:gosh-shell.org][gosh Shell 用户指南]] 中的相关说明.

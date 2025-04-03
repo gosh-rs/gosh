@@ -1,18 +1,17 @@
 #+TITLE: 用户指南: 工作流程示例
-#+AUTHOR: Roo (AI 助手)
+#+AUTHOR: Roo (AI 助手); Wenping Guo
 #+LANGUAGE: zh-CN
 #+OPTIONS: toc:nil num:nil ^:{} indent:t
 
 * 引言
-`gosh` 和 `bbm` 工具可以协同工作, 以简化和自动化各种计算化学任务. 本节将展示几个典型的工作流程示例, 说明如何结合使用这两个工具来提高效率.
+`gosh`, `bbm`, 和 `gosh-parser` 工具可以协同工作, 以简化和自动化各种计算化学任务. 本节将展示几个典型的工作流程示例, 说明如何结合使用这些工具来提高效率.
 
 * 示例 1: 高通量筛选 (结构准备 + 批量计算)
 场景: 您有一组 (例如 100 个) 初始的分子结构文件(如 `struct_001.xyz`, `struct_002.xyz`, ...), 需要对它们进行相同的单点能计算(例如使用 ORCA).
 
 流程:
-1. 准备批处理输入文件 (可选但推荐): 虽然 `bbm --bunch` 可以处理多结构文件, 但如果每个结构在一个单独的文件中, 可以先用 `gosh` 将它们合并. 或者, 如果需要对每个结构做预处理(如添加氢、清理), 也可以用 `gosh`.
-    - 如果结构都在单独的 `.xyz` 文件中, 并且模板支持从单个多结构文件读取, 您可以跳过此步, 直接将所有文件作为 `bbm` 的输入(如果 `bbm` 支持多个输入文件).
-    - *或者*, 使用脚本合并和预处理:
+1.  准备批处理输入文件 (可选但推荐): 如果需要对每个结构做预处理（如清理、加氢），可以使用 `gosh`。如果结构是分开的文件，且 `bbm` 或模板不支持直接处理多个文件输入，可能需要先合并。
+    - 使用脚本合并和预处理：
       #+begin_src shell
       #!/bin/bash
       # Gosh script (prepare.gosh)
@@ -26,88 +25,96 @@
           gosh -x prepare.gosh "$file"
       done
       #+end_src
+      *注意:* 上述 `gosh` 脚本需要调整以支持追加写入（`gosh` 目前可能不支持），或者在 Shell 脚本中用 `cat` 等命令合并 `gosh` 输出的单个文件。如果不需要预处理，直接用 `cat struct_*.xyz > combined_structures.xyz` 可能更简单。
 
-      注意: 上述 gosh 脚本需要调整以实现追加写入, 或者在 shell 脚本中处理合并. 一个更简单的方式可能是直接用 `cat` 合并 xyz 文件(如果格式允许).
-
-2. 运行批量计算: 使用 `bbm` 和 `--bunch` 选项, 配合 ORCA 的单点能计算模板.
+2.  运行批量计算: 使用 `bbm` 和 `--bunch` 选项, 配合 ORCA 的单点能计算模板.
     #+BEGIN_SRC bash
     # 假设所有结构已合并到 combined_structures.xyz
-    # 或者 bbm 支持 *.xyz 作为输入
-    bbm combined_structures.xyz --bbm-dir path/to/orca/sp --bunch --output results.out --chk-create screening_results.chk
+    bbm combined_structures.xyz --bbm-dir path/to/orca/sp --bunch --output results.out --chk-file screening_results.db
     # 或者 (如果 bbm 支持通配符或多个文件参数):
-    # bbm struct_*.xyz --bbm-dir path/to/orca/sp --bunch ...
+    # bbm struct_*.xyz --bbm-dir path/to/orca/sp --bunch --chk-file screening_results.db ...
     #+END_SRC
-    `bbm` 会尝试为 `combined_structures.xyz` 中的每个结构运行 ORCA 计算(如果模板配置为批处理运行则效率更高), 并将结果(例如最终能量)记录到检查点文件 `screening_results.chk` 中.
+    `bbm` 会尝试为 `combined_structures.xyz` 中的每个结构运行 ORCA 计算 (如果模板配置为批处理运行则效率更高), 并将结果(例如最终能量)记录到检查点文件 `screening_results.db` 中.
 
-3. 分析结果: (可能需要额外的脚本或工具) 从 `screening_results.chk` 或 `results.out` (如果 `bbm` 将摘要信息写入此处) 提取能量或其他属性进行分析. 进入 gosh REPL 界面后, 用 `load-chk` 命令可以用来提取特定结构.
+3.  分析结果: 从检查点文件 `screening_results.db` 中提取能量或其他属性进行分析. 可以使用 `gosh` 的 `load-chk` 命令来加载特定计算的结果结构和信息.
+    #+BEGIN_SRC gosh
+    gosh> load-chk screening_results.db --chk_slot 10 # 加载第 10 个计算的结果
+    # (查看加载的分子信息，如标题行可能包含能量)
+    #+END_SRC
+    可能还需要编写额外的脚本（可能用到 `gosh` 或 `gosh-parser`）来批量处理检查点文件并提取所需数据.
 
-* 示例 2: 复杂几何优化 (选择性约束 + BBM 优化)
+* 示例 2: 复杂几何优化 (选择性约束 + BBM 内置优化)
 场景: 您有一个较大的分子或周期性体系, 需要对其进行几何优化, 但希望固定某些原子(例如, 基底原子或远离活性中心的原子).
 
 流程:
-1. 加载并选择原子: 使用 `gosh` 加载初始结构, 并使用 `select` 命令选中需要固定的原子.
+1.  加载并选择原子: 使用 `gosh` 加载初始结构, 并使用 `select` 命令选中需要固定的原子.
     #+BEGIN_SRC gosh
     gosh> load initial_complex.cif
     gosh> select 1-50   # 假设原子 1 到 50 是需要固定的基底原子
-    # 输出: Selected 50 atoms
-    # 输出: Selection: 1-50
     #+END_SRC
 
-2. 冻结选定原子: 使用 `freeze` 命令.
+2.  冻结选定原子: 使用 `freeze` 命令.
     #+BEGIN_SRC gosh
     gosh> freeze
-    # 输出: atom 1 was freezed ... atom 50 was freezed
     #+END_SRC
 
-3. 保存带有约束的结构: 将带有冻结信息的分子保存到一个新文件. 某些格式(如 XYZ)可能不直接支持冻结标志, 需要选择合适的格式(内部格式或特定程序的格式). 假设可以保存为 `constrained.xyz`(或由 `bbm` 模板直接支持的格式).
+3.  保存带有约束的结构: 将带有冻结信息的分子保存到一个新文件. 确保选择的格式能保存冻结信息，或者 BBM 模板的 `input.tera`/`hbs` 能访问并使用这些冻结标志。
     #+BEGIN_SRC gosh
-    gosh> write constrained.xyz # 或 constrained.gosh_internal_format
+    gosh> write constrained.cif # CIF 通常能保存约束信息
     gosh> quit
     #+END_SRC
 
-4. 运行 BBM 优化: 使用 `bbm --opt`, 并指定一个能够处理原子冻结约束的模板(例如, 某些 VASP 或 Gaussian 模板).
+4.  运行 BBM 内置优化: 使用 `bbm --opt`，并指定一个能够计算单点能和力的模板 (例如 `sp` 模板)。`bbm` 的优化器会读取冻结标志并传递给模板（如果模板支持处理）。
     #+BEGIN_SRC bash
-    bbm constrained.xyz --bbm-dir path/to/vasp/opt_constrained --opt --fmax 0.05 --nmax 100 --output optimized.poscar --chk-update optimization.chk
+    bbm constrained.cif --bbm-dir path/to/vasp/sp --opt --fmax 0.05 --nmax 100 --output optimized.poscar --chk-file optimization.db
     #+END_SRC
-    `bbm` 会调用外部程序进行优化, 同时保持选定原子的坐标不变(如果模板和外部程序正确处理了冻结标志).
+    `bbm` 会调用 `sp` 模板在每个优化步骤获取能量和力，同时根据结构文件中的冻结信息保持约束原子的坐标不变，驱动内置的 LBFGS 优化。
 
 * 示例 3: 数据提取与自定义报告 (BBM 计算 + gosh format)
 场景: 您使用 `bbm` 完成了一系列计算(例如, 不同吸附物在表面上的吸附能计算), 并将结果保存到了检查点文件或单独的输出文件中. 现在您想提取每个计算的最终能量和结构, 并生成一个自定义格式的总结报告.
 
 流程:
-1. 运行 BBM 计算: (假设已完成) 确保计算结果被保存, 例如使用 `--output` 保存每个最终结构, 或使用 `--chk-update` 将结果记录到检查点数据库.
+1.  运行 BBM 计算: (假设已完成) 确保结果被保存, 例如使用 `--output` 保存最终结构, 或使用 `--chk-file` 记录到检查点数据库.
     #+BEGIN_SRC bash
-    # 示例: 计算 CO 在 Pt 表面的吸附
-    # bbm CO_on_Pt.xyz --bbm-dir path/to/adsorption/calc --opt --output CO_on_Pt_final.xyz --chk-update adsorption_study.chk
+    # 示例: 计算 CO 在 Pt 表面的吸附 (使用内置优化)
+    bbm CO_on_Pt.xyz --bbm-dir path/to/adsorption/sp --opt --output CO_on_Pt_final.xyz --chk-file adsorption_study.db
     # ... 对其他吸附物重复 ...
     #+END_SRC
 
-2. 创建格式化模板 (`summary.tmpl`): 设计一个 `gosh format` 模板来提取所需信息. 假设检查点或加载的文件包含能量信息(例如在标题行).
-    #+BEGIN_SRC jinja2
+2.  创建格式化模板 (`summary.tera`): 设计一个 `gosh format` 模板来提取所需信息. 假设加载的文件包含能量信息（通常保存在 `molecule.title` 中，由 `submit.sh` 在解析时放入）。
+    #+BEGIN_SRC tera
     Structure File: {{ molecule.filename | default(value="N/A") }}
-    Energy: {{ molecule.title | regex_replace(pat="^.*energy =\\s*", repl="") | default(value="N/A") }}
+    Energy: {{ molecule.title | replace(from="^.*energy =\\s*", to="") | default(value="N/A") }}
     Number of Atoms: {{ molecule.natoms }}
 
     Final Coordinates (XYZ format):
     {{ molecule.natoms }}
-    Energy = {{ molecule.title | regex_replace(pat="^.*energy =\\s*", repl="") | default(value="N/A") }}
+    Energy = {{ molecule.title | replace(from="^.*energy =\\s*", to="") | default(value="N/A") }}
     {% for atom in molecule.atoms %}
-      {{ atom.element | pad_left(width=2) }}  {{ "%.8f" | format(atom.position[0]) | pad_left(width=15) }} {{ "%.8f" | format(atom.position[1]) | pad_left(width=15) }} {{ "%.8f" | format(atom.position[2]) | pad_left(width=15) }}
+      {{ atom.symbol | pad_start(width=2) }}  {{ atom.x | format(spec=".8f") | pad_start(width=15) }} {{ atom.y | format(spec=".8f") | pad_start(width=15) }} {{ atom.z | format(spec=".8f") | pad_start(width=15) }}
     {% endfor %}
+
     ---
     #+END_SRC
-    注意: 上述模板中的 `regex_replace` 过滤器是假设存在的, 用于从标题行提取能量. 实际可用的过滤器取决于 `gosh` 的实现. `molecule.filename` 也是假设变量.
+    *注意:* 上述模板中的 `replace` 过滤器是 Tera 的标准过滤器. `molecule.filename` 可能需要 `gosh` 在加载时支持或通过脚本传递.
 
-3. 使用 gosh 脚本处理结果: 创建一个 `gosh` 脚本 (`generate_report.gosh`) 来加载结果并应用模板.
+3.  使用 gosh 脚本处理结果: 创建一个 `gosh` 脚本 (`generate_report.gosh`) 来加载结果并应用模板.
     #+BEGIN_SRC gosh
-    # $1 是要加载的文件名 (最终结构文件或检查点槽位?)
-    # load $1  # 或者 load-chk adsorption_study.chk --chk_slot ... ?
+    # $1 是要加载的文件名
     load $1
-    format summary.tmpl
+    # 假设能量信息在 title 中
+    format summary.tera
+    quit
+    #+END_SRC
+    *或者*, 如果结果在检查点数据库中:
+    #+BEGIN_SRC gosh
+    # $1 是检查点文件名, $2 是槽位号
+    load-chk $1 --chk_slot $2
+    format summary.tera
     quit
     #+END_SRC
 
-4. 执行脚本生成报告:
+4.  执行脚本生成报告:
     #+BEGIN_SRC bash
     # 遍历所有最终结构文件
     echo "# Summary Report" > summary_report.txt
@@ -115,8 +122,12 @@
         gosh -x generate_report.gosh "$final_structure" >> summary_report.txt
     done
 
-    # 或者, 如果结果在检查点中, 可能需要脚本来确定槽位号并循环加载
-    # (这部分逻辑会更复杂)
+    # 或者，如果处理检查点数据库 (假设有N个条目)
+    # echo "# Summary Report from DB" > summary_db_report.txt
+    # for i in $(seq 0 N-1); do # 需要知道N
+    #     gosh -x generate_report_chk.gosh adsorption_study.db $i >> summary_db_report.txt
+    # done
     #+END_SRC
+    *提示:* 如果模板的 `submit.sh` 内部使用了 `gosh-parser`，那么解析和提取数据的逻辑可能已包含在内，使得这一步的 `gosh format` 模板或脚本更简单，甚至可以直接处理 `submit.sh` 的输出（如果设计为人类可读格式）。
 
-这些示例展示了 `gosh` 和 `bbm` 如何互补, 以适应不同的计算化学工作流程需求. 您可以根据自己的具体任务调整和组合这些步骤.
+这些示例展示了 `gosh`, `bbm`, `gosh-parser` 如何互补，以适应不同的计算化学工作流程需求. 您可以根据自己的具体任务调整和组合这些步骤.

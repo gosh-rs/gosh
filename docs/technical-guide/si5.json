@@ -1,0 +1,126 @@
+{
+  "molecule": {
+    "atoms": [
+      {
+        "element_index": 1,
+        "freezing": [
+          false,
+          false,
+          false
+        ],
+        "fx": 0.0,
+        "fy": 0.0,
+        "fz": 0.0,
+        "index": 1,
+        "number": 14,
+        "symbol": "Si",
+        "vx": 0.0,
+        "vy": 0.0,
+        "vz": 0.0,
+        "x": -0.285496,
+        "y": 1.271746,
+        "z": -0.32325
+      },
+      {
+        "element_index": 1,
+        "freezing": [
+          false,
+          false,
+          false
+        ],
+        "fx": 0.0,
+        "fy": 0.0,
+        "fz": 0.0,
+        "index": 2,
+        "number": 14,
+        "symbol": "Si",
+        "vx": 0.0,
+        "vy": 0.0,
+        "vz": 0.0,
+        "x": 0.237651,
+        "y": -0.21836,
+        "z": 1.481203
+      },
+      {
+        "element_index": 1,
+        "freezing": [
+          false,
+          false,
+          false
+        ],
+        "fx": 0.0,
+        "fy": 0.0,
+        "fz": 0.0,
+        "index": 3,
+        "number": 14,
+        "symbol": "Si",
+        "vx": 0.0,
+        "vy": 0.0,
+        "vz": 0.0,
+        "x": 2.079177,
+        "y": 1.010166,
+        "z": -0.017511
+      },
+      {
+        "element_index": 1,
+        "freezing": [
+          false,
+          false,
+          false
+        ],
+        "fx": 0.0,
+        "fy": 0.0,
+        "fz": 0.0,
+        "index": 4,
+        "number": 14,
+        "symbol": "Si",
+        "vx": 0.0,
+        "vy": 0.0,
+        "vz": 0.0,
+        "x": -1.919998,
+        "y": 2.261138,
+        "z": -1.517891
+      },
+      {
+        "element_index": 1,
+        "freezing": [
+          false,
+          false,
+          false
+        ],
+        "fx": 0.0,
+        "fy": 0.0,
+        "fz": 0.0,
+        "index": 5,
+        "number": 14,
+        "symbol": "Si",
+        "vx": 0.0,
+        "vy": 0.0,
+        "vz": 0.0,
+        "x": 2.605957,
+        "y": -0.481723,
+        "z": 1.790145
+      }
+    ],
+    "bonds": [],
+    "element_types": [
+      [
+        "Si",
+        5
+      ]
+    ],
+    "number_of_atoms": 5,
+    "number_of_bonds": 6,
+    "number_of_species": 1,
+    "species": [
+      {
+        "element_number": 14,
+        "element_symbol": "Si",
+        "index": 1,
+        "number_of_atoms": 5
+      }
+    ],
+    "title": "https://doi.org/10.1002/jcc.21769",
+    "unit_cell": null
+  }
+}

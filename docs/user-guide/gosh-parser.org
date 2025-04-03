@@ -1,0 +1,69 @@
+#+TITLE: 用户指南: gosh-parser 解析工具
+#+AUTHOR: Roo (AI 助手) &amp; Wenping Guo
+#+LANGUAGE: zh-CN
+#+OPTIONS: toc:nil num:nil ^:{} indent:t
+
+* 简介
+`gosh-parser` 是 `gosh` 工具集中的一个重要组成部分，它是一个专门设计用于 **辅助解析计算化学程序输出文本** 的工具。与 `gosh` 类似，它也提供了一个交互式 REPL 环境，并且可以执行脚本，但其核心功能聚焦于文本处理和数据提取，特别是从复杂的计算输出文件中提取能量、力、结构等关键信息。
+
+它的主要应用场景是在 BBM 模板的 `submit.sh` 脚本中被调用，以简化和标准化输出解析的过程，确保最终能生成符合 `ModelProperties` 格式的结果。
+
+* 主要特点
+- **REPL 环境:** 提供交互式环境，方便测试解析逻辑和命令。
+- **脚本执行:** 可以将复杂的解析流程编写成脚本 (`.gps` ? 或其他后缀)，方便复用和在其他脚本中调用。
+- **文本解析功能:** 内置或通过库提供了强大的文本匹配、处理和数据提取能力（具体功能可能需要查阅其文档或 `--help`）。
+- **与 BBM 结合:** 主要设计用于 `submit.sh` 脚本中，处理外部程序的输出，并将结果格式化为 `ModelProperties`。
+
+* 基本用法 (概念)
+`gosh-parser` 的具体用法可能需要参考其独立的文档或帮助信息 (`gosh-parser --help`)。以下是一些可能的使用方式：
+
+1.  **交互式 REPL:**
+    #+BEGIN_SRC bash
+    gosh-parser
+    # gosh_parser> # 输入解析命令或加载脚本
+    #+END_SRC
+
+2.  **执行单条命令:**
+    #+BEGIN_SRC bash
+    # 假设有内置函数 extract_energy 读取文件并提取能量
+    gosh-parser -e 'extract_energy("orca.out")'
+    #+END_SRC
+
+3.  **通过管道处理输入:**
+    #+BEGIN_SRC bash
+    cat orca.out | gosh-parser -e 'find_energy_line()'
+    #+END_SRC
+
+4.  **执行解析脚本:**
+    #+BEGIN_SRC bash
+    # 假设 parse_orca.gps 包含了完整的 ORCA 输出解析逻辑
+    gosh-parser -s parse_orca.gps orca.out
+    # 或者
+    cat orca.out | gosh-parser -s parse_orca.gps
+    #+END_SRC
+
+* 在 BBM `submit.sh` 中的应用
+`gosh-parser` 最典型的用法是在 BBM 模板的 `submit.sh` 脚本中。当外部计算程序（如 ORCA）运行结束后，`submit.sh` 会生成输出文件（如 `orca.out`）。此时，`submit.sh` 可以调用 `gosh-parser` 来处理这个输出文件。
+
+**示例 (`sp/submit.sh` 中的可能用法):**
+
+#+BEGIN_SRC bash
+# ... (submit.sh 前面的部分：生成输入、运行 orca) ...
+
+# 假设 orca 计算已完成，输岀在 orca.out 文件中
+
+# 调用 gosh-parser 执行解析脚本 parse_orca_output.gps
+# 该脚本负责读取 orca.out，提取能量和力，
+# 并将结果以 ModelProperties 格式打印到标准输出
+gosh-parser -s "$BBM_TPL_DIR/parse_orca_output.gps" orca.out
+
+# submit.sh 的标准输出会被 bbm 捕获
+# 因此 gosh-parser 的输出（即 ModelProperties）将传递给 bbm
+
+exit 0 # 确保脚本正常退出
+#+END_SRC
+
+在这个例子中，复杂的解析逻辑被封装在 `parse_orca_output.gps` 脚本中，使得 `submit.sh` 保持相对简洁，专注于流程控制。`gosh-parser` 负责具体的解析工作，并将结果以标准格式输出。
+
+* 总结
+`gosh-parser` 是一个强大的文本解析辅助工具，特别适用于处理计算化学程序的输出。通过在 BBM 模板的 `submit.sh` 中使用它，可以大大简化输出解析的复杂性，提高模板的可维护性和可靠性。建议查阅 `gosh-parser` 的具体文档或示例（如 `sp/submit.sh`）以了解其详细功能和脚本语法。
