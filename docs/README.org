@@ -1,11 +1,6 @@
-<<<<<<< HEAD
-#+TITLE: gosh: 计算化学工具箱
-#+AUTHOR: Wenping Guo
-=======
 #+TITLE: gosh 工具集: 计算化学瑞士军刀
 #+AUTHOR: Wenping Guo &amp; Roo (AI 助手)
 #+LANGUAGE: zh-CN
->>>>>>> dev
 #+OPTIONS: toc:nil num:nil ^:{} indent:t
 
 * 目标与理念: 多等级多尺度计算自动化流程化
@@ -26,22 +21,6 @@
 这些工具共同提供了一个灵活的平台。
 
 * 核心特性
-<<<<<<< HEAD
-gosh (交互式 Shell &amp; 脚本):
-- 加载、保存和转换多种分子文件格式 (xyz, mol2, cif, poscar, checkpoint-db 等).
-- 交互式结构编辑: 重建化学键、清理几何构型、原子选择、冻结原子.
-- 晶体结构操作: 创建超胞、根据边界盒构建晶格、解除晶体周期性.
-- 使用模板进行自定义输出格式化.
-- 可编写脚本以自动化重复性任务.
-
-bbm (黑箱模型运行器):
-- 使用预定义模板运行外部计算化学软件.
-- 支持单分子和批处理模式计算 (=--bunch=).
-- 内置使用 LBFGS 的几何优化功能 (=--opt=).
-- 检查点机制用于保存/重启计算.
-- 空跑模式 (=--dry-run=) 用于测试输入文件生成.
-- 灵活的模板系统 (参见 [[https://github.com/ybyygu/bbm-templates][bbm-templates]] 代码库).
-=======
 ** gosh (交互式 Shell &amp; Scripting):
 - 文件 I/O (xyz, cif, poscar, chk 等)。
 - 结构编辑 (键、清理、选择、冻结)。
@@ -61,7 +40,6 @@ bbm (黑箱模型运行器):
 - REPL 环境和脚本执行。
 - 专注于文本解析，提取数据。
 - 可在 `submit.sh` 等脚本中调用。
->>>>>>> dev
 
 * 安装
 提供了 Linux x86_64 二进制程序。请从 [[https://github.com/gosh-rs/gosh/releases][项目 Releases 页面]] 下载，解压后放入系统路径 (如 `~/.local/bin`)。
@@ -72,13 +50,7 @@ gosh --version && bbm --version && gosh-parser --version
 #+END_SRC
 
 * 快速入门
-<<<<<<< HEAD
-** 使用 gosh REPL:
-
-启动交互式 shell:
-=======
 ** gosh REPL:
->>>>>>> dev
 #+BEGIN_SRC bash
 gosh
 # gosh> load molecule.xyz
@@ -87,23 +59,8 @@ gosh
 # gosh> quit
 #+END_SRC
 
-<<<<<<< HEAD
-在 REPL 中:
-#+BEGIN_SRC gosh
-gosh> load molecule.xyz  # 加载一个分子
-gosh> # ... 执行选择、冻结、清理等操作 ...
-gosh> write molecule_modified.cif # 保存为另一种格式
-gosh> quit # 或 Ctrl-D
-#+END_SRC
-
-** 使用 bbm 运行器:
-
-假设您已经下载或克隆了 =bbm-templates= 代码库, 并且在 =~/bbm-templates/vasp/static= 中有一个 VASP 单点计算模板:
-
-=======
 ** bbm 结构优化:
 使用 `sp` 模板 (`~/bbm-templates/orca/sp`) 优化：
->>>>>>> dev
 #+BEGIN_SRC bash
 bbm input.xyz -t ~/bbm-templates/orca/sp --opt --fmax=0.05 --nmax=500 -o optimized.xyz --chk-file opt.db
 #+END_SRC
