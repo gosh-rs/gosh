@@ -4,9 +4,6 @@
 #+OPTIONS: toc:nil num:nil ^:{} indent:t
 
 * 概述
-:PROPERTIES:
-:DIR:      data/42cdf85f-bd36-4b6b-980b-396292fbce10
-:END:
 `gosh` 项目由一系列 Rust crates (库和可执行程序) 组成, 旨在提供一个模块化且可扩展的计算化学工具平台. 从用户的角度来看, 主要的交互入口是 `gosh` 命令行程序 (提供 REPL 和脚本执行) 和 `bbm` 命令行程序 (黑箱模型运行器).
 
 下图展示了项目主要组件之间的关系:
@@ -53,8 +50,6 @@ flowchart TD
     Lib_Model -.-> Lib_Adaptor
     Lib_Runner -.-> Lib_Remote
 #+end_src
-
-[[attachment:framework.png]]
 
 
 * 主要组件说明 (用户视角)

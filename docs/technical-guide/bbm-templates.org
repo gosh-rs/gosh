@@ -39,23 +39,23 @@ Template 的核心作用是充当 `bbm` 和外部程序之间的"翻译器"和"�
 
 #+BEGIN_SRC mermaid :file bbm-dataflow.png :cmdline -w 1000
 graph LR
-    A[bbm Runner Start] -- molfile, --bbm-dir --> B{Load Molecule & Template};
-    B --> C{Render Input File(s)<br>using input.tmpl};
-    C --> D{Execute run.sh};
+    A[bbm Runner Start] -- molfile --> B{Load Molecule & Template};
+    B --> C{"Render Input File(s) using input.tmpl"};
+    C --> D{"Execute run.sh"};
     subgraph External Calculation
         direction LR
-        D --> E[run.sh executes<br>external program (e.g., VASP)];
-        E --> F[External program writes<br>output files (e.g., OUTCAR)];
+        D --> E{"run.sh executes external program (e.g., VASP)"};
+        E --> F{"External program writes output files (e.g., OUTCAR)"};
     end
-    F --> G{Execute parse.py};
-    G --> H{parse.py reads output files<br>& extracts results};
-    H --> I{parse.py prints results<br>(e.g., JSON) to stdout};
-    I --> J{bbm receives results};
-    J -- If --opt --> K{Update geometry &<br>Check convergence (gosh_optim)};
+    F --> G{"Execute parse.py"};
+    G --> H{"parse.py reads output files & extracts results"};
+    H --> I{"parse.py prints results (e.g., JSON) to stdout"};
+    I --> J{"bbm receives results"};
+    J -- If --opt --> K{"Update geometry & Check convergence (gosh_optim)"};
     K -- Not converged --> C;
-    K -- Converged --> L{Final Processing};
+    K -- Converged --> L{"Final Processing"};
     J -- If not --opt --> L;
-    L --> M{Save Output (--output) &<br>Update Checkpoint (--chk-file)};
+    L --> M{"Save Output (--output) & Update Checkpoint (--chk-file)"};
     M --> N[bbm Runner End];
 #+END_SRC
 
